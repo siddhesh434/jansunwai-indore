@@ -58,6 +58,8 @@ export default function Dashboard() {
       const queryData = await res.json();
       setSelectedQuery(queryData);
       setThreads(queryData.objects || []);
+      // Close the new query form when selecting an existing query
+      setShowNewQueryForm(false);
     } catch (error) {
       console.error("Error fetching query threads:", error);
     }
