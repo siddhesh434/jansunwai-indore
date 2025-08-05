@@ -55,7 +55,7 @@ export default function Dashboard() {
       const res = await fetch(`/api/queries/${queryId}`);
       const queryData = await res.json();
       setSelectedQuery(queryData);
-      setThreads(queryData.threads || []);
+      setThreads(queryData.objects || []); // ← Change from 'threads' to 'objects'
     } catch (error) {
       console.error("Error fetching query threads:", error);
     }
@@ -87,13 +87,18 @@ export default function Dashboard() {
     try {
       const updatedThreads = [
         ...threads,
-        { message: newThread, author: user._id, timestamp: new Date() },
+        {
+          message: newThread,
+          authorId: user._id, // ← Change from 'author' to 'authorId'
+          authorType: "User", // ← Add required authorType
+          timestamp: new Date(),
+        },
       ];
 
       const res = await fetch(`/api/queries/${selectedQuery._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ threads: updatedThreads }),
+        body: JSON.stringify({ objects: updatedThreads }), // ← Change to 'objects'
       });
 
       if (res.ok) {
