@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Plus, Send, User, MessageSquare, Clock, ChevronRight } from "lucide-react";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -15,6 +16,7 @@ export default function Dashboard() {
   const [newThread, setNewThread] = useState("");
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showNewQueryForm, setShowNewQueryForm] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -55,59 +57,72 @@ export default function Dashboard() {
       const res = await fetch(`/api/queries/${queryId}`);
       const queryData = await res.json();
       setSelectedQuery(queryData);
-      setThreads(queryData.objects || []); // ← Change from 'threads' to 'objects'
+      setThreads(queryData.objects || []);
     } catch (error) {
       console.error("Error fetching query threads:", error);
     }
   };
 
-  const handleCreateQuery = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await fetch("/api/queries", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...newQuery, author: user._id }),
-      });
+  const handleCreateQuery = (e) => {
+    e?.preventDefault?.();
+    if (!newQuery.title || !newQuery.description || !newQuery.department) return;
+    
+    const createQuery = async () => {
+      try {
+        const res = await fetch("/api/queries", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...newQuery, author: user._id }),
+        });
 
-      if (res.ok) {
-        const createdQuery = await res.json();
-        setQueries([...queries, createdQuery]);
-        setNewQuery({ title: "", description: "", department: "" });
+        if (res.ok) {
+          const createdQuery = await res.json();
+          setQueries([...queries, createdQuery]);
+          setNewQuery({ title: "", description: "", department: "" });
+          setShowNewQueryForm(false);
+          setSelectedQuery(createdQuery);
+          setThreads([]);
+        }
+      } catch (error) {
+        console.error("Error creating query:", error);
       }
-    } catch (error) {
-      console.error("Error creating query:", error);
-    }
+    };
+    
+    createQuery();
   };
 
-  const handleAddThread = async (e) => {
-    e.preventDefault();
+  const handleAddThread = (e) => {
+    e?.preventDefault?.();
     if (!selectedQuery || !newThread.trim()) return;
 
-    try {
-      const updatedThreads = [
-        ...threads,
-        {
-          message: newThread,
-          authorId: user._id, // ← Change from 'author' to 'authorId'
-          authorType: "User", // ← Add required authorType
-          timestamp: new Date(),
-        },
-      ];
+    const addThread = async () => {
+      try {
+        const updatedThreads = [
+          ...threads,
+          {
+            message: newThread,
+            authorId: user._id,
+            authorType: "User",
+            timestamp: new Date(),
+          },
+        ];
 
-      const res = await fetch(`/api/queries/${selectedQuery._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ objects: updatedThreads }), // ← Change to 'objects'
-      });
+        const res = await fetch(`/api/queries/${selectedQuery._id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ objects: updatedThreads }),
+        });
 
-      if (res.ok) {
-        setThreads(updatedThreads);
-        setNewThread("");
+        if (res.ok) {
+          setThreads(updatedThreads);
+          setNewThread("");
+        }
+      } catch (error) {
+        console.error("Error adding thread:", error);
       }
-    } catch (error) {
-      console.error("Error adding thread:", error);
-    }
+    };
+    
+    addThread();
   };
 
   const handleLogout = () => {
@@ -117,169 +132,260 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen text-gray-600">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-blue-600"></div>
-        <span className="ml-3">Loading dashboard...</span>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="flex items-center space-x-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-orange-500 border-t-transparent"></div>
+          <span className="text-gray-600 font-medium">Loading dashboard...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="h-screen bg-white flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-10">
-        <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-        <div className="flex items-center gap-4">
-          <span className="text-gray-600">
-            Welcome, <b>{user?.name}</b>
-          </span>
+      <header className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center shrink-0">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+            <MessageSquare className="w-5 h-5 text-white" />
+          </div>
+          <h1 className="text-xl font-semibold text-gray-900">Query Dashboard</h1>
+        </div>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 text-sm text-gray-600">
+            <User className="w-4 h-4" />
+            <span>{user?.name}</span>
+          </div>
           <button
             onClick={handleLogout}
-            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+            className="text-sm text-gray-500 hover:text-gray-700 transition-colors px-3 py-1.5 rounded-md hover:bg-gray-100"
           >
-            Logout
+            Sign out
           </button>
         </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Panel - My Queries */}
-        <div className="w-1/3 border-r bg-white p-4 overflow-y-auto">
-          <h2 className="text-lg font-semibold mb-4">My Queries</h2>
+        {/* Left Sidebar - Queries List (20%) */}
+        <div className="w-1/5 bg-gray-50 border-r border-gray-200 flex flex-col">
+          {/* New Query Button */}
+          <div className="p-4 border-b border-gray-200">
+            <button
+              onClick={() => setShowNewQueryForm(true)}
+              className="w-full flex items-center justify-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-lg transition-colors font-medium"
+            >
+              <Plus className="w-4 h-4" />
+              <span>New Query</span>
+            </button>
+          </div>
 
-          <div className="space-y-3">
+          {/* Queries List */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-2">
             {queries.length === 0 ? (
-              <p className="text-gray-500 text-sm">
-                No queries yet. Create one below.
-              </p>
+              <div className="text-center py-8">
+                <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-sm text-gray-500">No queries yet</p>
+                <p className="text-xs text-gray-400 mt-1">Create your first query to get started</p>
+              </div>
             ) : (
               queries.map((query) => (
                 <div
                   key={query._id}
                   onClick={() => fetchQueryThreads(query._id)}
-                  className={`p-4 border rounded-lg cursor-pointer transition hover:shadow-sm ${
+                  className={`group p-3 rounded-lg cursor-pointer transition-all hover:bg-white hover:shadow-sm border ${
                     selectedQuery?._id === query._id
-                      ? "bg-blue-50 border-blue-400"
-                      : "bg-white"
+                      ? "bg-white border-orange-200 shadow-sm"
+                      : "border-transparent hover:border-gray-200"
                   }`}
                 >
-                  <h3 className="font-medium text-gray-800">{query.title}</h3>
-                  <p className="text-sm text-gray-600 line-clamp-2">
-                    {query.description}
-                  </p>
-                  <span className="text-xs text-gray-500">
-                    Status: {query.status || "Open"}
-                  </span>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-gray-900 text-sm truncate mb-1">
+                        {query.title}
+                      </h3>
+                      <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                        {query.description}
+                      </p>
+                      <div className="flex items-center mt-2 space-x-2">
+                        <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          query.status === "Open" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
+                        }`}>
+                          {query.status || "Open"}
+                        </div>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-400 shrink-0 ml-2" />
+                  </div>
                 </div>
               ))
             )}
           </div>
-
-          {/* Query Creation */}
-          <div className="mt-6 bg-gray-50 p-4 rounded-lg border">
-            <h3 className="text-md font-medium mb-3">Create New Query</h3>
-            <form onSubmit={handleCreateQuery} className="space-y-3">
-              <input
-                type="text"
-                placeholder="Query Title"
-                value={newQuery.title}
-                onChange={(e) =>
-                  setNewQuery({ ...newQuery, title: e.target.value })
-                }
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-400"
-                required
-              />
-              <textarea
-                placeholder="Description"
-                value={newQuery.description}
-                onChange={(e) =>
-                  setNewQuery({ ...newQuery, description: e.target.value })
-                }
-                className="w-full p-2 border rounded-lg h-20 focus:ring-2 focus:ring-blue-400"
-                required
-              />
-              <select
-                value={newQuery.department}
-                onChange={(e) =>
-                  setNewQuery({ ...newQuery, department: e.target.value })
-                }
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-400"
-                required
-              >
-                <option value="">Select Department</option>
-                {departments.map((dept) => (
-                  <option key={dept._id} value={dept._id}>
-                    {dept.name}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="submit"
-                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
-              >
-                Create Query
-              </button>
-            </form>
-          </div>
         </div>
 
-        {/* Right Panel - Query Threads */}
-        <div className="w-2/3 p-6 overflow-y-auto">
-          {selectedQuery ? (
-            <>
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold text-gray-800">
+        {/* Right Panel - Query Details and Threads (80%) */}
+        <div className="flex-1 flex flex-col">
+          {showNewQueryForm ? (
+            /* New Query Form */
+            <div className="flex-1 flex flex-col">
+              <div className="p-6 border-b border-gray-200">
+                <h2 className="text-xl font-semibold text-gray-900">Create New Query</h2>
+                <p className="text-sm text-gray-600 mt-1">Fill in the details to create a new query</p>
+              </div>
+              
+              <div className="flex-1 p-6">
+                <div className="max-w-2xl space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Query Title
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Enter a descriptive title for your query"
+                      value={newQuery.title}
+                      onChange={(e) => setNewQuery({ ...newQuery, title: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      placeholder="Provide a detailed description of your query"
+                      value={newQuery.description}
+                      onChange={(e) => setNewQuery({ ...newQuery, description: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg h-32 focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors resize-none"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Department
+                    </label>
+                    <select
+                      value={newQuery.department}
+                      onChange={(e) => setNewQuery({ ...newQuery, department: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors"
+                    >
+                      <option value="">Select a department</option>
+                      {departments.map((dept) => (
+                        <option key={dept._id} value={dept._id}>
+                          {dept.departmentName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="flex space-x-3 pt-4">
+                    <button
+                      onClick={handleCreateQuery}
+                      className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition-colors font-medium"
+                    >
+                      Create Query
+                    </button>
+                    <button
+                      onClick={() => setShowNewQueryForm(false)}
+                      className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-lg transition-colors font-medium"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : selectedQuery ? (
+            /* Query Thread View */
+            <div className="flex-1 flex flex-col">
+              {/* Query Header */}
+              <div className="p-6 border-b border-gray-200">
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
                   {selectedQuery.title}
                 </h2>
-                <p className="text-gray-600 mt-1">
+                <p className="text-gray-600 text-sm mb-3">
                   {selectedQuery.description}
                 </p>
-                <span className="text-sm text-gray-500">
-                  Status: {selectedQuery.status || "Open"}
-                </span>
+                <div className="flex items-center space-x-4 text-sm text-gray-500">
+                  <div className="flex items-center space-x-1">
+                    <Clock className="w-4 h-4" />
+                    <span>Status: {selectedQuery.status || "Open"}</span>
+                  </div>
+                </div>
               </div>
 
-              <div className="bg-white rounded-lg shadow p-4 h-96 overflow-y-auto mb-4">
-                <h3 className="font-medium mb-3">Threads</h3>
-                {threads.length === 0 ? (
-                  <p className="text-gray-500 text-sm">
-                    No threads yet. Start the conversation!
-                  </p>
-                ) : (
-                  threads.map((thread, index) => (
-                    <div
-                      key={index}
-                      className="mb-3 p-3 bg-gray-50 rounded-lg border"
-                    >
-                      <p className="text-gray-800">{thread.message}</p>
-                      <span className="text-xs text-gray-500 block mt-1">
-                        {new Date(thread.timestamp).toLocaleString()}
-                      </span>
+              {/* Threads Container */}
+              <div className="flex-1 flex flex-col min-h-0">
+                {/* Threads List */}
+                <div className="flex-1 overflow-y-auto p-6">
+                  {threads.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-center">
+                      <MessageSquare className="w-16 h-16 text-gray-300 mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No threads yet</h3>
+                      <p className="text-gray-600 mb-4">Start the conversation by adding your first thread below.</p>
                     </div>
-                  ))
-                )}
-              </div>
+                  ) : (
+                    <div className="space-y-4 max-w-4xl">
+                      {threads.map((thread, index) => (
+                        <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                          <div className="flex items-start space-x-3">
+                            <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center shrink-0">
+                              <User className="w-4 h-4 text-orange-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-gray-900 leading-relaxed">
+                                {thread.message}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-2 flex items-center space-x-1">
+                                <Clock className="w-3 h-3" />
+                                <span>{new Date(thread.timestamp).toLocaleString()}</span>
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-              {/* Add Thread */}
-              <form onSubmit={handleAddThread} className="flex gap-2">
-                <textarea
-                  placeholder="Add a thread..."
-                  value={newThread}
-                  onChange={(e) => setNewThread(e.target.value)}
-                  className="flex-1 p-2 border rounded-lg h-20 focus:ring-2 focus:ring-green-400"
-                  required
-                />
-                <button
-                  type="submit"
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition h-fit"
-                >
-                  Add
-                </button>
-              </form>
-            </>
+                {/* Thread Input */}
+                <div className="border-t border-gray-200 p-6">
+                  <div className="max-w-4xl">
+                    <div className="flex space-x-3">
+                      <div className="flex-1">
+                        <textarea
+                          placeholder="Add your thread here..."
+                          value={newThread}
+                          onChange={(e) => setNewThread(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleAddThread(e);
+                            }
+                          }}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors resize-none"
+                          rows="3"
+                        />
+                      </div>
+                      <button
+                        onClick={handleAddThread}
+                        disabled={!newThread.trim()}
+                        className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white p-3 rounded-lg transition-colors shrink-0 flex items-center justify-center"
+                      >
+                        <Send className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           ) : (
-            <div className="flex items-center justify-center h-full text-gray-400">
-              Select a query to view threads
+            /* Empty State */
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Select a query</h3>
+                <p className="text-gray-600">Choose a query from the sidebar to view and manage its threads.</p>
+              </div>
             </div>
           )}
         </div>
