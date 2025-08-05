@@ -8,7 +8,7 @@ const UserSchema = new Schema(
   {
     username: { type: String, required: true, unique: true },
     name: { type: String, required: true },
-    hashedPassword: { type: String, required: true },
+    password: { type: String, required: true },
     address: { type: String },
     queries: [{ type: Schema.Types.ObjectId, ref: "Query" }],
   },
@@ -30,7 +30,7 @@ const DepartmentMemberSchema = new Schema(
   {
     name: { type: String, required: true },
     username: { type: String, required: true, unique: true },
-    hashedPassword: { type: String, required: true },
+    password: { type: String, required: true },
     department: { type: Schema.Types.ObjectId, ref: "Department" },
   },
   { timestamps: true }

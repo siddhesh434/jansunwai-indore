@@ -2,9 +2,10 @@
 import dbConnect from "../../../../lib/dbConnect";
 import { Query } from "../../../../models";
 
-export async function GET(request, { params }) {
+export async function GET(request, context) {
   try {
     await dbConnect();
+    const params = await context.params; // ✅ Await params directly
     const query = await Query.findById(params.id).populate([
       "author",
       "department",
@@ -17,9 +18,10 @@ export async function GET(request, { params }) {
   }
 }
 
-export async function PUT(request, { params }) {
+export async function PUT(request, context) {
   try {
     await dbConnect();
+    const params = await context.params; // ✅ Await params directly
     const body = await request.json();
     const query = await Query.findByIdAndUpdate(params.id, body, { new: true });
     if (!query)
@@ -30,9 +32,10 @@ export async function PUT(request, { params }) {
   }
 }
 
-export async function DELETE(request, { params }) {
+export async function DELETE(request, context) {
   try {
     await dbConnect();
+    const params = await context.params; // ✅ Await params directly
     const query = await Query.findByIdAndDelete(params.id);
     if (!query)
       return Response.json({ error: "Query not found" }, { status: 404 });
