@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Send, User, MessageSquare, Clock, ChevronRight } from "lucide-react";
+import { Plus, Send, User, MessageSquare, Clock, ChevronRight, Building2 } from "lucide-react";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -130,6 +130,19 @@ export default function Dashboard() {
     router.push("/login");
   };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "open":
+        return "bg-red-100 text-red-700";
+      case "in_progress":
+        return "bg-yellow-100 text-yellow-700";
+      case "resolved":
+        return "bg-green-100 text-green-700";
+      default:
+        return "bg-gray-100 text-gray-600";
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -166,8 +179,8 @@ export default function Dashboard() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar - Queries List (20%) */}
-        <div className="w-1/5 bg-gray-50 border-r border-gray-200 flex flex-col">
+        {/* Left Sidebar - Queries List */}
+        <div className="w-1/3 bg-gray-50 border-r border-gray-200 flex flex-col">
           {/* New Query Button */}
           <div className="p-4 border-b border-gray-200">
             <button
@@ -177,6 +190,13 @@ export default function Dashboard() {
               <Plus className="w-4 h-4" />
               <span>New Query</span>
             </button>
+          </div>
+
+          {/* Query Count */}
+          <div className="px-4 py-2 bg-white border-b border-gray-200">
+            <p className="text-sm text-gray-600">
+              {queries.length} queries
+            </p>
           </div>
 
           {/* Queries List */}
@@ -203,15 +223,16 @@ export default function Dashboard() {
                       <h3 className="font-medium text-gray-900 text-sm truncate mb-1">
                         {query.title}
                       </h3>
-                      <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                      <p className="text-xs text-gray-500 mb-2 line-clamp-2 leading-relaxed">
                         {query.description}
                       </p>
-                      <div className="flex items-center mt-2 space-x-2">
-                        <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          query.status === "Open" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
-                        }`}>
-                          {query.status || "Open"}
+                      <div className="flex items-center justify-between">
+                        <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(query.status?.toLowerCase() || "open")}`}>
+                          {query.status?.replace('_', ' ').toUpperCase() || "OPEN"}
                         </div>
+                        <span className="text-xs text-gray-400">
+                          {query.objects?.length || 0} replies
+                        </span>
                       </div>
                     </div>
                     <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-400 shrink-0 ml-2" />
@@ -222,7 +243,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Right Panel - Query Details and Threads (80%) */}
+        {/* Right Panel - Query Details and Threads */}
         <div className="flex-1 flex flex-col">
           {showNewQueryForm ? (
             /* New Query Form */
@@ -299,16 +320,24 @@ export default function Dashboard() {
             <div className="flex-1 flex flex-col">
               {/* Query Header */}
               <div className="p-6 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                  {selectedQuery.title}
-                </h2>
-                <p className="text-gray-600 text-sm mb-3">
-                  {selectedQuery.description}
-                </p>
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                      {selectedQuery.title}
+                    </h2>
+                    <p className="text-gray-600 text-sm mb-3">
+                      {selectedQuery.description}
+                    </p>
+                  </div>
+                </div>
+                
                 <div className="flex items-center space-x-4 text-sm text-gray-500">
                   <div className="flex items-center space-x-1">
                     <Clock className="w-4 h-4" />
-                    <span>Status: {selectedQuery.status || "Open"}</span>
+                    <span>Created: {new Date(selectedQuery.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedQuery.status?.toLowerCase() || "open")}`}>
+                    {selectedQuery.status?.replace('_', ' ').toUpperCase() || "OPEN"}
                   </div>
                 </div>
               </div>
@@ -320,24 +349,40 @@ export default function Dashboard() {
                   {threads.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center">
                       <MessageSquare className="w-16 h-16 text-gray-300 mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No threads yet</h3>
-                      <p className="text-gray-600 mb-4">Start the conversation by adding your first thread below.</p>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No replies yet</h3>
+                      <p className="text-gray-600 mb-4">Start the conversation by adding your first message below.</p>
                     </div>
                   ) : (
                     <div className="space-y-4 max-w-4xl">
                       {threads.map((thread, index) => (
-                        <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div key={index} className={`rounded-lg p-4 border ${
+                          thread.authorType === "User" 
+                            ? "bg-orange-50 border-orange-200 mr-8" 
+                            : "bg-blue-50 border-blue-200 ml-8"
+                        }`}>
                           <div className="flex items-start space-x-3">
-                            <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center shrink-0">
-                              <User className="w-4 h-4 text-orange-600" />
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                              thread.authorType === "User"
+                                ? "bg-orange-100"
+                                : "bg-blue-100"
+                            }`}>
+                              {thread.authorType === "User" ? (
+                                <User className="w-4 h-4 text-orange-600" />
+                              ) : (
+                                <Building2 className="w-4 h-4 text-blue-600" />
+                              )}
                             </div>
                             <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2 mb-1">
+                                <span className="text-sm font-medium text-gray-900">
+                                  {thread.authorType === "User" ? "You" : "Department Response"}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {new Date(thread.timestamp).toLocaleString()}
+                                </span>
+                              </div>
                               <p className="text-gray-900 leading-relaxed">
                                 {thread.message}
-                              </p>
-                              <p className="text-xs text-gray-500 mt-2 flex items-center space-x-1">
-                                <Clock className="w-3 h-3" />
-                                <span>{new Date(thread.timestamp).toLocaleString()}</span>
                               </p>
                             </div>
                           </div>
@@ -353,7 +398,7 @@ export default function Dashboard() {
                     <div className="flex space-x-3">
                       <div className="flex-1">
                         <textarea
-                          placeholder="Add your thread here..."
+                          placeholder="Type your message here..."
                           value={newThread}
                           onChange={(e) => setNewThread(e.target.value)}
                           onKeyDown={(e) => {
