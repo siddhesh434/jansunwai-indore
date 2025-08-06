@@ -295,7 +295,7 @@ export default function DepartmentDashboard() {
               </div>
 
               {/* Threads Container */}
-              <div className="flex-1 flex flex-col min-h-0 max-h-[84vh]">
+              <div className="flex-1 flex flex-col min-h-0 max-h-[75vh]">
                 {/* Threads List */}
                 <div className="flex-1 overflow-y-auto p-6">
                   {threads.length === 0 ? (
