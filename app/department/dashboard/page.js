@@ -295,9 +295,9 @@ export default function DepartmentDashboard() {
               </div>
 
               {/* Threads Container */}
-              <div className="flex-1 flex flex-col min-h-0">
+              <div className="flex-1 flex flex-col min-h-0 max-h-[84vh]">
                 {/* Threads List */}
-                <div className="flex-1 overflow-y-auto p-6 max-h-[84vh]">
+                <div className="flex-1 overflow-y-auto p-6">
                   {threads.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center">
                       <MessageSquare className="w-16 h-16 text-gray-300 mb-4" />
