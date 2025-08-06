@@ -1,7 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Send, User, MessageSquare, Clock, ChevronRight, Building2 } from "lucide-react";
+import { Plus, Send, User, MessageSquare, Clock, ChevronRight, Building2, Bot, Sparkles } from "lucide-react";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -17,7 +17,29 @@ export default function Dashboard() {
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showNewQueryForm, setShowNewQueryForm] = useState(false);
+  
+  // AI Assistant states
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [aiMessages, setAiMessages] = useState([
+    {
+      role: "assistant",
+      content: "Hello! I'm your JanSunwai AI Assistant. I can help you with municipal services, draft complaints, suggest departments, and guide you through the complaint process. How can I assist you today?"
+    }
+  ]);
+  const [aiInput, setAiInput] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const messagesEndRef = useRef(null);
+  
   const router = useRouter();
+
+  // Scroll to bottom of AI chat
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [aiMessages]);
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -58,10 +80,65 @@ export default function Dashboard() {
       const queryData = await res.json();
       setSelectedQuery(queryData);
       setThreads(queryData.objects || []);
-      // Close the new query form when selecting an existing query
       setShowNewQueryForm(false);
     } catch (error) {
       console.error("Error fetching query threads:", error);
+    }
+  };
+
+  // AI Assistant Functions
+  const handleAIMessage = async (e) => {
+    e?.preventDefault();
+    if (!aiInput.trim() || aiLoading) return;
+
+    const userMessage = aiInput;
+    setAiInput("");
+    setAiMessages(prev => [...prev, { role: "user", content: userMessage }]);
+    setAiLoading(true);
+
+    try {
+      const res = await fetch("/api/ai-assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: userMessage,
+          context: {
+            departments: departments.map(d => d.departmentName),
+            userQueries: queries.length,
+            userName: user?.name
+          }
+        }),
+      });
+
+      const data = await res.json();
+      
+      if (data.success) {
+        setAiMessages(prev => [...prev, { role: "assistant", content: data.response }]);
+        
+        // If AI suggests creating a query, populate the form
+        if (data.suggestedQuery) {
+          setNewQuery({
+            title: data.suggestedQuery.title || "",
+            description: data.suggestedQuery.description || "",
+            department: data.suggestedQuery.departmentId || "",
+          });
+          setShowNewQueryForm(true);
+          setShowAIAssistant(false);
+        }
+      } else {
+        setAiMessages(prev => [...prev, { 
+          role: "assistant", 
+          content: "I'm sorry, I'm having trouble connecting right now. Please try again later." 
+        }]);
+      }
+    } catch (error) {
+      console.error("Error sending AI message:", error);
+      setAiMessages(prev => [...prev, { 
+        role: "assistant", 
+        content: "I'm sorry, I encountered an error. Please try again later." 
+      }]);
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -157,7 +234,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="h-screen bg-white flex flex-col overflow-hidden">
+    <div className="h-screen bg-white flex flex-col overflow-hidden relative">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center shrink-0">
         <div className="flex items-center space-x-3">
@@ -167,6 +244,20 @@ export default function Dashboard() {
           <h1 className="text-xl font-semibold text-gray-900">Query Dashboard</h1>
         </div>
         <div className="flex items-center space-x-4">
+          {/* AI Assistant Toggle */}
+          <button
+            onClick={() => setShowAIAssistant(!showAIAssistant)}
+            className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
+              showAIAssistant 
+                ? "bg-purple-100 text-purple-700 hover:bg-purple-200" 
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            <Bot className="w-4 h-4" />
+            <span className="text-sm font-medium">AI Assistant</span>
+            {aiLoading && <Sparkles className="w-3 h-3 animate-pulse" />}
+          </button>
+          
           <div className="flex items-center space-x-2 text-sm text-gray-600">
             <User className="w-4 h-4" />
             <span>{user?.name}</span>
@@ -319,7 +410,7 @@ export default function Dashboard() {
             </div>
           ) : selectedQuery ? (
             /* Query Thread View */
-            <div className="flex-1 flex flex-col  max-h-[84vh]">
+            <div className="flex-1 flex flex-col max-h-[84vh]">
               {/* Query Header */}
               <div className="p-6 border-b border-gray-200">
                 <div className="flex items-start justify-between mb-4">
@@ -437,6 +528,84 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* AI Assistant Overlay */}
+      {showAIAssistant && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl h-[600px] flex flex-col m-4">
+            {/* AI Assistant Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+                  <Bot className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">JanSunwai AI Assistant</h3>
+                  <p className="text-xs text-gray-500">Municipal services helper</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAIAssistant(false)}
+                className="text-gray-400 hover:text-gray-600 text-xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* AI Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {aiMessages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                      message.role === "user"
+                        ? "bg-orange-500 text-white"
+                        : "bg-gray-100 text-gray-900"
+                    }`}
+                  >
+                    <p className="text-sm leading-relaxed">{message.content}</p>
+                  </div>
+                </div>
+              ))}
+              {aiLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-gray-100 text-gray-900 px-4 py-2 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-500 border-t-transparent"></div>
+                      <span className="text-sm">Thinking...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* AI Input */}
+            <div className="border-t border-gray-200 p-4">
+              <form onSubmit={handleAIMessage} className="flex space-x-2">
+                <input
+                  type="text"
+                  placeholder="Ask about municipal services, complaint procedures, or get help..."
+                  value={aiInput}
+                  onChange={(e) => setAiInput(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  disabled={aiLoading}
+                />
+                <button
+                  type="submit"
+                  disabled={!aiInput.trim() || aiLoading}
+                  className="bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
