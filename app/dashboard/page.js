@@ -288,7 +288,7 @@ export default function Dashboard() {
 
   const handleLogout = () => {
     localStorage.removeItem("userId");
-    router.push("/login");
+    router.push("/");
   };
 
   const getStatusColor = (status) => {

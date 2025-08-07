@@ -113,7 +113,7 @@ export default function DepartmentDashboard() {
 
   const handleLogout = () => {
     localStorage.removeItem("departmentMemberId");
-    router.push("/department/login");
+    router.push("/");
   };
 
   const getStatusColor = (status) => {
