@@ -1,7 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Send, User, MessageSquare, Clock, ChevronRight, Building2, Search, Filter, X } from "lucide-react";
+import { Plus, Send, User, MessageSquare, Clock, ChevronRight, Building2, Search, Filter, X, Mic, MicOff } from "lucide-react";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -9,14 +9,20 @@ export default function Dashboard() {
   const [selectedQuery, setSelectedQuery] = useState(null);
   const [threads, setThreads] = useState([]);
   const [newQuery, setNewQuery] = useState({
-    title: "",
-    description: "",
-    department: "",
+    query: "",
+    address: "",
   });
+  const [queryAnalysis, setQueryAnalysis] = useState(null);
+  const [analyzing, setAnalyzing] = useState(false);
   const [newThread, setNewThread] = useState("");
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showNewQueryForm, setShowNewQueryForm] = useState(false);
+  
+  // Voice-to-text states
+  const [isListening, setIsListening] = useState(false);
+  const [isSupported, setIsSupported] = useState(false);
+  const recognitionRef = useRef(null);
   
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -32,6 +38,53 @@ export default function Dashboard() {
     }
     fetchUserData(userId);
     fetchDepartments();
+  }, []);
+
+  // Initialize voice-to-text
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
+      setIsSupported(true);
+      const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = 'en-IN';
+      
+      recognitionRef.current.onstart = () => {
+        setIsListening(true);
+      };
+      
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+      
+      recognitionRef.current.onresult = (event) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+        
+        if (finalTranscript) {
+          setNewQuery(prev => ({
+            ...prev,
+            query: prev.query + (prev.query ? ' ' : '') + finalTranscript
+          }));
+        }
+      };
+      
+      recognitionRef.current.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+    }
   }, []);
 
   const fetchUserData = async (userId) => {
@@ -57,6 +110,78 @@ export default function Dashboard() {
     }
   };
 
+  // Voice-to-text functions
+  const toggleVoiceInput = () => {
+    if (!isSupported) {
+      alert('Speech recognition is not supported in your browser. Please use Chrome or Edge.');
+      return;
+    }
+    
+    if (isListening) {
+      recognitionRef.current?.stop();
+    } else {
+      recognitionRef.current?.start();
+    }
+  };
+
+  const stopVoiceInput = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+    }
+  };
+
+  // Cleanup voice recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  const analyzeQuery = async (query, address) => {
+    if (!query.trim()) return;
+    
+    setAnalyzing(true);
+    try {
+      const res = await fetch("/api/query-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, address }),
+      });
+
+      const data = await res.json();
+      
+      if (data.success) {
+        setQueryAnalysis(data.analysis);
+      } else {
+        console.error("Query analysis failed:", data.error);
+        // Fallback: create a basic analysis
+        setQueryAnalysis({
+          title: query.substring(0, 60) + (query.length > 60 ? "..." : ""),
+          departmentId: departments[0]?._id || "",
+          departmentName: departments[0]?.departmentName || "Municipal Services",
+          reasoning: "Auto-generated due to analysis failure",
+          originalQuery: query,
+          address: address || ""
+        });
+      }
+    } catch (error) {
+      console.error("Error analyzing query:", error);
+      // Fallback: create a basic analysis
+      setQueryAnalysis({
+        title: query.substring(0, 60) + (query.length > 60 ? "..." : ""),
+        departmentId: departments[0]?._id || "",
+        departmentName: departments[0]?.departmentName || "Municipal Services",
+        reasoning: "Auto-generated due to analysis error",
+        originalQuery: query,
+        address: address || ""
+      });
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   const fetchQueryThreads = async (queryId) => {
     try {
       const res = await fetch(`/api/queries/${queryId}`);
@@ -71,20 +196,29 @@ export default function Dashboard() {
 
   const handleCreateQuery = (e) => {
     e?.preventDefault?.();
-    if (!newQuery.title || !newQuery.description || !newQuery.department) return;
+    if (!queryAnalysis || !newQuery.query.trim()) return;
     
     const createQuery = async () => {
       try {
+        const queryData = {
+          title: queryAnalysis.title,
+          description: newQuery.query,
+          department: queryAnalysis.departmentId,
+          author: user._id,
+        };
+
         const res = await fetch("/api/queries", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...newQuery, author: user._id }),
+          body: JSON.stringify(queryData),
         });
 
         if (res.ok) {
           const createdQuery = await res.json();
+          stopVoiceInput();
           setQueries([...queries, createdQuery]);
-          setNewQuery({ title: "", description: "", department: "" });
+          setNewQuery({ query: "", address: "" });
+          setQueryAnalysis(null);
           setShowNewQueryForm(false);
           setSelectedQuery(createdQuery);
           setThreads([]);
@@ -100,13 +234,6 @@ export default function Dashboard() {
   const handleAddThread = (e) => {
     e?.preventDefault?.();
     if (!selectedQuery || !newThread.trim()) return;
-
-    // Check if user has already sent 2 messages
-    const userThreadCount = threads.filter(thread => thread.authorType === "User").length;
-    if (userThreadCount >= 2) {
-      alert("You can only send up to 2 messages per query.");
-      return;
-    }
 
     const addThread = async () => {
       try {
@@ -163,13 +290,6 @@ export default function Dashboard() {
     const matchesStatus = filterStatus === "all" || query.status?.toLowerCase() === filterStatus;
     return matchesSearch && matchesStatus;
   });
-
-  // Calculate remaining messages for current query
-  const getRemainingMessages = () => {
-    if (!selectedQuery) return 2;
-    const userThreadCount = threads.filter(thread => thread.authorType === "User").length;
-    return Math.max(0, 2 - userThreadCount);
-  };
 
   if (loading) {
     return (
@@ -305,66 +425,123 @@ export default function Dashboard() {
         <div className="flex-1 flex flex-col bg-white/40 backdrop-blur-sm">
           {showNewQueryForm ? (
             /* New Query Form */
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col max-h-[84vh]">
               <div className="p-6 border-b border-blue-200 bg-white/60 backdrop-blur-sm">
                 <h2 className="text-xl font-semibold bg-gradient-to-r from-blue-900 to-indigo-900 bg-clip-text text-transparent">Create New Query</h2>
-                <p className="text-sm text-gray-600 mt-1">Fill in the details to create a new query</p>
+                <p className="text-sm text-gray-600 mt-1">Describe your complaint and our system will automatically categorize it</p>
               </div>
               
               <div className="flex-1 p-6 overflow-y-auto">
                 <div className="max-w-2xl space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Query Title
+                      Your Complaint
+                    </label>
+                    <div className="relative">
+                      <textarea
+                        placeholder="Describe your complaint in detail. For example: 'The garbage truck has not come to our area for the past 7 days. The situation is getting very unhygienic.'"
+                        value={newQuery.query}
+                        onChange={(e) => setNewQuery({ ...newQuery, query: e.target.value })}
+                        onBlur={() => {
+                          if (newQuery.query.trim()) {
+                            analyzeQuery(newQuery.query, newQuery.address);
+                          }
+                        }}
+                        className="w-full px-4 py-3 pr-12 border border-blue-200 rounded-lg h-32 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none bg-white/80 backdrop-blur-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={toggleVoiceInput}
+                        disabled={!isSupported}
+                        className={`absolute right-3 top-3 p-2 rounded-lg transition-all duration-200 ${
+                          isListening 
+                            ? 'bg-red-500 text-white animate-pulse' 
+                            : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                        } ${!isSupported ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        title={isListening ? 'Stop recording' : isSupported ? 'Start voice input (speak your complaint)' : 'Voice input not supported in this browser'}
+                      >
+                        {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between mt-1">
+                      <p className="text-xs text-gray-500">Be as detailed as possible to help us route your complaint correctly</p>
+                      {isListening && (
+                        <div className="flex items-center space-x-1 text-xs text-red-600">
+                          <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                          <span>Listening...</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Address (Optional)
                     </label>
                     <input
                       type="text"
-                      placeholder="Enter a descriptive title for your query"
-                      value={newQuery.title}
-                      onChange={(e) => setNewQuery({ ...newQuery, title: e.target.value })}
+                      placeholder="Enter your address or location details"
+                      value={newQuery.address}
+                      onChange={(e) => setNewQuery({ ...newQuery, address: e.target.value })}
                       className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white/80 backdrop-blur-sm"
                     />
                   </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      placeholder="Provide a detailed description of your query"
-                      value={newQuery.description}
-                      onChange={(e) => setNewQuery({ ...newQuery, description: e.target.value })}
-                      className="w-full px-4 py-3 border border-blue-200 rounded-lg h-32 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none bg-white/80 backdrop-blur-sm"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Department
-                    </label>
-                    <select
-                      value={newQuery.department}
-                      onChange={(e) => setNewQuery({ ...newQuery, department: e.target.value })}
-                      className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white/80 backdrop-blur-sm"
-                    >
-                      <option value="">Select a department</option>
-                      {departments.map((dept) => (
-                        <option key={dept._id} value={dept._id}>
-                          {dept.departmentName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+
+                  {/* Analysis Results */}
+                  {analyzing && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent"></div>
+                        <span className="text-blue-700 font-medium">Analyzing your complaint...</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {queryAnalysis && !analyzing && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <span className="text-green-800 font-medium">Analysis Complete</span>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">Suggested Title:</span>
+                          <p className="text-sm text-gray-900 font-medium">{queryAnalysis.title}</p>
+                        </div>
+                        
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">Assigned Department:</span>
+                          <p className="text-sm text-gray-900 font-medium">{queryAnalysis.departmentName}</p>
+                        </div>
+                        
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">Reasoning:</span>
+                          <p className="text-sm text-gray-600">{queryAnalysis.reasoning}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="flex space-x-3 pt-4">
                     <button
                       onClick={handleCreateQuery}
-                      className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-3 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                      disabled={!queryAnalysis || !newQuery.query.trim()}
+                      className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 text-white px-6 py-3 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:transform-none"
                     >
-                      Create Query
+                      {analyzing ? "Analyzing..." : "Create Query"}
                     </button>
                     <button
-                      onClick={() => setShowNewQueryForm(false)}
+                      onClick={() => {
+                        stopVoiceInput();
+                        setShowNewQueryForm(false);
+                        setNewQuery({ query: "", address: "" });
+                        setQueryAnalysis(null);
+                      }}
                       className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg transition-colors font-medium border border-gray-300"
                     >
                       Cancel
@@ -389,21 +566,13 @@ export default function Dashboard() {
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between text-sm text-gray-500">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-1">
-                      <Clock className="w-4 h-4 text-blue-500" />
-                      <span>Created: {new Date(selectedQuery.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(selectedQuery.status?.toLowerCase() || "open")}`}>
-                      {selectedQuery.status?.replace('_', ' ').toUpperCase() || "OPEN"}
-                    </div>
+                <div className="flex items-center space-x-4 text-sm text-gray-500">
+                  <div className="flex items-center space-x-1">
+                    <Clock className="w-4 h-4 text-blue-500" />
+                    <span>Created: {new Date(selectedQuery.createdAt).toLocaleDateString()}</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs">Messages remaining:</span>
-                    <span className="text-sm font-semibold text-blue-600">
-                      {getRemainingMessages()}/2
-                    </span>
+                  <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(selectedQuery.status?.toLowerCase() || "open")}`}>
+                    {selectedQuery.status?.replace('_', ' ').toUpperCase() || "OPEN"}
                   </div>
                 </div>
               </div>
@@ -417,7 +586,6 @@ export default function Dashboard() {
                       <MessageSquare className="w-16 h-16 text-blue-300 mb-4" />
                       <h3 className="text-lg font-medium text-gray-900 mb-2">No replies yet</h3>
                       <p className="text-gray-600 mb-4">Start the conversation by adding your first message below.</p>
-                      <p className="text-sm text-blue-600">You can send up to 2 messages per query.</p>
                     </div>
                   ) : (
                     <div className="space-y-4 max-w-4xl">
@@ -462,48 +630,30 @@ export default function Dashboard() {
                 {/* Thread Input */}
                 <div className="border-t border-blue-200 p-6 bg-white/60 backdrop-blur-sm">
                   <div className="max-w-4xl">
-                    {getRemainingMessages() > 0 ? (
-                      <div className="flex space-x-3">
-                        <div className="flex-1">
-                          <textarea
-                            placeholder="Type your message here..."
-                            value={newThread}
-                            onChange={(e) => setNewThread(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleAddThread(e);
-                              }
-                            }}
-                            className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none bg-white/80 backdrop-blur-sm"
-                            rows="3"
-                          />
-                        </div>
-                        <button
-                          onClick={handleAddThread}
-                          disabled={!newThread.trim()}
-                          className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 text-white p-3 rounded-lg transition-all duration-200 shrink-0 flex items-center justify-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:transform-none"
-                        >
-                          <Send className="w-5 h-5" />
-                        </button>
+                    <div className="flex space-x-3">
+                      <div className="flex-1">
+                        <textarea
+                          placeholder="Type your message here..."
+                          value={newThread}
+                          onChange={(e) => setNewThread(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleAddThread(e);
+                            }
+                          }}
+                          className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none bg-white/80 backdrop-blur-sm"
+                          rows="3"
+                        />
                       </div>
-                    ) : (
-                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
-                        <p className="text-sm text-amber-800 font-medium">
-                          You have reached the maximum limit of 2 messages for this query.
-                        </p>
-                        <p className="text-xs text-amber-600 mt-1">
-                          Please wait for a department response or create a new query if needed.
-                        </p>
-                      </div>
-                    )}
-                    
-                    {/* Message counter */}
-                    {getRemainingMessages() > 0 && (
-                      <div className="mt-2 text-xs text-gray-500 text-right">
-                        {getRemainingMessages()} message{getRemainingMessages() !== 1 ? 's' : ''} remaining
-                      </div>
-                    )}
+                      <button
+                        onClick={handleAddThread}
+                        disabled={!newThread.trim()}
+                        className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 text-white p-3 rounded-lg transition-all duration-200 shrink-0 flex items-center justify-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:transform-none"
+                      >
+                        <Send className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
