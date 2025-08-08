@@ -1,7 +1,10 @@
-// components/Footer.jsx
+"use client";
 import { MessageSquare } from "lucide-react";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export default function Footer() {
+  const { t } = useLanguage();
+
   return (
     <footer className="bg-blue-900 text-white py-12">
       <div className="max-w-7xl mx-auto px-6">
@@ -13,9 +16,9 @@ export default function Footer() {
             <span className="text-xl font-bold">Jansunwai Indore</span>
           </div>
           <div className="text-center md:text-right">
-            <p className="text-blue-200">Government of Madhya Pradesh</p>
+            <p className="text-blue-200">{t("governmentOfMP")}</p>
             <p className="text-blue-200 mt-1">
-              © {new Date().getFullYear()} All rights reserved
+              © {new Date().getFullYear()} {t("allRightsReserved")}
             </p>
           </div>
         </div>

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Building2, Mail, Lock, AlertCircle } from "lucide-react";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 export default function DepartmentLogin() {
   const [email, setEmail] = useState("");
@@ -9,6 +10,7 @@ export default function DepartmentLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const { t } = useLanguage();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -28,10 +30,10 @@ export default function DepartmentLogin() {
         localStorage.setItem("departmentMemberId", data.departmentMemberId);
         router.push("/department/dashboard");
       } else {
-        setError(data.error || "Login failed");
+        setError(data.error || t("loginFailed"));
       }
     } catch (error) {
-      setError("Network error. Please try again.");
+      setError(t("networkError"));
     } finally {
       setLoading(false);
     }
@@ -45,8 +47,12 @@ export default function DepartmentLogin() {
           <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <Building2 className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Department Login</h2>
-          <p className="text-gray-600 text-sm">Sign in to your department account</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            {t("departmentLoginTitle")}
+          </h2>
+          <p className="text-gray-600 text-sm">
+            {t("departmentLoginSubtitle")}
+          </p>
         </div>
 
         {/* Error Message */}
@@ -61,7 +67,7 @@ export default function DepartmentLogin() {
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email Address
+              {t("emailAddress")}
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -69,7 +75,7 @@ export default function DepartmentLogin() {
               </div>
               <input
                 type="email"
-                placeholder="Enter your department email"
+                placeholder={t("enterDepartmentEmail")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
@@ -80,7 +86,7 @@ export default function DepartmentLogin() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Password
+              {t("password")}
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -88,7 +94,7 @@ export default function DepartmentLogin() {
               </div>
               <input
                 type="password"
-                placeholder="Enter your password"
+                placeholder={t("enterPassword")}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
@@ -105,19 +111,17 @@ export default function DepartmentLogin() {
             {loading ? (
               <div className="flex items-center justify-center space-x-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                <span>Signing in...</span>
+                <span>{t("signingIn")}</span>
               </div>
             ) : (
-              "Sign In"
+              t("signIn")
             )}
           </button>
         </form>
 
         {/* Footer */}
         <div className="mt-8 text-center">
-          <p className="text-xs text-gray-500">
-            Need access? Contact your department administrator
-          </p>
+          <p className="text-xs text-gray-500">{t("needAccess")}</p>
         </div>
       </div>
     </div>

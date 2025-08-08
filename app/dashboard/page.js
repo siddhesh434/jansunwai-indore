@@ -1,7 +1,21 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Send, User, MessageSquare, Clock, ChevronRight, Building2, Search, Filter, X, Mic, MicOff } from "lucide-react";
+import {
+  Plus,
+  Send,
+  User,
+  MessageSquare,
+  Clock,
+  ChevronRight,
+  Building2,
+  Search,
+  Filter,
+  X,
+  Mic,
+  MicOff,
+} from "lucide-react";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -18,17 +32,18 @@ export default function Dashboard() {
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showNewQueryForm, setShowNewQueryForm] = useState(false);
-  
+
   // Voice-to-text states
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
   const recognitionRef = useRef(null);
-  
+
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  
+
   const router = useRouter();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -42,27 +57,28 @@ export default function Dashboard() {
 
   // Initialize voice-to-text
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
+    if (typeof window !== "undefined" && "webkitSpeechRecognition" in window) {
       setIsSupported(true);
-      const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+      const SpeechRecognition =
+        window.webkitSpeechRecognition || window.SpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
-      
+
       recognitionRef.current.continuous = true;
       recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = 'en-IN';
-      
+      recognitionRef.current.lang = "en-IN";
+
       recognitionRef.current.onstart = () => {
         setIsListening(true);
       };
-      
+
       recognitionRef.current.onend = () => {
         setIsListening(false);
       };
-      
+
       recognitionRef.current.onresult = (event) => {
-        let finalTranscript = '';
-        let interimTranscript = '';
-        
+        let finalTranscript = "";
+        let interimTranscript = "";
+
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
@@ -71,17 +87,17 @@ export default function Dashboard() {
             interimTranscript += transcript;
           }
         }
-        
+
         if (finalTranscript) {
-          setNewQuery(prev => ({
+          setNewQuery((prev) => ({
             ...prev,
-            query: prev.query + (prev.query ? ' ' : '') + finalTranscript
+            query: prev.query + (prev.query ? " " : "") + finalTranscript,
           }));
         }
       };
-      
+
       recognitionRef.current.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
+        console.error("Speech recognition error:", event.error);
         setIsListening(false);
       };
     }
@@ -113,10 +129,10 @@ export default function Dashboard() {
   // Voice-to-text functions
   const toggleVoiceInput = () => {
     if (!isSupported) {
-      alert('Speech recognition is not supported in your browser. Please use Chrome or Edge.');
+      alert(t("speechRecognitionNotSupported"));
       return;
     }
-    
+
     if (isListening) {
       recognitionRef.current?.stop();
     } else {
@@ -141,7 +157,7 @@ export default function Dashboard() {
 
   const analyzeQuery = async (query, address) => {
     if (!query.trim()) return;
-    
+
     setAnalyzing(true);
     try {
       const res = await fetch("/api/query-analysis", {
@@ -151,7 +167,7 @@ export default function Dashboard() {
       });
 
       const data = await res.json();
-      
+
       if (data.success) {
         setQueryAnalysis(data.analysis);
       } else {
@@ -160,10 +176,11 @@ export default function Dashboard() {
         setQueryAnalysis({
           title: query.substring(0, 60) + (query.length > 60 ? "..." : ""),
           departmentId: departments[0]?._id || "",
-          departmentName: departments[0]?.departmentName || "Municipal Services",
+          departmentName:
+            departments[0]?.departmentName || "Municipal Services",
           reasoning: "Auto-generated due to analysis failure",
           originalQuery: query,
-          address: address || ""
+          address: address || "",
         });
       }
     } catch (error) {
@@ -175,7 +192,7 @@ export default function Dashboard() {
         departmentName: departments[0]?.departmentName || "Municipal Services",
         reasoning: "Auto-generated due to analysis error",
         originalQuery: query,
-        address: address || ""
+        address: address || "",
       });
     } finally {
       setAnalyzing(false);
@@ -197,7 +214,7 @@ export default function Dashboard() {
   const handleCreateQuery = (e) => {
     e?.preventDefault?.();
     if (!queryAnalysis || !newQuery.query.trim()) return;
-    
+
     const createQuery = async () => {
       try {
         const queryData = {
@@ -227,7 +244,7 @@ export default function Dashboard() {
         console.error("Error creating query:", error);
       }
     };
-    
+
     createQuery();
   };
 
@@ -261,7 +278,7 @@ export default function Dashboard() {
         console.error("Error adding thread:", error);
       }
     };
-    
+
     addThread();
   };
 
@@ -284,10 +301,12 @@ export default function Dashboard() {
   };
 
   // Filter queries based on search and status
-  const filteredQueries = queries.filter(query => {
-    const matchesSearch = query.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         query.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === "all" || query.status?.toLowerCase() === filterStatus;
+  const filteredQueries = queries.filter((query) => {
+    const matchesSearch =
+      query.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      query.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      filterStatus === "all" || query.status?.toLowerCase() === filterStatus;
     return matchesSearch && matchesStatus;
   });
 
@@ -296,7 +315,9 @@ export default function Dashboard() {
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
         <div className="flex items-center space-x-3">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"></div>
-          <span className="text-gray-600 font-medium">Loading dashboard...</span>
+          <span className="text-gray-600 font-medium">
+            {t("loadingDashboard")}
+          </span>
         </div>
       </div>
     );
@@ -311,7 +332,7 @@ export default function Dashboard() {
             <MessageSquare className="w-5 h-5 text-white" />
           </div>
           <h1 className="text-xl font-semibold bg-gradient-to-r from-blue-900 to-indigo-900 bg-clip-text text-transparent">
-            Query Dashboard
+            {t("queryDashboard")}
           </h1>
         </div>
         <div className="flex items-center space-x-4">
@@ -323,7 +344,7 @@ export default function Dashboard() {
             onClick={handleLogout}
             className="text-sm text-gray-500 hover:text-gray-700 transition-colors px-3 py-1.5 rounded-md hover:bg-white/50"
           >
-            Sign out
+            {t("signOut")}
           </button>
         </div>
       </header>
@@ -338,7 +359,7 @@ export default function Dashboard() {
               className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-4 py-2.5 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
             >
               <Plus className="w-4 h-4" />
-              <span>New Query</span>
+              <span>{t("newQuery")}</span>
             </button>
           </div>
 
@@ -348,7 +369,7 @@ export default function Dashboard() {
               <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search queries..."
+                placeholder={t("searchQueries")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 backdrop-blur-sm text-sm"
@@ -359,17 +380,17 @@ export default function Dashboard() {
               onChange={(e) => setFilterStatus(e.target.value)}
               className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 backdrop-blur-sm text-sm"
             >
-              <option value="all">All Status</option>
-              <option value="open">Open</option>
-              <option value="in_progress">In Progress</option>
-              <option value="resolved">Resolved</option>
+              <option value="all">{t("allStatus")}</option>
+              <option value="open">{t("open")}</option>
+              <option value="in_progress">{t("inProgress")}</option>
+              <option value="resolved">{t("resolved")}</option>
             </select>
           </div>
 
           {/* Query Count */}
           <div className="px-4 py-2 bg-blue-50/50 border-b border-blue-200">
             <p className="text-sm text-blue-600 font-medium">
-              {filteredQueries.length} of {queries.length} queries
+              {filteredQueries.length} of {queries.length} {t("queriesCount")}
             </p>
           </div>
 
@@ -379,10 +400,14 @@ export default function Dashboard() {
               <div className="text-center py-8">
                 <MessageSquare className="w-12 h-12 text-blue-300 mx-auto mb-3" />
                 <p className="text-sm text-gray-500">
-                  {queries.length === 0 ? "No queries yet" : "No matching queries"}
+                  {queries.length === 0
+                    ? t("noQueriesYet")
+                    : t("noMatchingQueries")}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  {queries.length === 0 ? "Create your first query to get started" : "Try adjusting your search"}
+                  {queries.length === 0
+                    ? t("createFirstQuery")
+                    : t("tryAdjustingSearch")}
                 </p>
               </div>
             ) : (
@@ -405,11 +430,16 @@ export default function Dashboard() {
                         {query.description}
                       </p>
                       <div className="flex items-center justify-between">
-                        <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(query.status?.toLowerCase() || "open")}`}>
-                          {query.status?.replace('_', ' ').toUpperCase() || "OPEN"}
+                        <div
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(
+                            query.status?.toLowerCase() || "open"
+                          )}`}
+                        >
+                          {query.status?.replace("_", " ").toUpperCase() ||
+                            t("open").toUpperCase()}
                         </div>
                         <span className="text-xs text-blue-500 font-medium">
-                          {query.objects?.length || 0} replies
+                          {query.objects?.length || 0} {t("replies")}
                         </span>
                       </div>
                     </div>
@@ -427,21 +457,27 @@ export default function Dashboard() {
             /* New Query Form */
             <div className="flex-1 flex flex-col max-h-[84vh]">
               <div className="p-6 border-b border-blue-200 bg-white/60 backdrop-blur-sm">
-                <h2 className="text-xl font-semibold bg-gradient-to-r from-blue-900 to-indigo-900 bg-clip-text text-transparent">Create New Query</h2>
-                <p className="text-sm text-gray-600 mt-1">Describe your complaint and our system will automatically categorize it</p>
+                <h2 className="text-xl font-semibold bg-gradient-to-r from-blue-900 to-indigo-900 bg-clip-text text-transparent">
+                  {t("createNewQuery")}
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  {t("createNewQueryDesc")}
+                </p>
               </div>
-              
+
               <div className="flex-1 p-6 overflow-y-auto">
                 <div className="max-w-2xl space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Your Complaint
+                      {t("yourComplaint")}
                     </label>
                     <div className="relative">
                       <textarea
-                        placeholder="Describe your complaint in detail. For example: 'The garbage truck has not come to our area for the past 7 days. The situation is getting very unhygienic.'"
+                        placeholder={t("complaintPlaceholder")}
                         value={newQuery.query}
-                        onChange={(e) => setNewQuery({ ...newQuery, query: e.target.value })}
+                        onChange={(e) =>
+                          setNewQuery({ ...newQuery, query: e.target.value })
+                        }
                         onBlur={() => {
                           if (newQuery.query.trim()) {
                             analyzeQuery(newQuery.query, newQuery.address);
@@ -454,35 +490,49 @@ export default function Dashboard() {
                         onClick={toggleVoiceInput}
                         disabled={!isSupported}
                         className={`absolute right-3 top-3 p-2 rounded-lg transition-all duration-200 ${
-                          isListening 
-                            ? 'bg-red-500 text-white animate-pulse' 
-                            : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-                        } ${!isSupported ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        title={isListening ? 'Stop recording' : isSupported ? 'Start voice input (speak your complaint)' : 'Voice input not supported in this browser'}
+                          isListening
+                            ? "bg-red-500 text-white animate-pulse"
+                            : "bg-blue-100 text-blue-600 hover:bg-blue-200"
+                        } ${
+                          !isSupported ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
+                        title={
+                          isListening
+                            ? t("stopRecording")
+                            : isSupported
+                            ? t("startVoiceInput")
+                            : t("voiceInputNotSupported")
+                        }
                       >
-                        {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                        {isListening ? (
+                          <MicOff className="w-4 h-4" />
+                        ) : (
+                          <Mic className="w-4 h-4" />
+                        )}
                       </button>
                     </div>
                     <div className="flex items-center justify-between mt-1">
-                      <p className="text-xs text-gray-500">Be as detailed as possible to help us route your complaint correctly</p>
+                      <p className="text-xs text-gray-500">{t("beDetailed")}</p>
                       {isListening && (
                         <div className="flex items-center space-x-1 text-xs text-red-600">
                           <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                          <span>Listening...</span>
+                          <span>{t("listening")}</span>
                         </div>
                       )}
                     </div>
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Address (Optional)
+                      {t("addressOptional")}
                     </label>
                     <input
                       type="text"
-                      placeholder="Enter your address or location details"
+                      placeholder={t("addressPlaceholder")}
                       value={newQuery.address}
-                      onChange={(e) => setNewQuery({ ...newQuery, address: e.target.value })}
+                      onChange={(e) =>
+                        setNewQuery({ ...newQuery, address: e.target.value })
+                      }
                       className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white/80 backdrop-blur-sm"
                     />
                   </div>
@@ -492,7 +542,9 @@ export default function Dashboard() {
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                       <div className="flex items-center space-x-3">
                         <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent"></div>
-                        <span className="text-blue-700 font-medium">Analyzing your complaint...</span>
+                        <span className="text-blue-700 font-medium">
+                          {t("analyzingComplaint")}
+                        </span>
                       </div>
                     </div>
                   )}
@@ -501,39 +553,61 @@ export default function Dashboard() {
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
                       <div className="flex items-center space-x-2">
                         <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          <svg
+                            className="w-3 h-3 text-white"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
                           </svg>
                         </div>
-                        <span className="text-green-800 font-medium">Analysis Complete</span>
+                        <span className="text-green-800 font-medium">
+                          {t("analysisComplete")}
+                        </span>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <div>
-                          <span className="text-sm font-medium text-gray-700">Suggested Title:</span>
-                          <p className="text-sm text-gray-900 font-medium">{queryAnalysis.title}</p>
+                          <span className="text-sm font-medium text-gray-700">
+                            {t("suggestedTitle")}
+                          </span>
+                          <p className="text-sm text-gray-900 font-medium">
+                            {queryAnalysis.title}
+                          </p>
                         </div>
-                        
+
                         <div>
-                          <span className="text-sm font-medium text-gray-700">Assigned Department:</span>
-                          <p className="text-sm text-gray-900 font-medium">{queryAnalysis.departmentName}</p>
+                          <span className="text-sm font-medium text-gray-700">
+                            {t("assignedDepartment")}
+                          </span>
+                          <p className="text-sm text-gray-900 font-medium">
+                            {queryAnalysis.departmentName}
+                          </p>
                         </div>
-                        
+
                         <div>
-                          <span className="text-sm font-medium text-gray-700">Reasoning:</span>
-                          <p className="text-sm text-gray-600">{queryAnalysis.reasoning}</p>
+                          <span className="text-sm font-medium text-gray-700">
+                            {t("reasoning")}
+                          </span>
+                          <p className="text-sm text-gray-600">
+                            {queryAnalysis.reasoning}
+                          </p>
                         </div>
                       </div>
                     </div>
                   )}
-                  
+
                   <div className="flex space-x-3 pt-4">
                     <button
                       onClick={handleCreateQuery}
                       disabled={!queryAnalysis || !newQuery.query.trim()}
                       className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 text-white px-6 py-3 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:transform-none"
                     >
-                      {analyzing ? "Analyzing..." : "Create Query"}
+                      {analyzing ? t("analyzing") : t("createQuery")}
                     </button>
                     <button
                       onClick={() => {
@@ -544,7 +618,7 @@ export default function Dashboard() {
                       }}
                       className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg transition-colors font-medium border border-gray-300"
                     >
-                      Cancel
+                      {t("cancel")}
                     </button>
                   </div>
                 </div>
@@ -565,14 +639,22 @@ export default function Dashboard() {
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-4 text-sm text-gray-500">
                   <div className="flex items-center space-x-1">
                     <Clock className="w-4 h-4 text-blue-500" />
-                    <span>Created: {new Date(selectedQuery.createdAt).toLocaleDateString()}</span>
+                    <span>
+                      {t("created")}{" "}
+                      {new Date(selectedQuery.createdAt).toLocaleDateString()}
+                    </span>
                   </div>
-                  <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(selectedQuery.status?.toLowerCase() || "open")}`}>
-                    {selectedQuery.status?.replace('_', ' ').toUpperCase() || "OPEN"}
+                  <div
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                      selectedQuery.status?.toLowerCase() || "open"
+                    )}`}
+                  >
+                    {selectedQuery.status?.replace("_", " ").toUpperCase() ||
+                      t("open").toUpperCase()}
                   </div>
                 </div>
               </div>
@@ -584,23 +666,32 @@ export default function Dashboard() {
                   {threads.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center">
                       <MessageSquare className="w-16 h-16 text-blue-300 mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No replies yet</h3>
-                      <p className="text-gray-600 mb-4">Start the conversation by adding your first message below.</p>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        {t("noRepliesYet")}
+                      </h3>
+                      <p className="text-gray-600 mb-4">
+                        {t("startConversation")}
+                      </p>
                     </div>
                   ) : (
                     <div className="space-y-4 max-w-4xl">
                       {threads.map((thread, index) => (
-                        <div key={index} className={`rounded-xl p-4 border backdrop-blur-sm transition-all duration-200 hover:shadow-md ${
-                          thread.authorType === "User" 
-                            ? "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 mr-8" 
-                            : "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 ml-8"
-                        }`}>
+                        <div
+                          key={index}
+                          className={`rounded-xl p-4 border backdrop-blur-sm transition-all duration-200 hover:shadow-md ${
+                            thread.authorType === "User"
+                              ? "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 mr-8"
+                              : "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 ml-8"
+                          }`}
+                        >
                           <div className="flex items-start space-x-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
-                              thread.authorType === "User"
-                                ? "bg-gradient-to-r from-blue-400 to-indigo-500"
-                                : "bg-gradient-to-r from-green-400 to-emerald-500"
-                            }`}>
+                            <div
+                              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
+                                thread.authorType === "User"
+                                  ? "bg-gradient-to-r from-blue-400 to-indigo-500"
+                                  : "bg-gradient-to-r from-green-400 to-emerald-500"
+                              }`}
+                            >
                               {thread.authorType === "User" ? (
                                 <User className="w-4 h-4 text-white" />
                               ) : (
@@ -610,7 +701,9 @@ export default function Dashboard() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center space-x-2 mb-1">
                                 <span className="text-sm font-medium text-gray-900">
-                                  {thread.authorType === "User" ? "You" : "Department Response"}
+                                  {thread.authorType === "User"
+                                    ? "You"
+                                    : "Department Response"}
                                 </span>
                                 <span className="text-xs text-gray-500">
                                   {new Date(thread.timestamp).toLocaleString()}
@@ -633,11 +726,11 @@ export default function Dashboard() {
                     <div className="flex space-x-3">
                       <div className="flex-1">
                         <textarea
-                          placeholder="Type your message here..."
+                          placeholder={t("typeMessage")}
                           value={newThread}
                           onChange={(e) => setNewThread(e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
+                            if (e.key === "Enter" && !e.shiftKey) {
                               e.preventDefault();
                               handleAddThread(e);
                             }
@@ -663,8 +756,10 @@ export default function Dashboard() {
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <MessageSquare className="w-16 h-16 text-blue-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Select a query</h3>
-                <p className="text-gray-600">Choose a query from the sidebar to view and manage its threads.</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {t("selectQuery")}
+                </h3>
+                <p className="text-gray-600">{t("selectQueryDesc")}</p>
               </div>
             </div>
           )}

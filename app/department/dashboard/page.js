@@ -1,7 +1,17 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Send, User, MessageSquare, Clock, ChevronRight, Building2, Filter, Search } from "lucide-react";
+import {
+  Send,
+  User,
+  MessageSquare,
+  Clock,
+  ChevronRight,
+  Building2,
+  Filter,
+  Search,
+} from "lucide-react";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 export default function DepartmentDashboard() {
   const [departmentMember, setDepartmentMember] = useState(null);
@@ -13,6 +23,7 @@ export default function DepartmentDashboard() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const departmentMemberId = localStorage.getItem("departmentMemberId");
@@ -28,9 +39,11 @@ export default function DepartmentDashboard() {
       const res = await fetch(`/api/department-members/${memberId}`);
       const memberData = await res.json();
       setDepartmentMember(memberData);
-      
+
       // Fetch all queries for this department
-      const queriesRes = await fetch(`/api/departments/${memberData.department._id}/queries`);
+      const queriesRes = await fetch(
+        `/api/departments/${memberData.department._id}/queries`
+      );
       const queriesData = await queriesRes.json();
       setDepartmentQueries(queriesData);
     } catch (error) {
@@ -75,7 +88,7 @@ export default function DepartmentDashboard() {
       if (res.ok) {
         setThreads(updatedThreads);
         setNewThread("");
-        
+
         // Update query status to in_progress if it was open
         if (selectedQuery.status === "open") {
           await fetch(`/api/queries/${selectedQuery._id}/status`, {
@@ -102,8 +115,10 @@ export default function DepartmentDashboard() {
       if (res.ok) {
         setSelectedQuery({ ...selectedQuery, status: newStatus });
         // Update the query in the list
-        setDepartmentQueries(queries => 
-          queries.map(q => q._id === queryId ? { ...q, status: newStatus } : q)
+        setDepartmentQueries((queries) =>
+          queries.map((q) =>
+            q._id === queryId ? { ...q, status: newStatus } : q
+          )
         );
       }
     } catch (error) {
@@ -129,10 +144,12 @@ export default function DepartmentDashboard() {
     }
   };
 
-  const filteredQueries = departmentQueries.filter(query => {
-    const matchesStatus = statusFilter === "all" || query.status === statusFilter;
-    const matchesSearch = query.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         query.author?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredQueries = departmentQueries.filter((query) => {
+    const matchesStatus =
+      statusFilter === "all" || query.status === statusFilter;
+    const matchesSearch =
+      query.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      query.author?.name?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesSearch;
   });
 
@@ -141,7 +158,9 @@ export default function DepartmentDashboard() {
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="flex items-center space-x-3">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"></div>
-          <span className="text-gray-600 font-medium">Loading department dashboard...</span>
+          <span className="text-gray-600 font-medium">
+            {t("loadingDepartmentDashboard")}
+          </span>
         </div>
       </div>
     );
@@ -156,8 +175,12 @@ export default function DepartmentDashboard() {
             <Building2 className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-gray-900">Department Dashboard</h1>
-            <p className="text-sm text-gray-600">{departmentMember?.department?.departmentName}</p>
+            <h1 className="text-xl font-semibold text-gray-900">
+              {t("departmentDashboard")}
+            </h1>
+            <p className="text-sm text-gray-600">
+              {departmentMember?.department?.departmentName}
+            </p>
           </div>
         </div>
         <div className="flex items-center space-x-4">
@@ -169,7 +192,7 @@ export default function DepartmentDashboard() {
             onClick={handleLogout}
             className="text-sm text-gray-500 hover:text-gray-700 transition-colors px-3 py-1.5 rounded-md hover:bg-gray-100"
           >
-            Sign out
+            {t("signOut")}
           </button>
         </div>
       </header>
@@ -183,7 +206,7 @@ export default function DepartmentDashboard() {
               <Search className="w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search queries..."
+                placeholder={t("searchQueriesPlaceholder")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -196,10 +219,10 @@ export default function DepartmentDashboard() {
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="all">All Status</option>
-                <option value="open">Open</option>
-                <option value="in_progress">In Progress</option>
-                <option value="resolved">Resolved</option>
+                <option value="all">{t("allStatus")}</option>
+                <option value="open">{t("open")}</option>
+                <option value="in_progress">{t("inProgress")}</option>
+                <option value="resolved">{t("resolved")}</option>
               </select>
             </div>
           </div>
@@ -207,7 +230,8 @@ export default function DepartmentDashboard() {
           {/* Query Count */}
           <div className="px-4 py-2 bg-white border-b border-gray-200">
             <p className="text-sm text-gray-600">
-              {filteredQueries.length} of {departmentQueries.length} queries
+              {filteredQueries.length} of {departmentQueries.length}{" "}
+              {t("queriesCount")}
             </p>
           </div>
 
@@ -216,8 +240,10 @@ export default function DepartmentDashboard() {
             {filteredQueries.length === 0 ? (
               <div className="text-center py-8">
                 <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-gray-500">No queries found</p>
-                <p className="text-xs text-gray-400 mt-1">Try adjusting your filters</p>
+                <p className="text-sm text-gray-500">{t("noQueriesFound")}</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {t("tryAdjustingFilters")}
+                </p>
               </div>
             ) : (
               filteredQueries.map((query) => (
@@ -236,14 +262,20 @@ export default function DepartmentDashboard() {
                         {query.title}
                       </h3>
                       <p className="text-xs text-gray-500 mb-2">
-                        By: {query.author?.name || "Unknown User"}
+                        {t("submittedBy")}{" "}
+                        {query.author?.name || t("unknownUser")}
                       </p>
                       <div className="flex items-center justify-between">
-                        <div className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(query.status)}`}>
-                          {query.status?.replace('_', ' ').toUpperCase() || "OPEN"}
+                        <div
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                            query.status
+                          )}`}
+                        >
+                          {query.status?.replace("_", " ").toUpperCase() ||
+                            t("open").toUpperCase()}
                         </div>
                         <span className="text-xs text-gray-400">
-                          {query.objects?.length || 0} replies
+                          {query.objects?.length || 0} {t("replies")}
                         </span>
                       </div>
                     </div>
@@ -267,29 +299,42 @@ export default function DepartmentDashboard() {
                       {selectedQuery.title}
                     </h2>
                     <p className="text-gray-600 text-sm mb-3">
-                      Submitted by: <span className="font-medium">{selectedQuery.author?.name}</span>
+                      {t("submittedBy")}{" "}
+                      <span className="font-medium">
+                        {selectedQuery.author?.name}
+                      </span>
                     </p>
                   </div>
                   <div className="flex items-center space-x-2">
                     <select
                       value={selectedQuery.status}
-                      onChange={(e) => updateQueryStatus(selectedQuery._id, e.target.value)}
+                      onChange={(e) =>
+                        updateQueryStatus(selectedQuery._id, e.target.value)
+                      }
                       className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
-                      <option value="open">Open</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="resolved">Resolved</option>
+                      <option value="open">{t("open")}</option>
+                      <option value="in_progress">{t("inProgress")}</option>
+                      <option value="resolved">{t("resolved")}</option>
                     </select>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-4 text-sm text-gray-500">
                   <div className="flex items-center space-x-1">
                     <Clock className="w-4 h-4" />
-                    <span>Created: {new Date(selectedQuery.createdAt).toLocaleDateString()}</span>
+                    <span>
+                      {t("created")}{" "}
+                      {new Date(selectedQuery.createdAt).toLocaleDateString()}
+                    </span>
                   </div>
-                  <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedQuery.status)}`}>
-                    {selectedQuery.status?.replace('_', ' ').toUpperCase() || "OPEN"}
+                  <div
+                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                      selectedQuery.status
+                    )}`}
+                  >
+                    {selectedQuery.status?.replace("_", " ").toUpperCase() ||
+                      t("open").toUpperCase()}
                   </div>
                 </div>
               </div>
@@ -301,23 +346,32 @@ export default function DepartmentDashboard() {
                   {threads.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center">
                       <MessageSquare className="w-16 h-16 text-gray-300 mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No replies yet</h3>
-                      <p className="text-gray-600 mb-4">Be the first to respond to this query.</p>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        {t("noRepliesYetDept")}
+                      </h3>
+                      <p className="text-gray-600 mb-4">
+                        {t("beFirstToRespond")}
+                      </p>
                     </div>
                   ) : (
                     <div className="space-y-4 max-w-4xl">
                       {threads.map((thread, index) => (
-                        <div key={index} className={`rounded-lg p-4 border ${
-                          thread.authorType === "DepartmentMember" 
-                            ? "bg-blue-50 border-blue-200 ml-8" 
-                            : "bg-gray-50 border-gray-200 mr-8"
-                        }`}>
+                        <div
+                          key={index}
+                          className={`rounded-lg p-4 border ${
+                            thread.authorType === "DepartmentMember"
+                              ? "bg-blue-50 border-blue-200 ml-8"
+                              : "bg-gray-50 border-gray-200 mr-8"
+                          }`}
+                        >
                           <div className="flex items-start space-x-3">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                              thread.authorType === "DepartmentMember"
-                                ? "bg-blue-100"
-                                : "bg-orange-100"
-                            }`}>
+                            <div
+                              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                                thread.authorType === "DepartmentMember"
+                                  ? "bg-blue-100"
+                                  : "bg-orange-100"
+                              }`}
+                            >
                               {thread.authorType === "DepartmentMember" ? (
                                 <Building2 className="w-4 h-4 text-blue-600" />
                               ) : (
@@ -327,7 +381,9 @@ export default function DepartmentDashboard() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center space-x-2 mb-1">
                                 <span className="text-sm font-medium text-gray-900">
-                                  {thread.authorType === "DepartmentMember" ? "Department Response" : "User"}
+                                  {thread.authorType === "DepartmentMember"
+                                    ? t("departmentResponseLabel")
+                                    : t("user")}
                                 </span>
                                 <span className="text-xs text-gray-500">
                                   {new Date(thread.timestamp).toLocaleString()}
@@ -350,11 +406,11 @@ export default function DepartmentDashboard() {
                     <div className="flex space-x-3">
                       <div className="flex-1">
                         <textarea
-                          placeholder="Type your response here..."
+                          placeholder={t("typeResponse")}
                           value={newThread}
                           onChange={(e) => setNewThread(e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
+                            if (e.key === "Enter" && !e.shiftKey) {
                               e.preventDefault();
                               handleAddThread(e);
                             }
@@ -380,8 +436,10 @@ export default function DepartmentDashboard() {
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Select a query</h3>
-                <p className="text-gray-600">Choose a query from the sidebar to view and respond to it.</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {t("selectQuery")}
+                </h3>
+                <p className="text-gray-600">{t("selectQueryDesc")}</p>
               </div>
             </div>
           )}
