@@ -38,6 +38,7 @@ const UserSchema = new Schema(
 const DepartmentSchema = new Schema(
   {
     departmentName: { type: String, required: true, unique: true },
+    description: { type: String },
     members: [{ type: Schema.Types.ObjectId, ref: "DepartmentMember" }],
     queries: [{ type: Schema.Types.ObjectId, ref: "Query" }],
   },
@@ -134,35 +135,35 @@ const Query = mongoose.model("Query", QuerySchema);
 const departmentsData = [
   {
     name: "Municipal Services",
-    description: "Garbage collection, road maintenance, street lighting",
+    description: "Garbage collection, road maintenance, street lighting, public toilets, noise pollution, construction permits, building maintenance, street cleaning, drainage issues, public infrastructure",
   },
   {
     name: "Water Supply",
-    description: "Water distribution, quality control, pipeline maintenance",
+    description: "Water distribution, quality control, pipeline maintenance, water pressure issues, water contamination, billing disputes, meter problems, water connection, supply interruptions, water tankers",
   },
   {
     name: "Traffic Management",
-    description: "Traffic signals, parking, road safety",
+    description: "Traffic signals, parking, road safety, speed breakers, traffic congestion, illegal parking, road accidents, traffic violations, pedestrian safety, road signs",
   },
   {
     name: "Public Health",
-    description: "Health centers, sanitation, disease control",
+    description: "Health centers, sanitation, disease control, vaccination camps, medical facilities, health inspections, mosquito control, public hygiene, health awareness, epidemic prevention",
   },
   {
     name: "Education",
-    description: "Schools, libraries, educational programs",
+    description: "Schools, libraries, educational programs, school infrastructure, teacher issues, student facilities, educational materials, school maintenance, academic programs, educational policies",
   },
   {
     name: "Revenue",
-    description: "Tax collection, property registration, certificates",
+    description: "Tax collection, property registration, certificates, birth certificates, death certificates, property tax, business licenses, revenue collection, document verification, legal documents",
   },
   {
     name: "Fire Services",
-    description: "Fire safety, emergency response, rescue operations",
+    description: "Fire safety, emergency response, rescue operations, fire inspections, safety certificates, fire prevention, emergency services, fire equipment, safety training, fire NOC",
   },
   {
     name: "Parks & Gardens",
-    description: "Park maintenance, tree plantation, landscaping",
+    description: "Park maintenance, tree plantation, landscaping, playground equipment, garden maintenance, public spaces, recreational facilities, green spaces, park safety, environmental conservation",
   },
 ];
 
@@ -953,6 +954,7 @@ async function seedDatabase() {
     for (const deptData of departmentsData) {
       const dept = await Department.create({
         departmentName: deptData.name,
+        description: deptData.description,
       });
       departments[deptData.name] = dept;
     }

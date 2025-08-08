@@ -9,10 +9,11 @@ export default function Dashboard() {
   const [selectedQuery, setSelectedQuery] = useState(null);
   const [threads, setThreads] = useState([]);
   const [newQuery, setNewQuery] = useState({
-    title: "",
-    description: "",
-    department: "",
+    query: "",
+    address: "",
   });
+  const [queryAnalysis, setQueryAnalysis] = useState(null);
+  const [analyzing, setAnalyzing] = useState(false);
   const [newThread, setNewThread] = useState("");
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -77,6 +78,49 @@ export default function Dashboard() {
       setDepartments(data);
     } catch (error) {
       console.error("Error fetching departments:", error);
+    }
+  };
+
+  const analyzeQuery = async (query, address) => {
+    if (!query.trim()) return;
+    
+    setAnalyzing(true);
+    try {
+      const res = await fetch("/api/query-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, address }),
+      });
+
+      const data = await res.json();
+      
+      if (data.success) {
+        setQueryAnalysis(data.analysis);
+      } else {
+        console.error("Query analysis failed:", data.error);
+        // Fallback: create a basic analysis
+        setQueryAnalysis({
+          title: query.substring(0, 60) + (query.length > 60 ? "..." : ""),
+          departmentId: departments[0]?._id || "",
+          departmentName: departments[0]?.departmentName || "Municipal Services",
+          reasoning: "Auto-generated due to analysis failure",
+          originalQuery: query,
+          address: address || ""
+        });
+      }
+    } catch (error) {
+      console.error("Error analyzing query:", error);
+      // Fallback: create a basic analysis
+      setQueryAnalysis({
+        title: query.substring(0, 60) + (query.length > 60 ? "..." : ""),
+        departmentId: departments[0]?._id || "",
+        departmentName: departments[0]?.departmentName || "Municipal Services",
+        reasoning: "Auto-generated due to analysis error",
+        originalQuery: query,
+        address: address || ""
+      });
+    } finally {
+      setAnalyzing(false);
     }
   };
 
@@ -158,12 +202,15 @@ export default function Dashboard() {
         // Handle AI suggestions and actions
         if (data.suggestedQuery) {
           setNewQuery({
-            title: data.suggestedQuery.title || "",
-            description: data.suggestedQuery.description || "",
-            department: data.suggestedQuery.departmentId || "",
+            query: data.suggestedQuery.description || "",
+            address: data.suggestedQuery.address || "",
           });
           setShowNewQueryForm(true);
           setShowAIAssistant(false);
+          // Trigger analysis if query is provided
+          if (data.suggestedQuery.description) {
+            analyzeQuery(data.suggestedQuery.description, data.suggestedQuery.address || "");
+          }
         }
         
         if (data.suggestedThread && selectedQuery) {
@@ -198,7 +245,7 @@ export default function Dashboard() {
         setAiContext("analysis");
         break;
       case "draft":
-        prompt = "Help me draft a new complaint";
+        prompt = "Help me draft a new complaint. I want to describe my issue and let AI automatically categorize it.";
         break;
       case "status":
         prompt = selectedQuery ? `What should I expect for the status of my query: ${selectedQuery.title}?` : "How do I track query status?";
@@ -216,20 +263,28 @@ export default function Dashboard() {
 
   const handleCreateQuery = (e) => {
     e?.preventDefault?.();
-    if (!newQuery.title || !newQuery.description || !newQuery.department) return;
+    if (!queryAnalysis || !newQuery.query.trim()) return;
     
     const createQuery = async () => {
       try {
+        const queryData = {
+          title: queryAnalysis.title,
+          description: newQuery.query,
+          department: queryAnalysis.departmentId,
+          author: user._id,
+        };
+
         const res = await fetch("/api/queries", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...newQuery, author: user._id }),
+          body: JSON.stringify(queryData),
         });
 
         if (res.ok) {
           const createdQuery = await res.json();
           setQueries([...queries, createdQuery]);
-          setNewQuery({ title: "", description: "", department: "" });
+          setNewQuery({ query: "", address: "" });
+          setQueryAnalysis(null);
           setShowNewQueryForm(false);
           setSelectedQuery(createdQuery);
           setThreads([]);
@@ -237,7 +292,7 @@ export default function Dashboard() {
           // AI acknowledgment
           setAiMessages(prev => [...prev, {
             role: "assistant",
-            content: `Great! I've helped you create the query "${createdQuery.title}". I'll continue to monitor its progress and can help with follow-ups.`,
+            content: `Great! I've analyzed your complaint and created the query "${createdQuery.title}" for the ${queryAnalysis.departmentName} department. I'll continue to monitor its progress and can help with follow-ups.`,
             timestamp: new Date()
           }]);
         }
@@ -476,66 +531,99 @@ export default function Dashboard() {
         <div className="flex-1 flex flex-col bg-white/40 backdrop-blur-sm">
           {showNewQueryForm ? (
             /* New Query Form */
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col max-h-[84vh]">
               <div className="p-6 border-b border-blue-200 bg-white/60 backdrop-blur-sm">
                 <h2 className="text-xl font-semibold bg-gradient-to-r from-blue-900 to-indigo-900 bg-clip-text text-transparent">Create New Query</h2>
-                <p className="text-sm text-gray-600 mt-1">Fill in the details to create a new query</p>
+                <p className="text-sm text-gray-600 mt-1">Describe your complaint and our AI will automatically categorize it</p>
               </div>
               
               <div className="flex-1 p-6 overflow-y-auto">
                 <div className="max-w-2xl space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Query Title
+                      Your Complaint
+                    </label>
+                    <textarea
+                      placeholder="Describe your complaint in detail. For example: 'The garbage truck has not come to our area for the past 7 days. The situation is getting very unhygienic.'"
+                      value={newQuery.query}
+                      onChange={(e) => setNewQuery({ ...newQuery, query: e.target.value })}
+                      onBlur={() => {
+                        if (newQuery.query.trim()) {
+                          analyzeQuery(newQuery.query, newQuery.address);
+                        }
+                      }}
+                      className="w-full px-4 py-3 border border-blue-200 rounded-lg h-32 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none bg-white/80 backdrop-blur-sm"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Be as detailed as possible to help us route your complaint correctly</p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Address (Optional)
                     </label>
                     <input
                       type="text"
-                      placeholder="Enter a descriptive title for your query"
-                      value={newQuery.title}
-                      onChange={(e) => setNewQuery({ ...newQuery, title: e.target.value })}
+                      placeholder="Enter your address or location details"
+                      value={newQuery.address}
+                      onChange={(e) => setNewQuery({ ...newQuery, address: e.target.value })}
                       className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white/80 backdrop-blur-sm"
                     />
                   </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      placeholder="Provide a detailed description of your query"
-                      value={newQuery.description}
-                      onChange={(e) => setNewQuery({ ...newQuery, description: e.target.value })}
-                      className="w-full px-4 py-3 border border-blue-200 rounded-lg h-32 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none bg-white/80 backdrop-blur-sm"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Department
-                    </label>
-                    <select
-                      value={newQuery.department}
-                      onChange={(e) => setNewQuery({ ...newQuery, department: e.target.value })}
-                      className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white/80 backdrop-blur-sm"
-                    >
-                      <option value="">Select a department</option>
-                      {departments.map((dept) => (
-                        <option key={dept._id} value={dept._id}>
-                          {dept.departmentName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+
+                  {/* AI Analysis Results */}
+                  {analyzing && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent"></div>
+                        <span className="text-blue-700 font-medium">Analyzing your complaint...</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {queryAnalysis && !analyzing && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <span className="text-green-800 font-medium">AI Analysis Complete</span>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">Suggested Title:</span>
+                          <p className="text-sm text-gray-900 font-medium">{queryAnalysis.title}</p>
+                        </div>
+                        
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">Assigned Department:</span>
+                          <p className="text-sm text-gray-900 font-medium">{queryAnalysis.departmentName}</p>
+                        </div>
+                        
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">Reasoning:</span>
+                          <p className="text-sm text-gray-600">{queryAnalysis.reasoning}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="flex space-x-3 pt-4">
                     <button
                       onClick={handleCreateQuery}
-                      className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-3 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                      disabled={!queryAnalysis || !newQuery.query.trim()}
+                      className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 text-white px-6 py-3 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:transform-none"
                     >
-                      Create Query
+                      {analyzing ? "Analyzing..." : "Create Query"}
                     </button>
                     <button
-                      onClick={() => setShowNewQueryForm(false)}
+                      onClick={() => {
+                        setShowNewQueryForm(false);
+                        setNewQuery({ query: "", address: "" });
+                        setQueryAnalysis(null);
+                      }}
                       className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg transition-colors font-medium border border-gray-300"
                     >
                       Cancel
