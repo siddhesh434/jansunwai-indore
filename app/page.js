@@ -9,9 +9,11 @@ import {
   MessageSquare,
   ShieldCheck,
 } from "lucide-react";
+import { useLanguage } from "./contexts/LanguageContext";
 
 export default function Home() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   useEffect(() => {
     // Check if user is already logged in
@@ -29,13 +31,11 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div>
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight mb-6">
-              Connecting Citizens <br />
-              <span className="text-blue-600">With Government Departments</span>
+              {t("heroTitle")} <br />
+              <span className="text-blue-600">{t("heroTitleHighlight")}</span>
             </h1>
             <p className="text-lg text-gray-600 mb-10 max-w-2xl">
-              Jansunwai Indore is a platform for citizens to raise concerns and
-              get direct responses from government departments. Track your
-              queries in real-time and ensure accountability.
+              {t("heroDescription")}
             </p>
 
             <div className="flex flex-wrap gap-4">
@@ -43,14 +43,14 @@ export default function Home() {
                 onClick={() => router.push("/login")}
                 className="flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3.5 rounded-lg transition-colors font-medium"
               >
-                <span>Citizen Login</span>
+                <span>{t("citizenLogin")}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
               <button
                 onClick={() => router.push("/department/login")}
                 className="flex items-center justify-center space-x-2 bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 px-6 py-3.5 rounded-lg transition-colors font-medium"
               >
-                <span>Department Login</span>
+                <span>{t("departmentLogin")}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -61,7 +61,7 @@ export default function Home() {
               <div className="flex items-center space-x-3 mb-6">
                 <ShieldCheck className="w-6 h-6 text-blue-600" />
                 <h3 className="text-xl font-semibold text-gray-900">
-                  Secure Login Options
+                  {t("secureLoginOptions")}
                 </h3>
               </div>
 
@@ -77,10 +77,10 @@ export default function Home() {
                     </div>
                     <div>
                       <h4 className="font-medium text-gray-900">
-                        Citizen Login
+                        {t("citizenLoginCard")}
                       </h4>
                       <p className="text-sm text-gray-500 mt-1">
-                        Raise and track your queries
+                        {t("citizenLoginDesc")}
                       </p>
                     </div>
                   </div>
@@ -100,10 +100,10 @@ export default function Home() {
                     </div>
                     <div>
                       <h4 className="font-medium text-gray-900">
-                        Department Login
+                        {t("departmentLoginCard")}
                       </h4>
                       <p className="text-sm text-gray-500 mt-1">
-                        Respond to citizen queries
+                        {t("departmentLoginDesc")}
                       </p>
                     </div>
                   </div>
@@ -123,32 +123,26 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-6 py-16 bg-white">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            How It Works
+            {t("howItWorks")}
           </h2>
-          <p className="text-gray-600">
-            Our platform streamlines communication between citizens and
-            government departments for efficient issue resolution
-          </p>
+          <p className="text-gray-600">{t("featuresDescription")}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
             {
-              title: "Raise Queries",
-              description:
-                "Citizens can easily submit queries with all necessary details",
+              title: t("raiseQueries"),
+              description: t("raiseQueriesDesc"),
               icon: <User className="w-8 h-8 text-blue-600" />,
             },
             {
-              title: "Department Response",
-              description:
-                "Departments receive notifications and can respond directly",
+              title: t("departmentResponse"),
+              description: t("departmentResponseDesc"),
               icon: <Building2 className="w-8 h-8 text-blue-600" />,
             },
             {
-              title: "Track Progress",
-              description:
-                "Real-time updates on query status from submission to resolution",
+              title: t("trackProgress"),
+              description: t("trackProgressDesc"),
               icon: <MessageSquare className="w-8 h-8 text-blue-600" />,
             },
           ].map((feature, index) => (

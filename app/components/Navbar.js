@@ -1,10 +1,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Globe } from "lucide-react";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export default function NavBar() {
   const router = useRouter();
+  const { language, changeLanguage, t } = useLanguage();
+
+  const toggleLanguage = () => {
+    changeLanguage(language === "en" ? "hi" : "en");
+  };
 
   return (
     <nav className="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
@@ -16,18 +22,30 @@ export default function NavBar() {
           Jansunwai Indore
         </span>
       </div>
-      <div className="flex space-x-4">
+      <div className="flex items-center space-x-4">
+        {/* Language Switcher */}
+        <button
+          onClick={toggleLanguage}
+          className="flex items-center space-x-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          title={language === "en" ? "हिंदी में बदलें" : "Switch to English"}
+        >
+          <Globe className="w-4 h-4" />
+          <span className="font-medium">
+            {language === "en" ? "हिंदी" : "English"}
+          </span>
+        </button>
+
         <button
           onClick={() => router.push("/login")}
           className="px-4 py-2 text-blue-700 font-medium hover:bg-blue-50 rounded-lg transition-colors"
         >
-          Citizen Login
+          {t("citizenLogin")}
         </button>
         <button
           onClick={() => router.push("/department/login")}
           className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
         >
-          Department Login
+          {t("departmentLogin")}
         </button>
       </div>
     </nav>
