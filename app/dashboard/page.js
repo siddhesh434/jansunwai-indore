@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Send, User, MessageSquare, Clock, ChevronRight, Building2, Bot, Sparkles, Search, Filter, X } from "lucide-react";
+import { Plus, Send, User, MessageSquare, Clock, ChevronRight, Building2, Bot, Sparkles, Search, Filter, X, Mic, MicOff } from "lucide-react";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -18,6 +18,11 @@ export default function Dashboard() {
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showNewQueryForm, setShowNewQueryForm] = useState(false);
+  
+  // Voice-to-text states
+  const [isListening, setIsListening] = useState(false);
+  const [isSupported, setIsSupported] = useState(false);
+  const recognitionRef = useRef(null);
   
   // Enhanced AI Assistant states
   const [showAIAssistant, setShowAIAssistant] = useState(false);
@@ -58,6 +63,53 @@ export default function Dashboard() {
     fetchDepartments();
   }, []);
 
+  // Initialize voice-to-text
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
+      setIsSupported(true);
+      const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = 'en-IN';
+      
+      recognitionRef.current.onstart = () => {
+        setIsListening(true);
+      };
+      
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+      
+      recognitionRef.current.onresult = (event) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+        
+        if (finalTranscript) {
+          setNewQuery(prev => ({
+            ...prev,
+            query: prev.query + (prev.query ? ' ' : '') + finalTranscript
+          }));
+        }
+      };
+      
+      recognitionRef.current.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+    }
+  }, []);
+
   const fetchUserData = async (userId) => {
     try {
       const res = await fetch(`/api/users/${userId}`);
@@ -80,6 +132,35 @@ export default function Dashboard() {
       console.error("Error fetching departments:", error);
     }
   };
+
+  // Voice-to-text functions
+  const toggleVoiceInput = () => {
+    if (!isSupported) {
+      alert('Speech recognition is not supported in your browser. Please use Chrome or Edge.');
+      return;
+    }
+    
+    if (isListening) {
+      recognitionRef.current?.stop();
+    } else {
+      recognitionRef.current?.start();
+    }
+  };
+
+  const stopVoiceInput = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+    }
+  };
+
+  // Cleanup voice recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
 
   const analyzeQuery = async (query, address) => {
     if (!query.trim()) return;
@@ -282,6 +363,7 @@ export default function Dashboard() {
 
         if (res.ok) {
           const createdQuery = await res.json();
+          stopVoiceInput();
           setQueries([...queries, createdQuery]);
           setNewQuery({ query: "", address: "" });
           setQueryAnalysis(null);
@@ -543,18 +625,41 @@ export default function Dashboard() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Your Complaint
                     </label>
-                    <textarea
-                      placeholder="Describe your complaint in detail. For example: 'The garbage truck has not come to our area for the past 7 days. The situation is getting very unhygienic.'"
-                      value={newQuery.query}
-                      onChange={(e) => setNewQuery({ ...newQuery, query: e.target.value })}
-                      onBlur={() => {
-                        if (newQuery.query.trim()) {
-                          analyzeQuery(newQuery.query, newQuery.address);
-                        }
-                      }}
-                      className="w-full px-4 py-3 border border-blue-200 rounded-lg h-32 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none bg-white/80 backdrop-blur-sm"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Be as detailed as possible to help us route your complaint correctly</p>
+                    <div className="relative">
+                      <textarea
+                        placeholder="Describe your complaint in detail. For example: 'The garbage truck has not come to our area for the past 7 days. The situation is getting very unhygienic.'"
+                        value={newQuery.query}
+                        onChange={(e) => setNewQuery({ ...newQuery, query: e.target.value })}
+                        onBlur={() => {
+                          if (newQuery.query.trim()) {
+                            analyzeQuery(newQuery.query, newQuery.address);
+                          }
+                        }}
+                        className="w-full px-4 py-3 pr-12 border border-blue-200 rounded-lg h-32 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none bg-white/80 backdrop-blur-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={toggleVoiceInput}
+                        disabled={!isSupported}
+                        className={`absolute right-3 top-3 p-2 rounded-lg transition-all duration-200 ${
+                          isListening 
+                            ? 'bg-red-500 text-white animate-pulse' 
+                            : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                        } ${!isSupported ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        title={isListening ? 'Stop recording' : isSupported ? 'Start voice input (speak your complaint)' : 'Voice input not supported in this browser'}
+                      >
+                        {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between mt-1">
+                      <p className="text-xs text-gray-500">Be as detailed as possible to help us route your complaint correctly</p>
+                      {isListening && (
+                        <div className="flex items-center space-x-1 text-xs text-red-600">
+                          <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                          <span>Listening...</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
                   <div>
@@ -620,6 +725,7 @@ export default function Dashboard() {
                     </button>
                     <button
                       onClick={() => {
+                        stopVoiceInput();
                         setShowNewQueryForm(false);
                         setNewQuery({ query: "", address: "" });
                         setQueryAnalysis(null);
