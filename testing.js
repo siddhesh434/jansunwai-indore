@@ -1,42 +1,39 @@
-const fetch = require('node-fetch');
+require("dotenv").config();
+const fs = require("fs");
+const fetch = require("node-fetch");
 
-const GROQ_API_KEY = GROQ_API_KEY; // 🔁 Replace this with your actual Groq API key
-
-const url = 'https://api.groq.com/openai/v1/chat/completions';
-
-const headers = {
-  'Content-Type': 'application/json',
-  'Authorization': `Bearer ${GROQ_API_KEY}`
-};
-
-const body = {
-  model: 'llama3-70b-8192', // or "mixtral-8x7b-32768"
-  messages: [
-    {
-      role: 'user',
-      content: 'What is Groq and how is it different from OpenAI?'
-    }
-  ],
-  temperature: 0.7
-};
-
-async function testGroq() {
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body)
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+async function testGemini() {
+    if (!process.env.GEMINI_API_KEY) {
+        console.error("❌ GEMINI_API_KEY not found in .env");
+        return;
     }
 
-    const data = await response.json();
-    console.log('✅ Groq Response:\n', data.choices[0].message.content);
-  } catch (error) {
-    console.error('❌ Error:', error.message);
-  }
+    const filePath = "demo.jpg"; // Change to your test image
+    const imageBase64 = fs.readFileSync(filePath).toString("base64");
+
+    console.log("🔍 Sending image to Gemini Vision...");
+
+    const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [
+                        { text: "Describe this image in detail." },
+                        { inlineData: { mimeType: "image/jpeg", data: imageBase64 } }
+                    ]
+                }]
+            })
+        }
+    );
+
+    const data = await res.json();
+    console.log("📄 Raw Gemini response:", JSON.stringify(data, null, 2));
+
+    const description = data?.candidates?.[0]?.content?.parts?.[0]?.text || "❌ No description found.";
+    console.log("\n✅ Gemini Vision Description:", description);
 }
 
-testGroq();
+testGemini();
