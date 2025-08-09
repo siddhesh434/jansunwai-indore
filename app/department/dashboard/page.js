@@ -10,6 +10,9 @@ import {
   Building2,
   Filter,
   Search,
+  Image as ImageIcon,
+  Video as VideoIcon,
+  FileText,
 } from "lucide-react";
 import { useLanguage } from "../../contexts/LanguageContext";
 
@@ -337,12 +340,43 @@ export default function DepartmentDashboard() {
                       t("open").toUpperCase()}
                   </div>
                 </div>
+                {selectedQuery.attachments?.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Attachments</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {selectedQuery.attachments.map((att, idx) => {
+                        const isImage = (att.mimetype || "").startsWith("image/");
+                        const isVideo = (att.mimetype || "").startsWith("video/");
+                        return (
+                          <div key={idx} className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+                            {isImage ? (
+                              <a href={att.url} target="_blank" rel="noreferrer" className="block">
+                                <img src={att.url} alt={att.originalName} className="w-full h-28 object-cover" />
+                                <div className="px-2 py-1 text-xs text-gray-700 truncate flex items-center"><ImageIcon className="w-3 h-3 mr-1 text-gray-500" />{att.originalName}</div>
+                              </a>
+                            ) : isVideo ? (
+                              <div className="w-full">
+                                <video src={att.url} controls className="w-full h-28 object-cover bg-black" />
+                                <a href={att.url} target="_blank" rel="noreferrer" className="px-2 py-1 text-xs text-gray-700 truncate flex items-center"><VideoIcon className="w-3 h-3 mr-1 text-gray-500" />{att.originalName}</a>
+                              </div>
+                            ) : (
+                              <a href={att.url} target="_blank" rel="noreferrer" className="flex items-center space-x-2 p-2 text-xs text-gray-700 hover:bg-gray-50">
+                                <FileText className="w-4 h-4 text-gray-500" />
+                                <span className="truncate" title={att.originalName}>{att.originalName}</span>
+                              </a>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Threads Container */}
               <div className="flex-1 flex flex-col min-h-0 max-h-[75vh]">
-                {/* Threads List */}
-                <div className="flex-1 overflow-y-auto p-6">
+                {/* Timeline-style Updates List */}
+                <div className="flex-1 overflow-y-auto p-6 bg-white/50">
                   {threads.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center">
                       <MessageSquare className="w-16 h-16 text-gray-300 mb-4" />
@@ -354,48 +388,63 @@ export default function DepartmentDashboard() {
                       </p>
                     </div>
                   ) : (
-                    <div className="space-y-4 max-w-4xl">
-                      {threads.map((thread, index) => (
-                        <div
-                          key={index}
-                          className={`rounded-lg p-4 border ${
-                            thread.authorType === "DepartmentMember"
-                              ? "bg-blue-50 border-blue-200 ml-8"
-                              : "bg-gray-50 border-gray-200 mr-8"
-                          }`}
-                        >
-                          <div className="flex items-start space-x-3">
-                            <div
-                              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                                thread.authorType === "DepartmentMember"
-                                  ? "bg-blue-100"
-                                  : "bg-orange-100"
-                              }`}
-                            >
-                              {thread.authorType === "DepartmentMember" ? (
-                                <Building2 className="w-4 h-4 text-blue-600" />
-                              ) : (
-                                <User className="w-4 h-4 text-orange-600" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center space-x-2 mb-1">
-                                <span className="text-sm font-medium text-gray-900">
-                                  {thread.authorType === "DepartmentMember"
-                                    ? t("departmentResponseLabel")
-                                    : t("user")}
-                                </span>
-                                <span className="text-xs text-gray-500">
-                                  {new Date(thread.timestamp).toLocaleString()}
-                                </span>
+                    <div className="relative max-w-4xl">
+                      <div className="absolute left-4 top-0 bottom-0 w-px bg-gradient-to-b from-blue-300 via-blue-200 to-transparent" />
+                      <div className="space-y-5">
+                        {threads.map((thread, index) => {
+                          const isAdmin = thread.authorType === "DepartmentMember";
+                          return (
+                            <div key={index} className="relative pl-12">
+                              <div className={`absolute left-1.5 top-2 w-5 h-5 rounded-full border-2 ${isAdmin ? 'border-green-500 bg-green-50' : 'border-blue-500 bg-blue-50'} flex items-center justify-center`}>
+                                {isAdmin ? <Building2 className="w-3 h-3 text-green-600" /> : <User className="w-3 h-3 text-blue-600" />}
                               </div>
-                              <p className="text-gray-900 leading-relaxed">
-                                {thread.message}
-                              </p>
+                              <div className={`rounded-lg border ${isAdmin ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'} p-4`}>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-2">
+                                    <span className={`text-sm font-medium ${isAdmin ? 'text-green-800' : 'text-blue-800'}`}>
+                                      {isAdmin ? t('departmentResponseLabel') : t('user')}
+                                    </span>
+                                    <span className="text-xs text-gray-500">
+                                      {new Date(thread.timestamp).toLocaleString()}
+                                    </span>
+                                  </div>
+                                </div>
+                                <p className="mt-2 text-gray-900 leading-relaxed whitespace-pre-wrap">
+                                  {thread.message}
+                                </p>
+                                {Array.isArray(thread.attachments) && thread.attachments.length > 0 && (
+                                  <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    {thread.attachments.map((att, i) => {
+                                      const isImage = (att.mimetype || '').startsWith('image/');
+                                      const isVideo = (att.mimetype || '').startsWith('video/');
+                                      return (
+                                        <div key={i} className="border border-blue-200 rounded-lg overflow-hidden bg-white">
+                                          {isImage ? (
+                                            <a href={att.url} target="_blank" rel="noreferrer" className="block">
+                                              <img src={att.url} alt={att.originalName} className="w-full h-24 object-cover" />
+                                              <div className="px-2 py-1 text-xs text-gray-700 truncate flex items-center"><ImageIcon className="w-3 h-3 mr-1 text-blue-500" />{att.originalName}</div>
+                                            </a>
+                                          ) : isVideo ? (
+                                            <div className="w-full">
+                                              <video src={att.url} controls className="w-full h-24 object-cover bg-black" />
+                                              <a href={att.url} target="_blank" rel="noreferrer" className="px-2 py-1 text-xs text-gray-700 truncate flex items-center"><VideoIcon className="w-3 h-3 mr-1 text-blue-500" />{att.originalName}</a>
+                                            </div>
+                                          ) : (
+                                            <a href={att.url} target="_blank" rel="noreferrer" className="flex items-center space-x-2 p-2 text-xs text-gray-700 hover:bg-blue-50">
+                                              <FileText className="w-4 h-4 text-blue-500" />
+                                              <span className="truncate" title={att.originalName}>{att.originalName}</span>
+                                            </a>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      ))}
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
