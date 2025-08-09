@@ -20,10 +20,7 @@ import {
   FileText,
 } from "lucide-react";
 import { useLanguage } from "../contexts/LanguageContext";
-import dynamic from "next/dynamic";
-const MapAddressSelector = dynamic(() => import("./MapAddressSelector"), {
-  ssr: false,
-});
+import MapAddressSelector from "./MapAddressSelector"; // Import the new component
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -34,6 +31,7 @@ export default function Dashboard() {
     query: "",
     address: "",
   });
+  const newQueryRef = useRef({ query: "", address: "" });
   const [queryAnalysis, setQueryAnalysis] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [newThread, setNewThread] = useState("");
@@ -67,6 +65,11 @@ export default function Dashboard() {
     fetchDepartments();
   }, []);
 
+  // Keep a ref of the latest newQuery to avoid stale closures
+  useEffect(() => {
+    newQueryRef.current = newQuery;
+  }, [newQuery]);
+
   // Initialize voice-to-text
   useEffect(() => {
     if (typeof window !== "undefined" && "webkitSpeechRecognition" in window) {
@@ -85,6 +88,10 @@ export default function Dashboard() {
 
       recognitionRef.current.onend = () => {
         setIsListening(false);
+        const { query, address } = newQueryRef.current || {};
+        if (query && query.trim()) {
+          analyzeQuery(query, address);
+        }
       };
 
       recognitionRef.current.onresult = (event) => {
@@ -469,6 +476,14 @@ export default function Dashboard() {
                         onChange={(e) =>
                           setNewQuery({ ...newQuery, query: e.target.value })
                         }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            if (newQuery.query.trim()) {
+                              analyzeQuery(newQuery.query, newQuery.address);
+                            }
+                          }
+                        }}
                         onBlur={() => {
                           if (newQuery.query.trim()) {
                             analyzeQuery(newQuery.query, newQuery.address);
