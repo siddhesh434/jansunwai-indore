@@ -1,39 +1,75 @@
 require("dotenv").config();
 const fs = require("fs");
-const fetch = require("node-fetch");
+const path = require("path");
+const exifr = require("exifr");
+const mime = require("mime-types");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const Groq = require("groq-sdk");
 
-async function testGemini() {
-    if (!process.env.GEMINI_API_KEY) {
-        console.error("❌ GEMINI_API_KEY not found in .env");
-        return;
-    }
+const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-    const filePath = "demo.jpg"; // Change to your test image
-    const imageBase64 = fs.readFileSync(filePath).toString("base64");
+async function getGeminiDescription(filePath, mimeType) {
+  const data = fs.readFileSync(filePath).toString("base64");
+  const model = gemini.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    console.log("🔍 Sending image to Gemini Vision...");
+  let prompt = "";
+  if (mimeType.startsWith("image/")) prompt = "Describe this image in detail.";
+  else if (mimeType === "application/pdf") prompt = "Summarize the contents of this PDF file.";
+  else if (mimeType.startsWith("video/")) prompt = "Describe what is happening in this video.";
+  else prompt = "Analyze this file.";
 
-    const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${process.env.GEMINI_API_KEY}`,
-        {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [
-                        { text: "Describe this image in detail." },
-                        { inlineData: { mimeType: "image/jpeg", data: imageBase64 } }
-                    ]
-                }]
-            })
-        }
-    );
+  const result = await model.generateContent([
+    { inlineData: { data, mimeType } },
+    prompt,
+  ]);
 
-    const data = await res.json();
-    console.log("📄 Raw Gemini response:", JSON.stringify(data, null, 2));
-
-    const description = data?.candidates?.[0]?.content?.parts?.[0]?.text || "❌ No description found.";
-    console.log("\n✅ Gemini Vision Description:", description);
+  return result.response?.candidates?.[0]?.content?.parts?.[0]?.text || "No description available.";
 }
 
-testGemini();
+async function getMetadata(filePath, mimeType) {
+  if (mimeType.startsWith("image/")) {
+    return (await exifr.parse(filePath)) || {};
+  }
+  const stats = fs.statSync(filePath);
+  return { sizeBytes: stats.size, modified: stats.mtime };
+}
+
+async function summarizeWithGroq(metadata, description) {
+  const prompt = `
+  You are given:
+  1. File metadata: ${JSON.stringify(metadata, null, 2)}
+  2. AI description: ${description}
+
+  Summarize this into a short but detailed report including:
+  - Content overview
+  - Possible context or location if available
+  - Notable technical or contextual details
+  `;
+
+  const completion = await groq.chat.completions.create({
+    model: "llama3-70b-8192",
+    messages: [{ role: "user", content: prompt }],
+  });
+
+  return completion.choices[0]?.message?.content || "No summary generated.";
+}
+
+(async () => {
+  const filePath = path.join(__dirname, process.argv[2] || "public/upload/demo.jpg");
+  const mimeType = mime.lookup(filePath) || "application/octet-stream";
+
+  console.log(`📂 Analyzing file: ${filePath} (${mimeType})`);
+
+  console.log("📸 Extracting metadata...");
+  const metadata = await getMetadata(filePath, mimeType);
+
+  console.log("🔍 Getting Gemini description...");
+  const description = await getGeminiDescription(filePath, mimeType);
+
+  console.log("🧠 Summarizing with Groq...");
+  const summary = await summarizeWithGroq(metadata, description);
+
+  console.log("\n=== FINAL REPORT ===");
+  console.log(JSON.stringify({ metadata, description, summary }, null, 2));
+})();
