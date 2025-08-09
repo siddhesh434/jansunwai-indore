@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { useLanguage } from "../contexts/LanguageContext";
 import MapAddressSelector from "./MapAddressSelector"; // Import the new component
+import AttachmentAI from "./components/AttachmentAI";
+import { clampWords } from "../../lib/ai/wordClamp";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -41,6 +43,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [showNewQueryForm, setShowNewQueryForm] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [attachmentAnalyses, setAttachmentAnalyses] = useState([]);
 
   // Voice-to-text states
   const [isListening, setIsListening] = useState(false);
@@ -265,7 +268,38 @@ export default function Dashboard() {
       }
       const formData = new FormData();
       formData.append("title", queryAnalysis.title || "");
-      formData.append("description", newQuery.query || "");
+      let baseDesc = newQuery.query || "";
+      if (attachmentAnalyses.length > 0) {
+        const section = attachmentAnalyses
+          .map((a, idx) => {
+            if (!a?.analysis) return null;
+            const lines = [];
+            lines.push(`File ${idx + 1}: ${a.file?.name || a.filename || "attachment"}`);
+            if (a.analysis.description) lines.push(`Description: ${clampWords(a.analysis.description, 50, 60)}`);
+            if (a.analysis.summary) lines.push(`Municipal Summary: ${clampWords(a.analysis.summary, 50, 60)}`);
+            return lines.join("\n");
+          })
+          .filter(Boolean)
+          .join("\n\n");
+        if (section) baseDesc += `\n\n=== Attachment AI Summaries ===\n${section}`;
+        // Also send structured data for admin
+        const structured = attachmentAnalyses
+          .map((a) => (
+            a?.analysis && {
+              filename: a.filename || a.file?.name,
+              originalName: a.file?.name || a.filename,
+              mimetype: a.file?.type,
+              description: clampWords(a.analysis.description, 50, 60),
+              summary: clampWords(a.analysis.summary, 50, 60),
+              metadata: a.analysis.metadata || null,
+            }
+          ))
+          .filter(Boolean);
+        if (structured.length > 0) {
+          formData.append("attachmentAnalyses", JSON.stringify(structured));
+        }
+      }
+      formData.append("description", baseDesc);
       formData.append("address", newQuery.address || "");
       formData.append("author", user._id);
       formData.append("department", deptId);
@@ -582,18 +616,12 @@ export default function Dashboard() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Attach files (images, videos, documents)
                     </label>
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
-                      onChange={(e) => setSelectedFiles(Array.from(e.target.files || []))}
-                      className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    <AttachmentAI
+                      onAnalyzed={(items) => {
+                        setAttachmentAnalyses(items);
+                        setSelectedFiles(items.map((i) => i.file).filter(Boolean));
+                      }}
                     />
-                    {selectedFiles.length > 0 && (
-                      <p className="mt-2 text-xs text-gray-500">
-                        {selectedFiles.length} file(s) selected
-                      </p>
-                    )}
                   </div>
 
                   {/* Analysis Results */}

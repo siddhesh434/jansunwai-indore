@@ -85,6 +85,25 @@ const QuerySchema = new Schema(
         { _id: false }
       ),
     ],
+    attachmentAnalyses: [
+      new Schema(
+        {
+          filename: { type: String },
+          originalName: { type: String },
+          mimetype: { type: String },
+          description: { type: String },
+          summary: { type: String },
+          metadata: { type: Schema.Types.Mixed },
+        },
+        { _id: false }
+      ),
+    ],
+    urgencyScore: { type: Number, min: 1, max: 5 },
+    urgencyLabel: {
+      type: String,
+      enum: ["Low", "Medium", "High", "Critical"],
+    },
+    urgencyReason: { type: String },
   },
   { timestamps: true }
 );

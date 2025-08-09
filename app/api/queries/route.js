@@ -4,6 +4,7 @@ import { Query, User, Department } from "../../../models";
 import mongoose from "mongoose";
 import { promises as fs } from "fs";
 import path from "path";
+import { scoreUrgency } from "../../../lib/ai/queryUrgency";
 
 // Ensure Node.js runtime for fs access
 export const runtime = "nodejs";
@@ -64,6 +65,16 @@ export async function POST(request) {
         author: formData.get("author"),
         department: formData.get("department"),
         status: formData.get("status") || undefined,
+        // optional: client-provided attachment analyses
+        attachmentAnalyses: (() => {
+          const raw = formData.get("attachmentAnalyses");
+          if (!raw) return undefined;
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) return parsed;
+          } catch {}
+          return undefined;
+        })(),
       };
     } else {
       // JSON fallback
@@ -85,6 +96,18 @@ export async function POST(request) {
       ? new mongoose.Types.ObjectId(payload.department)
       : undefined;
 
+    // Compute urgency using AI (best-effort; do not block creation if fails)
+    let urgency = null;
+    try {
+      urgency = await scoreUrgency({
+        title: payload.title,
+        description: payload.description,
+        attachmentAnalyses: Array.isArray(payload.attachmentAnalyses)
+          ? payload.attachmentAnalyses
+          : [],
+      });
+    } catch {}
+
     const query = await Query.create({
       title: payload.title,
       description: payload.description || "",
@@ -93,6 +116,12 @@ export async function POST(request) {
       department: departmentId,
       status: payload.status || undefined,
       attachments: attachments || [],
+      attachmentAnalyses: Array.isArray(payload.attachmentAnalyses)
+        ? payload.attachmentAnalyses
+        : [],
+      urgencyScore: urgency?.score,
+      urgencyLabel: urgency?.label,
+      urgencyReason: urgency?.reason,
     });
 
     // Add query ID to user's queries array

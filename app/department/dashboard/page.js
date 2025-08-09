@@ -28,6 +28,22 @@ export default function DepartmentDashboard() {
   const router = useRouter();
   const { t } = useLanguage();
 
+  // Map of filenames/originalNames that have saved AI analyses for quick lookup
+  const analyzedNameSet = new Set(
+    (Array.isArray(selectedQuery?.attachmentAnalyses)
+      ? selectedQuery.attachmentAnalyses
+      : [])
+      .flatMap((a) => [a?.filename, a?.originalName].filter(Boolean))
+  );
+
+  const aiTextFromDescription = (() => {
+    const desc = selectedQuery?.description || "";
+    const marker = "=== Attachment AI Summaries ===";
+    const idx = desc.indexOf(marker);
+    if (idx === -1) return "";
+    return desc.slice(idx + marker.length).trim();
+  })();
+
   useEffect(() => {
     const departmentMemberId = localStorage.getItem("departmentMemberId");
     if (!departmentMemberId) {
@@ -340,6 +356,39 @@ export default function DepartmentDashboard() {
                       t("open").toUpperCase()}
                   </div>
                 </div>
+                {selectedQuery.urgencyLabel && (
+                  <div className="mt-2 flex items-center space-x-2 text-sm">
+                    <span
+                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold border ${
+                        selectedQuery.urgencyLabel === 'Critical'
+                          ? 'bg-red-50 text-red-700 border-red-200'
+                          : selectedQuery.urgencyLabel === 'High'
+                          ? 'bg-orange-50 text-orange-700 border-orange-200'
+                          : selectedQuery.urgencyLabel === 'Medium'
+                          ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                          : 'bg-green-50 text-green-700 border-green-200'
+                      }`}
+                    >
+                      Urgency: {selectedQuery.urgencyLabel}
+                      {typeof selectedQuery.urgencyScore === 'number' && (
+                        <span className="ml-1">({selectedQuery.urgencyScore}/5)</span>
+                      )}
+                    </span>
+                    {selectedQuery.urgencyReason && (
+                      <span className="text-xs text-gray-600">Reason: {selectedQuery.urgencyReason}</span>
+                    )}
+                  </div>
+                )}
+                {/* Fallback: show AI text embedded in description if no structured analyses */}
+                {(!Array.isArray(selectedQuery.attachmentAnalyses) || selectedQuery.attachmentAnalyses.length === 0) && aiTextFromDescription && (
+                  <div className="mt-4">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Attachment AI Summaries (from description)</p>
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-sm text-gray-800 whitespace-pre-wrap">
+                      {aiTextFromDescription}
+                    </div>
+                  </div>
+                )}
+
                 {selectedQuery.attachments?.length > 0 && (
                   <div className="mt-4">
                     <p className="text-sm font-medium text-gray-700 mb-2">Attachments</p>
@@ -347,8 +396,14 @@ export default function DepartmentDashboard() {
                       {selectedQuery.attachments.map((att, idx) => {
                         const isImage = (att.mimetype || "").startsWith("image/");
                         const isVideo = (att.mimetype || "").startsWith("video/");
+                        const hasAnalysis = analyzedNameSet.has(att.filename) || analyzedNameSet.has(att.originalName);
                         return (
-                          <div key={idx} className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+                          <div key={idx} className="border border-gray-200 rounded-lg overflow-hidden bg-white relative">
+                            {hasAnalysis && (
+                              <span className="absolute top-1 right-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-700 border border-purple-200 shadow-sm">
+                                AI
+                              </span>
+                            )}
                             {isImage ? (
                               <a href={att.url} target="_blank" rel="noreferrer" className="block">
                                 <img src={att.url} alt={att.originalName} className="w-full h-28 object-cover" />
@@ -365,9 +420,41 @@ export default function DepartmentDashboard() {
                                 <span className="truncate" title={att.originalName}>{att.originalName}</span>
                               </a>
                             )}
+                            {/* Removed Analyze Content button; summaries shown below if available */}
                           </div>
                         );
                       })}
+                    </div>
+                  </div>
+                )}
+
+                {Array.isArray(selectedQuery.attachmentAnalyses) && selectedQuery.attachmentAnalyses.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Attachment AI Summaries</p>
+                    <div className="space-y-3">
+                      {selectedQuery.attachmentAnalyses.map((a, idx) => (
+                        <div key={idx} className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                          <div className="text-sm font-medium text-purple-800 mb-1 truncate">{a.originalName || a.filename || `Attachment ${idx+1}`}</div>
+                          {a.description && (
+                            <div className="mb-2">
+                              <p className="text-xs font-semibold text-gray-600 mb-1">Content Description</p>
+                              <p className="text-sm text-gray-700 bg-white rounded p-2">{a.description}</p>
+                            </div>
+                          )}
+                          {a.summary && (
+                            <div>
+                              <p className="text-xs font-semibold text-gray-600 mb-1">Municipal Summary</p>
+                              <p className="text-sm text-gray-700 bg-white rounded p-2">{a.summary}</p>
+                            </div>
+                          )}
+                          {a.metadata && (
+                            <details className="mt-2 text-xs">
+                              <summary className="cursor-pointer text-gray-600">Metadata</summary>
+                              <pre className="bg-white rounded p-2 overflow-auto max-h-40 text-[11px] text-gray-700">{JSON.stringify(a.metadata, null, 2)}</pre>
+                            </details>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
