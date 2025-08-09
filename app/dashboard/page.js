@@ -20,7 +20,10 @@ import {
   FileText,
 } from "lucide-react";
 import { useLanguage } from "../contexts/LanguageContext";
-import MapAddressSelector from "./MapAddressSelector"; // Import the new component
+import dynamic from "next/dynamic";
+const MapAddressSelector = dynamic(() => import("./MapAddressSelector"), {
+  ssr: false,
+});
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
