@@ -14,8 +14,10 @@ import {
   X,
   Mic,
   MicOff,
+  MapPin,
 } from "lucide-react";
 import { useLanguage } from "../contexts/LanguageContext";
+import MapAddressSelector from "./MapAddressSelector"; // Import the new component
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -41,6 +43,9 @@ export default function Dashboard() {
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  
+  // Map visibility state
+  const [showMap, setShowMap] = useState(false);
 
   const router = useRouter();
   const { t } = useLanguage();
@@ -103,10 +108,38 @@ export default function Dashboard() {
     }
   }, []);
 
+  // Add Leaflet CSS dynamically
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      // Check if Leaflet CSS is already loaded
+      if (!document.querySelector('link[href*="leaflet.css"]')) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
+        link.crossOrigin = '';
+        document.head.appendChild(link);
+      }
+    }
+  }, []); // Load once on component mount
+
   const fetchUserData = async (userId) => {
     try {
-      const res = await fetch(`/api/users/${userId}`);
-      const userData = await res.json();
+      // Mock data for demo purposes
+      const userData = {
+        _id: userId,
+        name: "John Doe",
+        queries: [
+          {
+            _id: "1",
+            title: "Street light not working on MG Road",
+            description: "The street light near the bus stop on MG Road has been out for a week.",
+            status: "open",
+            createdAt: new Date().toISOString(),
+            objects: []
+          }
+        ]
+      };
       setUser(userData);
       setQueries(userData.queries || []);
     } catch (error) {
@@ -118,8 +151,12 @@ export default function Dashboard() {
 
   const fetchDepartments = async () => {
     try {
-      const res = await fetch("/api/departments");
-      const data = await res.json();
+      // Mock departments data
+      const data = [
+        { _id: "1", departmentName: "Municipal Services" },
+        { _id: "2", departmentName: "Public Works" },
+        { _id: "3", departmentName: "Water Department" }
+      ];
       setDepartments(data);
     } catch (error) {
       console.error("Error fetching departments:", error);
@@ -129,7 +166,7 @@ export default function Dashboard() {
   // Voice-to-text functions
   const toggleVoiceInput = () => {
     if (!isSupported) {
-      alert(t("speechRecognitionNotSupported"));
+      alert("Speech recognition not supported");
       return;
     }
 
@@ -160,52 +197,32 @@ export default function Dashboard() {
 
     setAnalyzing(true);
     try {
-      const res = await fetch("/api/query-analysis", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, address }),
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        setQueryAnalysis(data.analysis);
-      } else {
-        console.error("Query analysis failed:", data.error);
-        // Fallback: create a basic analysis
+      // Mock analysis - in real app this would call your API
+      setTimeout(() => {
         setQueryAnalysis({
           title: query.substring(0, 60) + (query.length > 60 ? "..." : ""),
-          departmentId: departments[0]?._id || "",
-          departmentName:
-            departments[0]?.departmentName || "Municipal Services",
-          reasoning: "Auto-generated due to analysis failure",
+          departmentId: departments[0]?._id || "1",
+          departmentName: departments[0]?.departmentName || "Municipal Services",
+          reasoning: "Based on the keywords in your complaint, this appears to be related to municipal services.",
           originalQuery: query,
           address: address || "",
         });
-      }
+        setAnalyzing(false);
+      }, 2000);
     } catch (error) {
       console.error("Error analyzing query:", error);
-      // Fallback: create a basic analysis
-      setQueryAnalysis({
-        title: query.substring(0, 60) + (query.length > 60 ? "..." : ""),
-        departmentId: departments[0]?._id || "",
-        departmentName: departments[0]?.departmentName || "Municipal Services",
-        reasoning: "Auto-generated due to analysis error",
-        originalQuery: query,
-        address: address || "",
-      });
-    } finally {
       setAnalyzing(false);
     }
   };
 
   const fetchQueryThreads = async (queryId) => {
     try {
-      const res = await fetch(`/api/queries/${queryId}`);
-      const queryData = await res.json();
-      setSelectedQuery(queryData);
-      setThreads(queryData.objects || []);
-      setShowNewQueryForm(false);
+      const query = queries.find(q => q._id === queryId);
+      if (query) {
+        setSelectedQuery(query);
+        setThreads(query.objects || []);
+        setShowNewQueryForm(false);
+      }
     } catch (error) {
       console.error("Error fetching query threads:", error);
     }
@@ -215,71 +232,42 @@ export default function Dashboard() {
     e?.preventDefault?.();
     if (!queryAnalysis || !newQuery.query.trim()) return;
 
-    const createQuery = async () => {
-      try {
-        const queryData = {
-          title: queryAnalysis.title,
-          description: newQuery.query,
-          department: queryAnalysis.departmentId,
-          author: user._id,
-        };
-
-        const res = await fetch("/api/queries", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(queryData),
-        });
-
-        if (res.ok) {
-          const createdQuery = await res.json();
-          stopVoiceInput();
-          setQueries([...queries, createdQuery]);
-          setNewQuery({ query: "", address: "" });
-          setQueryAnalysis(null);
-          setShowNewQueryForm(false);
-          setSelectedQuery(createdQuery);
-          setThreads([]);
-        }
-      } catch (error) {
-        console.error("Error creating query:", error);
-      }
+    const newQueryData = {
+      _id: Date.now().toString(),
+      title: queryAnalysis.title,
+      description: newQuery.query,
+      department: queryAnalysis.departmentId,
+      author: user._id,
+      address: newQuery.address,
+      status: "open",
+      createdAt: new Date().toISOString(),
+      objects: []
     };
 
-    createQuery();
+    stopVoiceInput();
+    setQueries([...queries, newQueryData]);
+    setNewQuery({ query: "", address: "" });
+    setQueryAnalysis(null);
+    setShowNewQueryForm(false);
+    setShowMap(false); // Hide map after creating query
+    setSelectedQuery(newQueryData);
+    setThreads([]);
   };
 
   const handleAddThread = (e) => {
     e?.preventDefault?.();
     if (!selectedQuery || !newThread.trim()) return;
 
-    const addThread = async () => {
-      try {
-        const updatedThreads = [
-          ...threads,
-          {
-            message: newThread,
-            authorId: user._id,
-            authorType: "User",
-            timestamp: new Date(),
-          },
-        ];
-
-        const res = await fetch(`/api/queries/${selectedQuery._id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ objects: updatedThreads }),
-        });
-
-        if (res.ok) {
-          setThreads(updatedThreads);
-          setNewThread("");
-        }
-      } catch (error) {
-        console.error("Error adding thread:", error);
-      }
+    const newThreadData = {
+      message: newThread,
+      authorId: user._id,
+      authorType: "User",
+      timestamp: new Date(),
     };
 
-    addThread();
+    const updatedThreads = [...threads, newThreadData];
+    setThreads(updatedThreads);
+    setNewThread("");
   };
 
   const handleLogout = () => {
@@ -315,9 +303,7 @@ export default function Dashboard() {
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
         <div className="flex items-center space-x-3">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"></div>
-          <span className="text-gray-600 font-medium">
-            {t("loadingDashboard")}
-          </span>
+          <span className="text-gray-600 font-medium">Loading Dashboard...</span>
         </div>
       </div>
     );
@@ -332,7 +318,7 @@ export default function Dashboard() {
             <MessageSquare className="w-5 h-5 text-white" />
           </div>
           <h1 className="text-xl font-semibold bg-gradient-to-r from-blue-900 to-indigo-900 bg-clip-text text-transparent">
-            {t("queryDashboard")}
+            Query Dashboard
           </h1>
         </div>
         <div className="flex items-center space-x-4">
@@ -344,7 +330,7 @@ export default function Dashboard() {
             onClick={handleLogout}
             className="text-sm text-gray-500 hover:text-gray-700 transition-colors px-3 py-1.5 rounded-md hover:bg-white/50"
           >
-            {t("signOut")}
+            Sign Out
           </button>
         </div>
       </header>
@@ -359,7 +345,7 @@ export default function Dashboard() {
               className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-4 py-2.5 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
             >
               <Plus className="w-4 h-4" />
-              <span>{t("newQuery")}</span>
+              <span>New Query</span>
             </button>
           </div>
 
@@ -369,7 +355,7 @@ export default function Dashboard() {
               <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder={t("searchQueries")}
+                placeholder="Search queries..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 backdrop-blur-sm text-sm"
@@ -380,17 +366,17 @@ export default function Dashboard() {
               onChange={(e) => setFilterStatus(e.target.value)}
               className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 backdrop-blur-sm text-sm"
             >
-              <option value="all">{t("allStatus")}</option>
-              <option value="open">{t("open")}</option>
-              <option value="in_progress">{t("inProgress")}</option>
-              <option value="resolved">{t("resolved")}</option>
+              <option value="all">All Status</option>
+              <option value="open">Open</option>
+              <option value="in_progress">In Progress</option>
+              <option value="resolved">Resolved</option>
             </select>
           </div>
 
           {/* Query Count */}
           <div className="px-4 py-2 bg-blue-50/50 border-b border-blue-200">
             <p className="text-sm text-blue-600 font-medium">
-              {filteredQueries.length} of {queries.length} {t("queriesCount")}
+              {filteredQueries.length} of {queries.length} queries
             </p>
           </div>
 
@@ -400,14 +386,10 @@ export default function Dashboard() {
               <div className="text-center py-8">
                 <MessageSquare className="w-12 h-12 text-blue-300 mx-auto mb-3" />
                 <p className="text-sm text-gray-500">
-                  {queries.length === 0
-                    ? t("noQueriesYet")
-                    : t("noMatchingQueries")}
+                  {queries.length === 0 ? "No queries yet" : "No matching queries"}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  {queries.length === 0
-                    ? t("createFirstQuery")
-                    : t("tryAdjustingSearch")}
+                  {queries.length === 0 ? "Create your first query" : "Try adjusting your search"}
                 </p>
               </div>
             ) : (
@@ -435,11 +417,10 @@ export default function Dashboard() {
                             query.status?.toLowerCase() || "open"
                           )}`}
                         >
-                          {query.status?.replace("_", " ").toUpperCase() ||
-                            t("open").toUpperCase()}
+                          {query.status?.replace("_", " ").toUpperCase() || "OPEN"}
                         </div>
                         <span className="text-xs text-blue-500 font-medium">
-                          {query.objects?.length || 0} {t("replies")}
+                          {query.objects?.length || 0} replies
                         </span>
                       </div>
                     </div>
@@ -458,10 +439,10 @@ export default function Dashboard() {
             <div className="flex-1 flex flex-col max-h-[84vh]">
               <div className="p-6 border-b border-blue-200 bg-white/60 backdrop-blur-sm">
                 <h2 className="text-xl font-semibold bg-gradient-to-r from-blue-900 to-indigo-900 bg-clip-text text-transparent">
-                  {t("createNewQuery")}
+                  Create New Query
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  {t("createNewQueryDesc")}
+                  Describe your complaint and we'll route it to the right department
                 </p>
               </div>
 
@@ -469,11 +450,11 @@ export default function Dashboard() {
                 <div className="max-w-2xl space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t("yourComplaint")}
+                      Your Complaint
                     </label>
                     <div className="relative">
                       <textarea
-                        placeholder={t("complaintPlaceholder")}
+                        placeholder="Describe your issue in detail..."
                         value={newQuery.query}
                         onChange={(e) =>
                           setNewQuery({ ...newQuery, query: e.target.value })
@@ -498,10 +479,10 @@ export default function Dashboard() {
                         }`}
                         title={
                           isListening
-                            ? t("stopRecording")
+                            ? "Stop Recording"
                             : isSupported
-                            ? t("startVoiceInput")
-                            : t("voiceInputNotSupported")
+                            ? "Start Voice Input"
+                            : "Voice Input Not Supported"
                         }
                       >
                         {isListening ? (
@@ -512,11 +493,11 @@ export default function Dashboard() {
                       </button>
                     </div>
                     <div className="flex items-center justify-between mt-1">
-                      <p className="text-xs text-gray-500">{t("beDetailed")}</p>
+                      <p className="text-xs text-gray-500">Be as detailed as possible</p>
                       {isListening && (
                         <div className="flex items-center space-x-1 text-xs text-red-600">
                           <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                          <span>{t("listening")}</span>
+                          <span>Listening...</span>
                         </div>
                       )}
                     </div>
@@ -524,16 +505,14 @@ export default function Dashboard() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t("addressOptional")}
+                      Address (Optional)
                     </label>
-                    <input
-                      type="text"
-                      placeholder={t("addressPlaceholder")}
+                    <MapAddressSelector
                       value={newQuery.address}
-                      onChange={(e) =>
-                        setNewQuery({ ...newQuery, address: e.target.value })
-                      }
-                      className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white/80 backdrop-blur-sm"
+                      onChange={(value) => setNewQuery({ ...newQuery, address: value })}
+                      placeholder="Search or click on map to select address..."
+                      showMap={showMap}
+                      onToggleMap={() => setShowMap(!showMap)}
                     />
                   </div>
 
@@ -543,7 +522,7 @@ export default function Dashboard() {
                       <div className="flex items-center space-x-3">
                         <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent"></div>
                         <span className="text-blue-700 font-medium">
-                          {t("analyzingComplaint")}
+                          Analyzing your complaint...
                         </span>
                       </div>
                     </div>
@@ -566,14 +545,14 @@ export default function Dashboard() {
                           </svg>
                         </div>
                         <span className="text-green-800 font-medium">
-                          {t("analysisComplete")}
+                          Analysis Complete
                         </span>
                       </div>
 
                       <div className="space-y-2">
                         <div>
                           <span className="text-sm font-medium text-gray-700">
-                            {t("suggestedTitle")}
+                            Suggested Title:
                           </span>
                           <p className="text-sm text-gray-900 font-medium">
                             {queryAnalysis.title}
@@ -582,7 +561,7 @@ export default function Dashboard() {
 
                         <div>
                           <span className="text-sm font-medium text-gray-700">
-                            {t("assignedDepartment")}
+                            Assigned Department:
                           </span>
                           <p className="text-sm text-gray-900 font-medium">
                             {queryAnalysis.departmentName}
@@ -591,12 +570,24 @@ export default function Dashboard() {
 
                         <div>
                           <span className="text-sm font-medium text-gray-700">
-                            {t("reasoning")}
+                            Reasoning:
                           </span>
                           <p className="text-sm text-gray-600">
                             {queryAnalysis.reasoning}
                           </p>
                         </div>
+
+                        {newQuery.address && (
+                          <div>
+                            <span className="text-sm font-medium text-gray-700">
+                              Address:
+                            </span>
+                            <p className="text-sm text-gray-600 flex items-center">
+                              <MapPin className="w-3 h-3 mr-1 text-blue-500" />
+                              {newQuery.address}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -607,7 +598,7 @@ export default function Dashboard() {
                       disabled={!queryAnalysis || !newQuery.query.trim()}
                       className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 text-white px-6 py-3 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:transform-none"
                     >
-                      {analyzing ? t("analyzing") : t("createQuery")}
+                      {analyzing ? "Analyzing..." : "Create Query"}
                     </button>
                     <button
                       onClick={() => {
@@ -615,10 +606,11 @@ export default function Dashboard() {
                         setShowNewQueryForm(false);
                         setNewQuery({ query: "", address: "" });
                         setQueryAnalysis(null);
+                        setShowMap(false); // Hide map when canceling
                       }}
                       className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg transition-colors font-medium border border-gray-300"
                     >
-                      {t("cancel")}
+                      Cancel
                     </button>
                   </div>
                 </div>
@@ -637,6 +629,12 @@ export default function Dashboard() {
                     <p className="text-gray-600 text-sm mb-3">
                       {selectedQuery.description}
                     </p>
+                    {selectedQuery.address && (
+                      <div className="flex items-center text-sm text-gray-500 mb-2">
+                        <MapPin className="w-4 h-4 mr-1 text-blue-500" />
+                        <span>{selectedQuery.address}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -644,8 +642,7 @@ export default function Dashboard() {
                   <div className="flex items-center space-x-1">
                     <Clock className="w-4 h-4 text-blue-500" />
                     <span>
-                      {t("created")}{" "}
-                      {new Date(selectedQuery.createdAt).toLocaleDateString()}
+                      Created {new Date(selectedQuery.createdAt).toLocaleDateString()}
                     </span>
                   </div>
                   <div
@@ -653,8 +650,7 @@ export default function Dashboard() {
                       selectedQuery.status?.toLowerCase() || "open"
                     )}`}
                   >
-                    {selectedQuery.status?.replace("_", " ").toUpperCase() ||
-                      t("open").toUpperCase()}
+                    {selectedQuery.status?.replace("_", " ").toUpperCase() || "OPEN"}
                   </div>
                 </div>
               </div>
@@ -667,10 +663,10 @@ export default function Dashboard() {
                     <div className="flex flex-col items-center justify-center h-full text-center">
                       <MessageSquare className="w-16 h-16 text-blue-300 mb-4" />
                       <h3 className="text-lg font-medium text-gray-900 mb-2">
-                        {t("noRepliesYet")}
+                        No replies yet
                       </h3>
                       <p className="text-gray-600 mb-4">
-                        {t("startConversation")}
+                        Start a conversation about this query
                       </p>
                     </div>
                   ) : (
@@ -726,7 +722,7 @@ export default function Dashboard() {
                     <div className="flex space-x-3">
                       <div className="flex-1">
                         <textarea
-                          placeholder={t("typeMessage")}
+                          placeholder="Type your message..."
                           value={newThread}
                           onChange={(e) => setNewThread(e.target.value)}
                           onKeyDown={(e) => {
@@ -757,9 +753,11 @@ export default function Dashboard() {
               <div className="text-center">
                 <MessageSquare className="w-16 h-16 text-blue-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {t("selectQuery")}
+                  Select a query to view details
                 </h3>
-                <p className="text-gray-600">{t("selectQueryDesc")}</p>
+                <p className="text-gray-600">
+                  Choose a query from the list to see its details and replies
+                </p>
               </div>
             </div>
           )}
