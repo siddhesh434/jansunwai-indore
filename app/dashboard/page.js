@@ -196,26 +196,47 @@ export default function Dashboard() {
 
   const analyzeQuery = async (query, address) => {
     if (!query.trim()) return;
-
+    
     setAnalyzing(true);
     try {
-      // Mock analysis - in real app this would call your API
-      setTimeout(() => {
+      const res = await fetch("/api/query-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, address }),
+      });
+
+      const data = await res.json();
+      
+      if (data.success) {
+        setQueryAnalysis(data.analysis);
+      } else {
+        console.error("Query analysis failed:", data.error);
+        // Fallback: create a basic analysis
         setQueryAnalysis({
           title: query.substring(0, 60) + (query.length > 60 ? "..." : ""),
-          departmentId: departments[0]?._id,
-          departmentName: departments[0]?.departmentName || "",
-          reasoning: "Based on the keywords in your complaint, this appears to be related to municipal services.",
+          departmentId: departments[0]?._id || "",
+          departmentName: departments[0]?.departmentName || "Municipal Services",
+          reasoning: "Auto-generated due to analysis failure",
           originalQuery: query,
-          address: address || "",
+          address: address || ""
         });
-        setAnalyzing(false);
-      }, 2000);
+      }
     } catch (error) {
       console.error("Error analyzing query:", error);
+      // Fallback: create a basic analysis
+      setQueryAnalysis({
+        title: query.substring(0, 60) + (query.length > 60 ? "..." : ""),
+        departmentId: departments[0]?._id || "",
+        departmentName: departments[0]?.departmentName || "Municipal Services",
+        reasoning: "Auto-generated due to analysis error",
+        originalQuery: query,
+        address: address || ""
+      });
+    } finally {
       setAnalyzing(false);
     }
   };
+
 
   const fetchQueryThreads = async (queryId) => {
     try {

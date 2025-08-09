@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { MapPin, Map, X, Search } from "lucide-react";
-import L from "leaflet";
 
 const MapAddressSelector = ({ 
   value, 
@@ -23,17 +22,29 @@ const MapAddressSelector = ({
   const markerRef = useRef(null);
   const searchTimeoutRef = useRef(null);
   const tileLayerRef = useRef(null);
+  const leafletRef = useRef(null);
+
+  const getLeaflet = async () => {
+    if (leafletRef.current) return leafletRef.current;
+    const mod = await import("leaflet");
+    const L = mod.default || mod;
+    leafletRef.current = L;
+    return L;
+  };
 
   // Fix Leaflet default marker icons
   useEffect(() => {
     if (typeof window !== "undefined") {
-      // Fix for default markers
-      delete L.Icon.Default.prototype._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-      });
+      (async () => {
+        const L = await getLeaflet();
+        // Fix for default markers
+        delete L.Icon.Default.prototype._getIconUrl;
+        L.Icon.Default.mergeOptions({
+          iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+        });
+      })();
     }
   }, []);
 
@@ -41,63 +52,66 @@ const MapAddressSelector = ({
   useEffect(() => {
     if (showMap && mapRef.current && !mapInstanceRef.current && typeof window !== "undefined") {
       // Create map
-      const map = L.map(mapRef.current, {
+      (async () => {
+        const L = await getLeaflet();
+        const map = L.map(mapRef.current, {
         center: [22.7196, 75.8577], // Indore
         zoom: 13,
-      });
+        });
 
-      // Add initial tile layer (Carto Voyager)
-      const cartoLayer = L.tileLayer(
-        'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-        {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/">OSM</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
-          subdomains: 'abcd',
-          maxZoom: 20
-        }
-      ).addTo(map);
-
-      tileLayerRef.current = cartoLayer;
-
-      // Handle map clicks for reverse geocoding
-      map.on("click", async (e) => {
-        const { lat, lng } = e.latlng;
-        try {
-          const response = await fetch(
-            `/api/query-geocode?type=reverse&lat=${lat}&lon=${lng}`
-          );
-          const data = await response.json();
-          const address = data.display_name || "Unknown location";
-          
-          // Remove existing marker
-          if (markerRef.current) {
-            map.removeLayer(markerRef.current);
+        // Add initial tile layer (Carto Voyager)
+        const cartoLayer = L.tileLayer(
+          'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+          {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/">OSM</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
           }
-          
-          // Add new marker
-          markerRef.current = L.marker([lat, lng]).addTo(map).bindPopup(address).openPopup();
-          
-          // Update input and call onChange
-          setInputValue(address);
-          onChange?.(address);
-          setSuggestions([]);
-        } catch (error) {
-          console.error("Error in reverse geocoding:", error);
+        ).addTo(map);
+
+        tileLayerRef.current = cartoLayer;
+
+        // Handle map clicks for reverse geocoding
+        map.on("click", async (e) => {
+          const { lat, lng } = e.latlng;
+          try {
+            const response = await fetch(
+              `/api/query-geocode?type=reverse&lat=${lat}&lon=${lng}`
+            );
+            const data = await response.json();
+            const address = data.display_name || "Unknown location";
+            
+            // Remove existing marker
+            if (markerRef.current) {
+              map.removeLayer(markerRef.current);
+            }
+            
+            // Add new marker
+            markerRef.current = L.marker([lat, lng]).addTo(map).bindPopup(address).openPopup();
+            
+            // Update input and call onChange
+            setInputValue(address);
+            onChange?.(address);
+            setSuggestions([]);
+          } catch (error) {
+            console.error("Error in reverse geocoding:", error);
+          }
+        });
+
+        mapInstanceRef.current = map;
+
+        // Force map to invalidate size after a short delay
+        setTimeout(() => {
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.invalidateSize();
+          }
+        }, 100);
+
+        // If there's an existing value, try to geocode it
+        if (value) {
+          geocodeAddress(value, map);
         }
-      });
-
-      mapInstanceRef.current = map;
-
-      // Force map to invalidate size after a short delay
-      setTimeout(() => {
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.invalidateSize();
-        }
-      }, 100);
-
-      // If there's an existing value, try to geocode it
-      if (value) {
-        geocodeAddress(value, map);
-      }
+      })();
     }
   }, [showMap, value]);
 
@@ -146,8 +160,9 @@ const MapAddressSelector = ({
   }, [showMap]);
 
   // Function to switch tile layers
-  const switchTileLayer = (layerType) => {
+  const switchTileLayer = async (layerType) => {
     if (!mapInstanceRef.current || !tileLayerRef.current) return;
+    const L = await getLeaflet();
 
     // Remove current tile layer
     mapInstanceRef.current.removeLayer(tileLayerRef.current);
@@ -205,6 +220,7 @@ const MapAddressSelector = ({
 
   const geocodeAddress = async (address, map) => {
     try {
+      const L = await getLeaflet();
       const response = await fetch(
         `/api/query-geocode?type=search&q=${encodeURIComponent(address)}`
       );
@@ -303,7 +319,7 @@ const MapAddressSelector = ({
     }
   };
 
-  const handleSuggestionClick = (suggestion) => {
+  const handleSuggestionClick = async (suggestion) => {
     if (suggestion.type === 'error') return;
     
     setInputValue(suggestion.display);
@@ -312,6 +328,7 @@ const MapAddressSelector = ({
     
     // If map is shown and we have a map instance, update the map
     if (showMap && mapInstanceRef.current) {
+      const L = await getLeaflet();
       if (suggestion.type === 'pincode') {
         // For PIN codes, geocode the address
         geocodeAddress(suggestion.display, mapInstanceRef.current);
