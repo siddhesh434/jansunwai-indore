@@ -129,23 +129,14 @@ export default function Dashboard() {
 
   const fetchUserData = async (userId) => {
     try {
-      // Mock data for demo purposes
-      const userData = {
-        _id: userId,
-        name: "John Doe",
-        queries: [
-          {
-            _id: "1",
-            title: "Street light not working on MG Road",
-            description: "The street light near the bus stop on MG Road has been out for a week.",
-            status: "open",
-            createdAt: new Date().toISOString(),
-            objects: []
-          }
-        ]
-      };
+      const res = await fetch(`/api/users/${userId}`);
+      if (!res.ok) throw new Error("Failed to fetch user");
+      const userData = await res.json();
       setUser(userData);
-      setQueries(userData.queries || []);
+      const userQueries = Array.isArray(userData.queries) ? userData.queries : [];
+      // Sort by createdAt desc for better UX
+      userQueries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setQueries(userQueries);
     } catch (error) {
       console.error("Error fetching user data:", error);
     } finally {
