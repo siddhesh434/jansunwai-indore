@@ -15,6 +15,9 @@ import {
   Mic,
   MicOff,
   MapPin,
+  Image as ImageIcon,
+  Video as VideoIcon,
+  FileText,
 } from "lucide-react";
 import { useLanguage } from "../contexts/LanguageContext";
 import MapAddressSelector from "./MapAddressSelector"; // Import the new component
@@ -34,6 +37,7 @@ export default function Dashboard() {
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showNewQueryForm, setShowNewQueryForm] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
 
   // Voice-to-text states
   const [isListening, setIsListening] = useState(false);
@@ -151,13 +155,10 @@ export default function Dashboard() {
 
   const fetchDepartments = async () => {
     try {
-      // Mock departments data
-      const data = [
-        { _id: "1", departmentName: "Municipal Services" },
-        { _id: "2", departmentName: "Public Works" },
-        { _id: "3", departmentName: "Water Department" }
-      ];
-      setDepartments(data);
+      const res = await fetch("/api/departments");
+      if (!res.ok) throw new Error("Failed to load departments");
+      const data = await res.json();
+      setDepartments(data || []);
     } catch (error) {
       console.error("Error fetching departments:", error);
     }
@@ -201,8 +202,8 @@ export default function Dashboard() {
       setTimeout(() => {
         setQueryAnalysis({
           title: query.substring(0, 60) + (query.length > 60 ? "..." : ""),
-          departmentId: departments[0]?._id || "1",
-          departmentName: departments[0]?.departmentName || "Municipal Services",
+          departmentId: departments[0]?._id,
+          departmentName: departments[0]?.departmentName || "",
           reasoning: "Based on the keywords in your complaint, this appears to be related to municipal services.",
           originalQuery: query,
           address: address || "",
@@ -228,30 +229,45 @@ export default function Dashboard() {
     }
   };
 
-  const handleCreateQuery = (e) => {
+  const handleCreateQuery = async (e) => {
     e?.preventDefault?.();
     if (!queryAnalysis || !newQuery.query.trim()) return;
 
-    const newQueryData = {
-      _id: Date.now().toString(),
-      title: queryAnalysis.title,
-      description: newQuery.query,
-      department: queryAnalysis.departmentId,
-      author: user._id,
-      address: newQuery.address,
-      status: "open",
-      createdAt: new Date().toISOString(),
-      objects: []
-    };
+    try {
+      const deptId = queryAnalysis?.departmentId || departments[0]?._id;
+      if (!deptId) {
+        alert("No departments available. Please try again later.");
+        return;
+      }
+      const formData = new FormData();
+      formData.append("title", queryAnalysis.title || "");
+      formData.append("description", newQuery.query || "");
+      formData.append("address", newQuery.address || "");
+      formData.append("author", user._id);
+      formData.append("department", deptId);
+      selectedFiles.forEach((file) => formData.append("attachments", file));
 
-    stopVoiceInput();
-    setQueries([...queries, newQueryData]);
-    setNewQuery({ query: "", address: "" });
-    setQueryAnalysis(null);
-    setShowNewQueryForm(false);
-    setShowMap(false); // Hide map after creating query
-    setSelectedQuery(newQueryData);
-    setThreads([]);
+      const res = await fetch("/api/queries", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Failed to create query");
+      const created = await res.json();
+
+      stopVoiceInput();
+      setQueries([...queries, created]);
+      setNewQuery({ query: "", address: "" });
+      setQueryAnalysis(null);
+      setSelectedFiles([]);
+      setShowNewQueryForm(false);
+      setShowMap(false);
+      setSelectedQuery(created);
+      setThreads([]);
+    } catch (err) {
+      console.error(err);
+      alert("Unable to submit query. Please try again.");
+    }
   };
 
   const handleAddThread = (e) => {
@@ -516,6 +532,24 @@ export default function Dashboard() {
                     />
                   </div>
 
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Attach files (images, videos, documents)
+                    </label>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
+                      onChange={(e) => setSelectedFiles(Array.from(e.target.files || []))}
+                      className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                    {selectedFiles.length > 0 && (
+                      <p className="mt-2 text-xs text-gray-500">
+                        {selectedFiles.length} file(s) selected
+                      </p>
+                    )}
+                  </div>
+
                   {/* Analysis Results */}
                   {analyzing && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -635,6 +669,38 @@ export default function Dashboard() {
                         <span>{selectedQuery.address}</span>
                       </div>
                     )}
+
+                    {selectedQuery.attachments?.length > 0 && (
+                      <div className="mt-3">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Attachments</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                          {selectedQuery.attachments.map((att, idx) => {
+                            const isImage = (att.mimetype || "").startsWith("image/");
+                            const isVideo = (att.mimetype || "").startsWith("video/");
+                            return (
+                              <div key={idx} className="border border-blue-200 rounded-lg overflow-hidden bg-white">
+                                {isImage ? (
+                                  <a href={att.url} target="_blank" rel="noreferrer" className="block">
+                                    <img src={att.url} alt={att.originalName} className="w-full h-28 object-cover" />
+                                    <div className="px-2 py-1 text-xs text-gray-700 truncate flex items-center"><ImageIcon className="w-3 h-3 mr-1 text-blue-500" />{att.originalName}</div>
+                                  </a>
+                                ) : isVideo ? (
+                                  <div className="w-full">
+                                    <video src={att.url} controls className="w-full h-28 object-cover bg-black" />
+                                    <a href={att.url} target="_blank" rel="noreferrer" className="px-2 py-1 text-xs text-gray-700 truncate flex items-center"><VideoIcon className="w-3 h-3 mr-1 text-blue-500" />{att.originalName}</a>
+                                  </div>
+                                ) : (
+                                  <a href={att.url} target="_blank" rel="noreferrer" className="flex items-center space-x-2 p-2 text-xs text-gray-700 hover:bg-blue-50">
+                                    <FileText className="w-4 h-4 text-blue-500" />
+                                    <span className="truncate" title={att.originalName}>{att.originalName}</span>
+                                  </a>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -708,6 +774,34 @@ export default function Dashboard() {
                               <p className="text-gray-900 leading-relaxed">
                                 {thread.message}
                               </p>
+                              {Array.isArray(thread.attachments) && thread.attachments.length > 0 && (
+                                <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                  {thread.attachments.map((att, i) => {
+                                    const isImage = (att.mimetype || "").startsWith("image/");
+                                    const isVideo = (att.mimetype || "").startsWith("video/");
+                                    return (
+                                      <div key={i} className="border border-blue-200 rounded-lg overflow-hidden bg-white">
+                                        {isImage ? (
+                                          <a href={att.url} target="_blank" rel="noreferrer" className="block">
+                                            <img src={att.url} alt={att.originalName} className="w-full h-24 object-cover" />
+                                            <div className="px-2 py-1 text-xs text-gray-700 truncate flex items-center"><ImageIcon className="w-3 h-3 mr-1 text-blue-500" />{att.originalName}</div>
+                                          </a>
+                                        ) : isVideo ? (
+                                          <div className="w-full">
+                                            <video src={att.url} controls className="w-full h-24 object-cover bg-black" />
+                                            <a href={att.url} target="_blank" rel="noreferrer" className="px-2 py-1 text-xs text-gray-700 truncate flex items-center"><VideoIcon className="w-3 h-3 mr-1 text-blue-500" />{att.originalName}</a>
+                                          </div>
+                                        ) : (
+                                          <a href={att.url} target="_blank" rel="noreferrer" className="flex items-center space-x-2 p-2 text-xs text-gray-700 hover:bg-blue-50">
+                                            <FileText className="w-4 h-4 text-blue-500" />
+                                            <span className="truncate" title={att.originalName}>{att.originalName}</span>
+                                          </a>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>

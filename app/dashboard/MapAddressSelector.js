@@ -63,7 +63,7 @@ const MapAddressSelector = ({
         const { lat, lng } = e.latlng;
         try {
           const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`
+            `/api/query-geocode?type=reverse&lat=${lat}&lon=${lng}`
           );
           const data = await response.json();
           const address = data.display_name || "Unknown location";
@@ -206,7 +206,7 @@ const MapAddressSelector = ({
   const geocodeAddress = async (address, map) => {
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&countrycodes=in&limit=1&q=${encodeURIComponent(address)}`
+        `/api/query-geocode?type=search&q=${encodeURIComponent(address)}`
       );
       const data = await response.json();
       
@@ -264,7 +264,7 @@ const MapAddressSelector = ({
     try {
       // Check if it's a 6-digit PIN code
       if (/^\d{6}$/.test(query)) {
-        const response = await fetch(`https://api.postalpincode.in/pincode/${query}`);
+        const response = await fetch(`/api/query-geocode?type=pincode&pin=${query}`);
         const data = await response.json();
         
         if (data[0]?.Status === "Success") {
@@ -280,8 +280,7 @@ const MapAddressSelector = ({
       } else {
         // Regular address search
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&countrycodes=in&addressdetails=1&limit=5&q=${encodeURIComponent(query)}`,
-          { headers: { 'Accept-Language': 'en' } }
+          `/api/query-geocode?type=search&q=${encodeURIComponent(query)}`
         );
         const data = await response.json();
         

@@ -59,6 +59,8 @@ const ThreadObjectSchema = new Schema(
 const QuerySchema = new Schema(
   {
     title: { type: String, required: true },
+    description: { type: String },
+    address: { type: String },
     objects: [ThreadObjectSchema],
     author: { type: Schema.Types.ObjectId, ref: "User", required: true },
     department: {
@@ -71,6 +73,18 @@ const QuerySchema = new Schema(
       enum: ["open", "in_progress", "resolved"],
       default: "open",
     },
+    attachments: [
+      new Schema(
+        {
+          filename: { type: String, required: true },
+          originalName: { type: String, required: true },
+          mimetype: { type: String, required: true },
+          size: { type: Number, required: true },
+          url: { type: String, required: true },
+        },
+        { _id: false }
+      ),
+    ],
   },
   { timestamps: true }
 );

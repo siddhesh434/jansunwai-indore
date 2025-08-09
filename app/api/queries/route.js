@@ -1,6 +1,12 @@
 // app/api/queries/route.js
 import dbConnect from "../../../lib/dbConnect";
 import { Query, User, Department } from "../../../models";
+import mongoose from "mongoose";
+import { promises as fs } from "fs";
+import path from "path";
+
+// Ensure Node.js runtime for fs access
+export const runtime = "nodejs";
 
 export async function GET() {
   try {
@@ -15,31 +21,100 @@ export async function GET() {
 export async function POST(request) {
   try {
     await dbConnect();
-    const body = await request.json();
 
-    // Create the query
-    const query = await Query.create(body);
-    console.log("Query created:", query);
-    console.log("Request body:", body);
+    const contentType = request.headers.get("content-type") || "";
+
+    let payload = {};
+    let attachments = [];
+
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await request.formData();
+
+      // Ensure upload directory exists
+      const uploadDir = path.join(process.cwd(), "public", "upload");
+      await fs.mkdir(uploadDir, { recursive: true });
+
+      // Collect files (input name: attachments)
+      const files = formData.getAll("attachments");
+      for (const file of files) {
+        if (!file || typeof file === "string") continue;
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
+        const ext = path.extname(file.name) || "";
+        const baseName = path.basename(file.name, ext).replace(/[^a-zA-Z0-9-_]/g, "_");
+        const uniqueName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${baseName}${ext}`;
+        const filePath = path.join(uploadDir, uniqueName);
+        await fs.writeFile(filePath, buffer);
+
+        attachments.push({
+          filename: uniqueName,
+          originalName: file.name,
+          mimetype: file.type || "application/octet-stream",
+          size: buffer.length,
+          url: `/upload/${uniqueName}`,
+        });
+      }
+
+      // Extract non-file fields
+      payload = {
+        title: formData.get("title") || "",
+        description: formData.get("description") || "",
+        address: formData.get("address") || "",
+        author: formData.get("author"),
+        department: formData.get("department"),
+        status: formData.get("status") || undefined,
+      };
+    } else {
+      // JSON fallback
+      const body = await request.json();
+      payload = body || {};
+      attachments = body?.attachments || [];
+    }
+
+    // Basic validation
+    if (!payload.title) {
+      return Response.json({ error: "Missing title" }, { status: 400 });
+    }
+
+    // Normalize ids
+    const authorId = typeof payload.author === "string" && mongoose.Types.ObjectId.isValid(payload.author)
+      ? new mongoose.Types.ObjectId(payload.author)
+      : undefined;
+    const departmentId = typeof payload.department === "string" && mongoose.Types.ObjectId.isValid(payload.department)
+      ? new mongoose.Types.ObjectId(payload.department)
+      : undefined;
+
+    const query = await Query.create({
+      title: payload.title,
+      description: payload.description || "",
+      address: payload.address || "",
+      author: authorId,
+      department: departmentId,
+      status: payload.status || undefined,
+      attachments: attachments || [],
+    });
 
     // Add query ID to user's queries array
-    if (body.author) {
-      await User.findByIdAndUpdate(
-        body.author,
-        { $push: { queries: query._id } },
-        { new: true }
-      );
-      console.log("Query ID added to user's queries array");
+    if (authorId) {
+      try {
+        await User.findByIdAndUpdate(
+          authorId,
+          { $push: { queries: query._id } },
+          { new: true }
+        );
+      } catch {}
     }
 
     // Add query ID to department's queries array
-    if (body.department) {
-      await Department.findByIdAndUpdate(
-        body.department,
-        { $push: { queries: query._id } },
-        { new: true }
-      );
-      console.log("Query ID added to department's queries array");
+    if (departmentId) {
+      try {
+        await Department.findByIdAndUpdate(
+          departmentId,
+          { $push: { queries: query._id } },
+          { new: true }
+        );
+      } catch {}
     }
 
     return Response.json(query, { status: 201 });
