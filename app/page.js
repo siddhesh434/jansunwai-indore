@@ -200,6 +200,59 @@ export default function Home() {
           ))}
         </div>
       </div>
+
+      {/* About Us Section */}
+      <div className="max-w-7xl mx-auto px-6 py-16 bg-gray-50">
+        <div className="text-center max-w-3xl mx-auto mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            {t("aboutUs") || "About Jansunwai Indore"}
+          </h2>
+          <p className="text-gray-600 text-lg">
+            {t("aboutUsDescription") || "Discover how our AI-powered system revolutionizes municipal complaint management for the citizens of Indore."}
+          </p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {[
+            {
+              icon: "🤖",
+              title: "AI-Powered",
+              description: "Advanced artificial intelligence for smart complaint routing and analysis"
+            },
+            {
+              icon: "🏢",
+              title: "Department Specific",
+              description: "Specialized dashboards for each municipal department"
+            },
+            {
+              icon: "🌍",
+              title: "Multilingual",
+              description: "Support for English and Hindi languages"
+            },
+            {
+              icon: "📱",
+              title: "Modern Interface",
+              description: "User-friendly design with real-time updates"
+            }
+          ].map((feature, index) => (
+            <div key={index} className="bg-white rounded-xl p-6 text-center shadow-sm hover:shadow-md transition-shadow">
+              <div className="text-4xl mb-3">{feature.icon}</div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
+              <p className="text-gray-600 text-sm">{feature.description}</p>
+            </div>
+          ))}
+        </div>
+        
+        <div className="text-center">
+          <button
+            onClick={() => router.push("/about")}
+            className="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg transition-colors font-medium"
+          >
+            <span>{t("learnMore") || "Learn More"}</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

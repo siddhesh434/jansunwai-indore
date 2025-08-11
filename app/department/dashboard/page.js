@@ -12,6 +12,19 @@ import {
   Image as ImageIcon,
   Video as VideoIcon,
   FileText,
+  CheckCircle,
+  AlertCircle,
+  Clock as ClockIcon,
+  TrendingUp,
+  BarChart3,
+  Calendar,
+  User,
+  MapPin,
+  Eye,
+  Reply,
+  Archive,
+  RefreshCw,
+  X,
 } from "lucide-react";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { useAuth } from "../../contexts/AuthContext";
@@ -24,6 +37,8 @@ export default function DepartmentDashboard() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [viewMode, setViewMode] = useState("grid"); // grid or list
+  const [sortBy, setSortBy] = useState("createdAt"); // createdAt, urgency, status
   const router = useRouter();
   const { t } = useLanguage();
   const { departmentMember, isAuthenticated } = useAuth();
@@ -140,18 +155,44 @@ export default function DepartmentDashboard() {
     }
   };
 
-
-
   const getStatusColor = (status) => {
     switch (status) {
       case "open":
-        return "bg-red-100 text-red-700";
+        return "bg-red-100 text-red-700 border-red-200";
       case "in_progress":
-        return "bg-yellow-100 text-yellow-700";
+        return "bg-yellow-100 text-yellow-700 border-yellow-200";
       case "resolved":
-        return "bg-green-100 text-green-700";
+        return "bg-green-100 text-green-700 border-green-200";
       default:
-        return "bg-gray-100 text-gray-600";
+        return "bg-gray-100 text-gray-600 border-gray-200";
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "open":
+        return <AlertCircle className="w-4 h-4" />;
+      case "in_progress":
+        return <ClockIcon className="w-4 h-4" />;
+      case "resolved":
+        return <CheckCircle className="w-4 h-4" />;
+      default:
+        return <ClockIcon className="w-4 h-4" />;
+    }
+  };
+
+  const getUrgencyColor = (urgencyLabel) => {
+    switch (urgencyLabel) {
+      case "Critical":
+        return "bg-red-50 text-red-700 border-red-200";
+      case "High":
+        return "bg-orange-50 text-orange-700 border-orange-200";
+      case "Medium":
+        return "bg-yellow-50 text-yellow-700 border-yellow-200";
+      case "Low":
+        return "bg-green-50 text-green-700 border-green-200";
+      default:
+        return "bg-gray-50 text-gray-600 border-gray-200";
     }
   };
 
@@ -163,6 +204,34 @@ export default function DepartmentDashboard() {
       query.author?.name?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesSearch;
   });
+
+  const sortedQueries = [...filteredQueries].sort((a, b) => {
+    switch (sortBy) {
+      case "urgency":
+        const urgencyOrder = { Critical: 4, High: 3, Medium: 2, Low: 1 };
+        const aUrgency = urgencyOrder[a.urgencyLabel] || 0;
+        const bUrgency = urgencyOrder[b.urgencyLabel] || 0;
+        return bUrgency - aUrgency;
+      case "status":
+        const statusOrder = { open: 3, in_progress: 2, resolved: 1 };
+        const aStatus = statusOrder[a.status] || 0;
+        const bStatus = statusOrder[b.status] || 0;
+        return aStatus - bStatus;
+      case "createdAt":
+      default:
+        return new Date(b.createdAt) - new Date(a.createdAt);
+    }
+  });
+
+  const activeQueries = sortedQueries.filter(q => q.status !== "resolved");
+  const resolvedQueries = sortedQueries.filter(q => q.status === "resolved");
+
+  const stats = {
+    total: departmentQueries.length,
+    open: departmentQueries.filter(q => q.status === "open").length,
+    inProgress: departmentQueries.filter(q => q.status === "in_progress").length,
+    resolved: departmentQueries.filter(q => q.status === "resolved").length,
+  };
 
   if (loading) {
     return (
@@ -178,387 +247,355 @@ export default function DepartmentDashboard() {
   }
 
   return (
-    <div className="h-screen bg-white flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center shrink-0">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-            <Building2 className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900">
-              {t("departmentDashboard")}
-            </h1>
-            <p className="text-sm text-gray-600">
-              {departmentMember?.department?.departmentName}
-            </p>
+      <header className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
+                <Building2 className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {t("departmentDashboard")}
+                </h1>
+                <p className="text-gray-600">
+                  {departmentMember?.department?.departmentName}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={fetchDepartmentQueries}
+                className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Refresh</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left Sidebar - Queries List */}
-        <div className="w-1/3 bg-gray-50 border-r border-gray-200 flex flex-col">
-          {/* Filters and Search */}
-          <div className="p-4 border-b border-gray-200 space-y-3">
-            <div className="flex items-center space-x-2">
-              <Search className="w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder={t("searchQueriesPlaceholder")}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <Filter className="w-4 h-4 text-gray-400" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">{t("allStatus")}</option>
-                <option value="open">{t("open")}</option>
-                <option value="in_progress">{t("inProgress")}</option>
-                <option value="resolved">{t("resolved")}</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Query Count */}
-          <div className="px-4 py-2 bg-white border-b border-gray-200">
-            <p className="text-sm text-gray-600">
-              {filteredQueries.length} of {departmentQueries.length}{" "}
-              {t("queriesCount")}
-            </p>
-          </div>
-
-          {/* Queries List */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-2">
-            {filteredQueries.length === 0 ? (
-              <div className="text-center py-8">
-                <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-gray-500">{t("noQueriesFound")}</p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {t("tryAdjustingFilters")}
-                </p>
+      {/* Stats Cards */}
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Queries</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
               </div>
-            ) : (
-              filteredQueries.map((query) => (
-                <div
-                  key={query._id}
-                  onClick={() => fetchQueryThreads(query._id)}
-                  className={`group p-3 rounded-lg cursor-pointer transition-all hover:bg-white hover:shadow-sm border ${
-                    selectedQuery?._id === query._id
-                      ? "bg-white border-blue-200 shadow-sm"
-                      : "border-transparent hover:border-gray-200"
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-gray-900 text-sm truncate mb-1">
-                        {query.title}
-                      </h3>
-                      <p className="text-xs text-gray-500 mb-2">
-                        {t("submittedBy")}{" "}
-                        {query.author?.name || t("unknownUser")}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <div
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                            query.status
-                          )}`}
-                        >
-                          {query.status?.replace("_", " ").toUpperCase() ||
-                            t("open").toUpperCase()}
-                        </div>
-                        <span className="text-xs text-gray-400">
-                          {query.objects?.length || 0} {t("replies")}
-                        </span>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-400 shrink-0 ml-2" />
-                  </div>
-                </div>
-              ))
-            )}
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <BarChart3 className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Open</p>
+                <p className="text-2xl font-bold text-red-600">{stats.open}</p>
+              </div>
+              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                <AlertCircle className="w-6 h-6 text-red-600" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">In Progress</p>
+                <p className="text-2xl font-bold text-yellow-600">{stats.inProgress}</p>
+              </div>
+              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <ClockIcon className="w-6 h-6 text-yellow-600" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Resolved</p>
+                <p className="text-2xl font-bold text-green-600">{stats.resolved}</p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Right Panel - Query Details and Threads */}
-        <div className="flex-1 flex flex-col">
-          {selectedQuery ? (
-            <div className="flex-1 flex flex-col">
-              {/* Query Header */}
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                      {selectedQuery.title}
-                    </h2>
-                    <p className="text-gray-600 text-sm mb-3">
-                      {t("submittedBy")}{" "}
-                      <span className="font-medium">
-                        {selectedQuery.author?.name}
-                      </span>
-                    </p>
+      <div className="max-w-7xl mx-auto px-6 pb-8">
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
+          {/* Active Queries Section */}
+          <div className="xl:col-span-3">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-gray-900">Active Queries</h2>
+                  <span className="text-sm text-gray-500">{activeQueries.length} queries</span>
+                </div>
+              </div>
+
+              {/* Filters and Controls */}
+              <div className="px-6 py-4 border-b border-gray-200 space-y-4">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search queries..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex gap-2">
                     <select
-                      value={selectedQuery.status}
-                      onChange={(e) =>
-                        updateQueryStatus(selectedQuery._id, e.target.value)
-                      }
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
                       className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
-                      <option value="open">{t("open")}</option>
-                      <option value="in_progress">{t("inProgress")}</option>
-                      <option value="resolved">{t("resolved")}</option>
+                      <option value="all">All Status</option>
+                      <option value="open">Open</option>
+                      <option value="in_progress">In Progress</option>
+                    </select>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="createdAt">Date</option>
+                      <option value="urgency">Urgency</option>
+                      <option value="status">Status</option>
                     </select>
                   </div>
                 </div>
+              </div>
 
-                <div className="flex items-center space-x-4 text-sm text-gray-500">
-                  <div className="flex items-center space-x-1">
-                    <Clock className="w-4 h-4" />
-                    <span>
-                      {t("created")}{" "}
-                      {new Date(selectedQuery.createdAt).toLocaleDateString()}
-                    </span>
+              {/* Queries Grid */}
+              <div className="p-6">
+                {activeQueries.length === 0 ? (
+                  <div className="text-center py-12">
+                    <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No active queries</h3>
+                    <p className="text-gray-500">All queries have been resolved!</p>
                   </div>
-                  <div
-                    className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                      selectedQuery.status
-                    )}`}
-                  >
-                    {selectedQuery.status?.replace("_", " ").toUpperCase() ||
-                      t("open").toUpperCase()}
-                  </div>
-                </div>
-                {selectedQuery.urgencyLabel && (
-                  <div className="mt-2 flex items-center space-x-2 text-sm">
-                    <span
-                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold border ${
-                        selectedQuery.urgencyLabel === 'Critical'
-                          ? 'bg-red-50 text-red-700 border-red-200'
-                          : selectedQuery.urgencyLabel === 'High'
-                          ? 'bg-orange-50 text-orange-700 border-orange-200'
-                          : selectedQuery.urgencyLabel === 'Medium'
-                          ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                          : 'bg-green-50 text-green-700 border-green-200'
-                      }`}
-                    >
-                      Urgency: {selectedQuery.urgencyLabel}
-                      {typeof selectedQuery.urgencyScore === 'number' && (
-                        <span className="ml-1">({selectedQuery.urgencyScore}/5)</span>
-                      )}
-                    </span>
-                    {selectedQuery.urgencyReason && (
-                      <span className="text-xs text-gray-600">Reason: {selectedQuery.urgencyReason}</span>
-                    )}
-                  </div>
-                )}
-                {/* Fallback: show AI text embedded in description if no structured analyses */}
-                {(!Array.isArray(selectedQuery.attachmentAnalyses) || selectedQuery.attachmentAnalyses.length === 0) && aiTextFromDescription && (
-                  <div className="mt-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Attachment AI Summaries (from description)</p>
-                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-sm text-gray-800 whitespace-pre-wrap">
-                      {aiTextFromDescription}
-                    </div>
-                  </div>
-                )}
-
-                {selectedQuery.attachments?.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Attachments</p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                      {selectedQuery.attachments.map((att, idx) => {
-                        const isImage = (att.mimetype || "").startsWith("image/");
-                        const isVideo = (att.mimetype || "").startsWith("video/");
-                        const hasAnalysis = analyzedNameSet.has(att.filename) || analyzedNameSet.has(att.originalName);
-                        return (
-                          <div key={idx} className="border border-gray-200 rounded-lg overflow-hidden bg-white relative">
-                            {hasAnalysis && (
-                              <span className="absolute top-1 right-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-700 border border-purple-200 shadow-sm">
-                                AI
-                              </span>
-                            )}
-                            {isImage ? (
-                              <a href={att.url} target="_blank" rel="noreferrer" className="block">
-                                <img src={att.url} alt={att.originalName} className="w-full h-28 object-cover" />
-                                <div className="px-2 py-1 text-xs text-gray-700 truncate flex items-center"><ImageIcon className="w-3 h-3 mr-1 text-gray-500" />{att.originalName}</div>
-                              </a>
-                            ) : isVideo ? (
-                              <div className="w-full">
-                                <video src={att.url} controls className="w-full h-28 object-cover bg-black" />
-                                <a href={att.url} target="_blank" rel="noreferrer" className="px-2 py-1 text-xs text-gray-700 truncate flex items-center"><VideoIcon className="w-3 h-3 mr-1 text-gray-500" />{att.originalName}</a>
-                              </div>
-                            ) : (
-                              <a href={att.url} target="_blank" rel="noreferrer" className="flex items-center space-x-2 p-2 text-xs text-gray-700 hover:bg-gray-50">
-                                <FileText className="w-4 h-4 text-gray-500" />
-                                <span className="truncate" title={att.originalName}>{att.originalName}</span>
-                              </a>
-                            )}
-                            {/* Removed Analyze Content button; summaries shown below if available */}
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {activeQueries.map((query) => (
+                      <div
+                        key={query._id}
+                        onClick={() => fetchQueryThreads(query._id)}
+                        className={`group p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md ${
+                          selectedQuery?._id === query._id
+                            ? "border-blue-300 bg-blue-50 shadow-md"
+                            : "border-gray-200 hover:border-gray-300 bg-white"
+                        }`}
+                      >
+                        <div className="space-y-3">
+                          <div className="flex items-start justify-between">
+                            <h3 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2">
+                              {query.title}
+                            </h3>
+                            <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(query.status)}`}>
+                              {getStatusIcon(query.status)}
+                              <span>{query.status?.replace("_", " ").toUpperCase()}</span>
+                            </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                          
+                          <div className="flex items-center space-x-2 text-xs text-gray-500">
+                            <User className="w-3 h-3" />
+                            <span>{query.author?.name || "Unknown User"}</span>
+                          </div>
+                          
+                          {query.address && (
+                            <div className="flex items-center space-x-2 text-xs text-gray-500">
+                              <MapPin className="w-3 h-3" />
+                              <span className="truncate">{query.address}</span>
+                            </div>
+                          )}
+                          
+                          <div className="flex items-center space-x-2 text-xs text-gray-500">
+                            <Calendar className="w-3 h-3" />
+                            <span>{new Date(query.createdAt).toLocaleDateString()}</span>
+                          </div>
 
-                {Array.isArray(selectedQuery.attachmentAnalyses) && selectedQuery.attachmentAnalyses.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Attachment AI Summaries</p>
-                    <div className="space-y-3">
-                      {selectedQuery.attachmentAnalyses.map((a, idx) => (
-                        <div key={idx} className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-                          <div className="text-sm font-medium text-purple-800 mb-1 truncate">{a.originalName || a.filename || `Attachment ${idx+1}`}</div>
-                          {a.description && (
-                            <div className="mb-2">
-                              <p className="text-xs font-semibold text-gray-600 mb-1">Content Description</p>
-                              <p className="text-sm text-gray-700 bg-white rounded p-2">{a.description}</p>
+                          {query.urgencyLabel && (
+                            <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getUrgencyColor(query.urgencyLabel)}`}>
+                              Urgency: {query.urgencyLabel}
+                              {typeof query.urgencyScore === 'number' && (
+                                <span className="ml-1">({query.urgencyScore}/5)</span>
+                              )}
                             </div>
                           )}
-                          {a.summary && (
-                            <div>
-                              <p className="text-xs font-semibold text-gray-600 mb-1">Municipal Summary</p>
-                              <p className="text-sm text-gray-700 bg-white rounded p-2">{a.summary}</p>
+
+                          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                            <div className="flex items-center space-x-2 text-xs text-gray-500">
+                              <MessageSquare className="w-3 h-3" />
+                              <span>{query.objects?.length || 0} replies</span>
                             </div>
-                          )}
-                          {a.metadata && (
-                            <details className="mt-2 text-xs">
-                              <summary className="cursor-pointer text-gray-600">Metadata</summary>
-                              <pre className="bg-white rounded p-2 overflow-auto max-h-40 text-[11px] text-gray-700">{JSON.stringify(a.metadata, null, 2)}</pre>
-                            </details>
-                          )}
+                            <div className="flex items-center space-x-1 text-blue-600 group-hover:text-blue-700">
+                              <Eye className="w-3 h-3" />
+                              <span className="text-xs font-medium">View</span>
+                            </div>
+                          </div>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
+            </div>
+          </div>
 
-              {/* Threads Container */}
-              <div className="flex-1 flex flex-col min-h-0 max-h-[75vh]">
-                {/* Timeline-style Updates List */}
-                <div className="flex-1 overflow-y-auto p-6 bg-white/50">
-                  {threads.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-center">
-                      <MessageSquare className="w-16 h-16 text-gray-300 mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">
-                        {t("noRepliesYetDept")}
-                      </h3>
-                      <p className="text-gray-600 mb-4">
-                        {t("beFirstToRespond")}
-                      </p>
+          {/* Right Panel - Query Details or Resolved Queries */}
+          <div className="xl:col-span-2">
+            {selectedQuery ? (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900">Query Details</h3>
+                    <button
+                      onClick={() => setSelectedQuery(null)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-6 space-y-4">
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-2">{selectedQuery.title}</h4>
+                    <p className="text-sm text-gray-600 mb-3">{selectedQuery.description}</p>
+                    {selectedQuery.address && (
+                      <div className="flex items-center space-x-2 text-sm text-gray-600 mb-3">
+                        <MapPin className="w-4 h-4" />
+                        <span>{selectedQuery.address}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2 text-sm text-gray-500">
+                      <User className="w-4 h-4" />
+                      <span>{selectedQuery.author?.name}</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <label className="text-sm font-medium text-gray-700">Status:</label>
+                      <select
+                        value={selectedQuery.status}
+                        onChange={(e) => updateQueryStatus(selectedQuery._id, e.target.value)}
+                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                      >
+                        <option value="open">Open</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="resolved">Resolved</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Threads */}
+                  <div className="space-y-3 max-h-80 overflow-y-auto">
+                    {threads.map((thread, index) => (
+                      <div key={index} className={`p-3 rounded-lg ${
+                        thread.authorType === "DepartmentMember" 
+                          ? "bg-blue-50 border border-blue-200" 
+                          : "bg-gray-50 border border-gray-200"
+                      }`}>
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className={`text-xs font-medium ${
+                            thread.authorType === "DepartmentMember" ? "text-blue-700" : "text-gray-700"
+                          }`}>
+                            {thread.authorType === "DepartmentMember" ? "Department" : "User"}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {new Date(thread.timestamp).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-900">{thread.message}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Add Thread */}
+                  <div className="space-y-3 border-t border-gray-200 pt-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Add Response
+                      </label>
+                      <textarea
+                        placeholder="Type your response..."
+                        value={newThread}
+                        onChange={(e) => setNewThread(e.target.value)}
+                        className="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                        rows="4"
+                      />
+                    </div>
+                    <button
+                      onClick={handleAddThread}
+                      disabled={!newThread.trim()}
+                      className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-6 py-3 rounded-lg transition-colors flex items-center justify-center space-x-2 font-medium"
+                    >
+                      <Send className="w-4 h-4" />
+                      <span>Send Response</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                  <h3 className="font-semibold text-gray-900">Resolved Queries</h3>
+                </div>
+                <div className="p-6">
+                  {resolvedQueries.length === 0 ? (
+                    <div className="text-center py-8">
+                      <CheckCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-sm text-gray-500">No resolved queries yet</p>
                     </div>
                   ) : (
-                    <div className="relative max-w-4xl">
-                      <div className="absolute left-4 top-0 bottom-0 w-px bg-gradient-to-b from-blue-300 via-blue-200 to-transparent" />
-                      <div className="space-y-5">
-                        {threads.map((thread, index) => {
-                          const isAdmin = thread.authorType === "DepartmentMember";
-                          return (
-                            <div key={index} className="relative pl-12">
-                              <div className={`absolute left-1.5 top-2 w-5 h-5 rounded-full border-2 ${isAdmin ? 'border-green-500 bg-green-50' : 'border-blue-500 bg-blue-50'} flex items-center justify-center`}>
-                                {isAdmin ? <Building2 className="w-3 h-3 text-green-600" /> : <span className="text-blue-600">U</span>}
-                              </div>
-                              <div className={`rounded-lg border ${isAdmin ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'} p-4`}>
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center space-x-2">
-                                    <span className={`text-sm font-medium ${isAdmin ? 'text-green-800' : 'text-blue-800'}`}>
-                                      {isAdmin ? t('departmentResponseLabel') : t('user')}
-                                    </span>
-                                    <span className="text-xs text-gray-500">
-                                      {new Date(thread.timestamp).toLocaleString()}
-                                    </span>
-                                  </div>
-                                </div>
-                                <p className="mt-2 text-gray-900 leading-relaxed whitespace-pre-wrap">
-                                  {thread.message}
-                                </p>
-                                {Array.isArray(thread.attachments) && thread.attachments.length > 0 && (
-                                  <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                    {thread.attachments.map((att, i) => {
-                                      const isImage = (att.mimetype || '').startsWith('image/');
-                                      const isVideo = (att.mimetype || '').startsWith('video/');
-                                      return (
-                                        <div key={i} className="border border-blue-200 rounded-lg overflow-hidden bg-white">
-                                          {isImage ? (
-                                            <a href={att.url} target="_blank" rel="noreferrer" className="block">
-                                              <img src={att.url} alt={att.originalName} className="w-full h-24 object-cover" />
-                                              <div className="px-2 py-1 text-xs text-gray-700 truncate flex items-center"><ImageIcon className="w-3 h-3 mr-1 text-blue-500" />{att.originalName}</div>
-                                            </a>
-                                          ) : isVideo ? (
-                                            <div className="w-full">
-                                              <video src={att.url} controls className="w-full h-24 object-cover bg-black" />
-                                              <a href={att.url} target="_blank" rel="noreferrer" className="px-2 py-1 text-xs text-gray-700 truncate flex items-center"><VideoIcon className="w-3 h-3 mr-1 text-blue-500" />{att.originalName}</a>
-                                            </div>
-                                          ) : (
-                                            <a href={att.url} target="_blank" rel="noreferrer" className="flex items-center space-x-2 p-2 text-xs text-gray-700 hover:bg-blue-50">
-                                              <FileText className="w-4 h-4 text-blue-500" />
-                                              <span className="truncate" title={att.originalName}>{att.originalName}</span>
-                                            </a>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                              </div>
+                    <div className="space-y-3">
+                      {resolvedQueries.slice(0, 10).map((query) => (
+                        <div
+                          key={query._id}
+                          onClick={() => fetchQueryThreads(query._id)}
+                          className="p-3 rounded-lg border border-gray-200 hover:border-gray-300 cursor-pointer transition-colors bg-gray-50 hover:bg-gray-100"
+                        >
+                          <h4 className="font-medium text-gray-900 text-sm mb-1 line-clamp-2">
+                            {query.title}
+                          </h4>
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between text-xs text-gray-500">
+                              <span>{query.author?.name}</span>
+                              <span>{new Date(query.createdAt).toLocaleDateString()}</span>
                             </div>
-                          );
-                        })}
-                      </div>
+                            {query.address && (
+                              <div className="flex items-center space-x-1 text-xs text-gray-400">
+                                <MapPin className="w-3 h-3" />
+                                <span className="truncate">{query.address}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      {resolvedQueries.length > 10 && (
+                        <div className="text-center pt-3">
+                          <p className="text-xs text-gray-500">
+                            +{resolvedQueries.length - 10} more resolved queries
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-
-                {/* Thread Input */}
-                <div className="border-t border-gray-200 p-6">
-                  <div className="max-w-4xl">
-                    <div className="flex space-x-3">
-                      <div className="flex-1">
-                        <textarea
-                          placeholder={t("typeResponse")}
-                          value={newThread}
-                          onChange={(e) => setNewThread(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && !e.shiftKey) {
-                              e.preventDefault();
-                              handleAddThread(e);
-                            }
-                          }}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none"
-                          rows="3"
-                        />
-                      </div>
-                      <button
-                        onClick={handleAddThread}
-                        disabled={!newThread.trim()}
-                        className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white p-3 rounded-lg transition-colors shrink-0 flex items-center justify-center"
-                      >
-                        <Send className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
               </div>
-            </div>
-          ) : (
-            /* Empty State */
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {t("selectQuery")}
-                </h3>
-                <p className="text-gray-600">{t("selectQueryDesc")}</p>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -70,6 +70,7 @@ export const LanguageProvider = ({ children }) => {
       password: "Password",
       loggingIn: "Logging in...",
       loginFailed: "Login failed",
+      logout: "Logout",
 
       // Department Login translations
       departmentLoginTitle: "Department Login",
@@ -98,6 +99,11 @@ export const LanguageProvider = ({ children }) => {
       tryAdjustingSearch: "Try adjusting your search",
       loadingDashboard: "Loading dashboard...",
       selectQuery: "Select a query",
+      
+      // About Us translations
+      aboutUs: "About Jansunwai Indore",
+      aboutUsDescription: "Discover how our AI-powered system revolutionizes municipal complaint management for the citizens of Indore.",
+      learnMore: "Learn More",
       selectQueryDesc:
         "Choose a query from the sidebar to view and manage its threads.",
       noRepliesYet: "No replies yet",
@@ -181,6 +187,11 @@ export const LanguageProvider = ({ children }) => {
       trackProgressDesc:
         "जमा करने से लेकर समाधान तक प्रश्न की स्थिति पर वास्तविक समय के अपडेट",
 
+      // About Us translations
+      aboutUs: "जनसुनवाई इंदौर के बारे में",
+      aboutUsDescription: "जानें कि हमारी AI-संचालित प्रणाली इंदौर शहर के नागरिकों के लिए नगरपालिका शिकायत प्रबंधन को कैसे क्रांतिकारी बनाती है।",
+      learnMore: "और जानें",
+
       // Footer translations
       governmentOfMP: "मध्य प्रदेश सरकार",
       allRightsReserved: "सर्वाधिकार सुरक्षित",
@@ -188,6 +199,7 @@ export const LanguageProvider = ({ children }) => {
       // Login page translations
       login: "लॉगिन",
       email: "ईमेल",
+      logout: "लॉगआउट",
       password: "पासवर्ड",
       loggingIn: "लॉगिन हो रहा है...",
       loginFailed: "लॉगिन विफल",
