@@ -131,6 +131,11 @@ export const LanguageProvider = ({ children }) => {
       createNewQuery: "Create New Query",
       createNewQueryDesc:
         "Describe your complaint and our system will automatically categorize it",
+      detailsSufficient: "Details Sufficient",
+      moreDetailsNeeded: "More Details Needed",
+      missingDetails: "Missing Details:",
+      suggestions: "Suggestions:",
+      detailValidationTip: "Providing basic details like location and clear issue description is sufficient for submission. Additional details help departments resolve your complaint faster.",
       yourComplaint: "Your Complaint",
       complaintPlaceholder:
         "Describe your complaint in detail. For example: 'The garbage truck has not come to our area for the past 7 days. The situation is getting very unhygienic.'",
@@ -257,6 +262,11 @@ export const LanguageProvider = ({ children }) => {
       createNewQuery: "नया प्रश्न बनाएं",
       createNewQueryDesc:
         "अपनी शिकायत का वर्णन करें और हमारी प्रणाली इसे स्वचालित रूप से वर्गीकृत करेगी",
+      detailsSufficient: "विवरण पर्याप्त",
+      moreDetailsNeeded: "अधिक विवरण आवश्यक",
+      missingDetails: "गुम विवरण:",
+      suggestions: "सुझाव:",
+      detailValidationTip: "स्थान और स्पष्ट समस्या का विवरण जैसे बुनियादी विवरण प्रदान करना प्रस्तुत करने के लिए पर्याप्त है। अतिरिक्त विवरण विभागों को आपकी शिकायत को तेजी से हल करने में मदद करते हैं।",
       yourComplaint: "आपकी शिकायत",
       complaintPlaceholder:
         "अपनी शिकायत का विस्तार से वर्णन करें। उदाहरण के लिए: 'पिछले 7 दिनों से हमारे क्षेत्र में कचरा ट्रक नहीं आया है। स्थिति बहुत अस्वच्छ हो रही है।'",

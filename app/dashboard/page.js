@@ -87,6 +87,14 @@ export default function Dashboard() {
     newQueryRef.current = newQuery;
   }, [newQuery]);
 
+  // Re-analyze query when address changes
+  useEffect(() => {
+    if (newQuery.query.trim() && newQuery.address && queryAnalysis) {
+      // Only re-analyze if we have both query and address, and there's existing analysis
+      analyzeQuery(newQuery.query, newQuery.address);
+    }
+  }, [newQuery.address]);
+
   // Initialize voice-to-text
   useEffect(() => {
     if (typeof window !== "undefined" && "webkitSpeechRecognition" in window) {
@@ -241,20 +249,26 @@ export default function Dashboard() {
           departmentName: departments[0]?.departmentName || "Municipal Services",
           reasoning: "Auto-generated due to analysis failure",
           originalQuery: query,
-          address: address || ""
+          address: address || "",
+          detailsSufficient: true,
+          missingDetails: [],
+          suggestions: ""
         });
       }
     } catch (error) {
       console.error("Error analyzing query:", error);
       // Fallback: create a basic analysis
-      setQueryAnalysis({
-        title: query.substring(0, 60) + (query.length > 60 ? "..." : ""),
-        departmentId: departments[0]?._id || "",
-        departmentName: departments[0]?.departmentName || "Municipal Services",
-        reasoning: "Auto-generated due to analysis error",
-        originalQuery: query,
-        address: address || ""
-      });
+              setQueryAnalysis({
+          title: query.substring(0, 60) + (query.length > 60 ? "..." : ""),
+          departmentId: departments[0]?._id || "",
+          departmentName: departments[0]?.departmentName || "Municipal Services",
+          reasoning: "Auto-generated due to analysis error",
+          originalQuery: query,
+          address: address || "",
+          detailsSufficient: true,
+          missingDetails: [],
+          suggestions: ""
+        });
     } finally {
       setAnalyzing(false);
     }
@@ -277,6 +291,12 @@ export default function Dashboard() {
   const handleCreateQuery = async (e) => {
     e?.preventDefault?.();
     if (!queryAnalysis || !newQuery.query.trim()) return;
+
+    // Prevent query submission if details are insufficient
+    if (queryAnalysis.detailsSufficient === false) {
+      alert("Your complaint cannot be submitted because it lacks very basic details or is inappropriate. Please provide a specific location/address and describe the issue clearly so departments can take action.");
+      return;
+    }
 
     try {
       const deptId = queryAnalysis?.departmentId || departments[0]?._id;
@@ -692,6 +712,68 @@ export default function Dashboard() {
                           </p>
                         </div>
 
+                        {/* Detail Validation Section */}
+                        <div className="border-t border-green-200 pt-3">
+                          <div className="flex items-center space-x-2 mb-2">
+                            {queryAnalysis.detailsSufficient ? (
+                              <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                                <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                            ) : (
+                              <div className="w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center">
+                                <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                            )}
+                            <span className={`text-sm font-medium ${queryAnalysis.detailsSufficient ? 'text-green-800' : 'text-yellow-800'}`}>
+                              {queryAnalysis.detailsSufficient ? t('detailsSufficient') : t('moreDetailsNeeded')}
+                            </span>
+                          </div>
+                          
+                          {!queryAnalysis.detailsSufficient && (
+                            <div className="space-y-2">
+                              {queryAnalysis.missingDetails && queryAnalysis.missingDetails.length > 0 && (
+                                <div>
+                                  <span className="text-sm font-medium text-yellow-700">{t('missingDetails')}</span>
+                                  <ul className="text-sm text-yellow-700 mt-1 space-y-1">
+                                    {queryAnalysis.missingDetails.map((detail, index) => (
+                                      <li key={index} className="flex items-start space-x-2">
+                                        <span className="text-yellow-600 mt-1">•</span>
+                                        <span>{detail}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              
+                              {queryAnalysis.suggestions && (
+                                <div>
+                                  <span className="text-sm font-medium text-yellow-700">{t('suggestions')}</span>
+                                  <p className="text-sm text-yellow-700 mt-1 bg-yellow-100 p-2 rounded border border-yellow-200">
+                                    {queryAnalysis.suggestions}
+                                  </p>
+                                </div>
+                              )}
+                              
+                                                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                <p className="text-sm text-blue-800">
+                                  <strong>Tip:</strong> {t('detailValidationTip')}
+                                </p>
+                              </div>
+                              
+                              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                                <p className="text-sm text-red-800">
+                                  <strong>⚠️ Query Submission Blocked:</strong> Your complaint cannot be submitted because it lacks very basic details or is inappropriate. Please provide a specific location/address and describe the issue clearly so departments can take action.
+                                </p>
+                              </div>
+ 
+                            </div>
+                          )}
+                        </div>
+
                         {newQuery.address && (
                           <div>
                             <span className="text-sm font-medium text-gray-700">
@@ -710,10 +792,10 @@ export default function Dashboard() {
                   <div className="flex space-x-3 pt-4">
                     <button
                       onClick={handleCreateQuery}
-                      disabled={!queryAnalysis || !newQuery.query.trim()}
-                      className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 text-white px-6 py-3 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:transform-none"
+                      disabled={!queryAnalysis || !newQuery.query.trim() || queryAnalysis.detailsSufficient === false}
+                      className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 disabled:from-gray-300 disabled:to-indigo-400 text-white px-6 py-3 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:transform-none"
                     >
-                      {analyzing ? "Analyzing..." : "Create Query"}
+                      {analyzing ? "Analyzing..." : queryAnalysis?.detailsSufficient === false ? "Details Insufficient" : "Create Query"}
                     </button>
                     <button
                       onClick={() => {

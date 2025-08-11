@@ -6,7 +6,7 @@ import { Department } from "../../../models";
 // You can switch between different LLM providers
 const LLM_PROVIDER = 'groq'; // 'openai', 'anthropic', 'groq', 'gemini', or 'deepinfra'
 
-async function callOpenAI(message, departments) {
+async function callOpenAI(message, address, departments) {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -22,29 +22,50 @@ async function callOpenAI(message, departments) {
 
 1. A concise, descriptive title (max 60 characters)
 2. The most appropriate department to handle the complaint
+3. Whether the user has provided ENOUGH DETAILS for effective complaint resolution
+4. If details are insufficient, suggest specific additional information needed
 
 Available departments:
 ${departments.map(dept => `- ${dept.departmentName}: ${dept.description || 'Municipal services'}`).join('\n')}
+
+DETAIL VALIDATION CRITERIA:
+- Location/Address: Is the specific location mentioned? (street, area, landmark)
+- Severity: How serious is the problem? (minor inconvenience, health hazard, safety risk)
+- Specific Description: Is the complaint detailed enough? (size, quantity, specific symptoms, specific nature of the issue)
+
+IMPORTANT: Only set detailsSufficient to false if:
+1. VERY BASIC details are missing (no location/address at all, completely vague description that doesn't describe any specific issue)
+2. The prompt is inappropriate or not a legitimate municipal complaint
+3. The complaint is so unclear that no department could reasonably act on it
+
+For most complaints, even if some details could be improved, set detailsSufficient to true and provide helpful suggestions for enhancement. Only block submission for genuinely insufficient or inappropriate content.
+
+Do NOT ask for time/duration or contact information.
 
 Rules:
 - Title should be clear, specific, and actionable
 - Choose the most relevant department based on the complaint type
 - If multiple departments could handle it, choose the primary one
 - Be precise and professional
+- ALWAYS check if details are sufficient for effective resolution
+- If details are insufficient, provide actionable suggestions for improvement
 
 Respond in JSON format only:
 {
   "title": "Brief descriptive title",
   "departmentId": "department_id_here",
-  "reasoning": "Brief explanation of why this department was chosen"
+  "reasoning": "Brief explanation of why this department was chosen",
+  "detailsSufficient": true/false,
+  "missingDetails": ["List of specific details that would help resolve this complaint"],
+  "suggestions": "Specific suggestions for what additional information to provide"
 }`
         },
         {
           role: 'user',
-          content: `Analyze this complaint: ${message}`
+          content: `Analyze this complaint: ${message}${address ? `\nAddress: ${address}` : ''}`
         }
       ],
-      max_tokens: 500,
+      max_tokens: 800,
       temperature: 0.3,
     }),
   });
@@ -56,8 +77,7 @@ Respond in JSON format only:
   return response.json();
 }
 
-async function callGroq(message, departments) {
-  departments.map(dept => `- ${dept.departmentName}: ${dept.description || 'Municipal services'}`).join('\n')
+async function callGroq(message, address, departments) {
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -73,29 +93,50 @@ async function callGroq(message, departments) {
 
 1. A concise, descriptive title (max 60 characters)
 2. The most appropriate department to handle the complaint
+3. Whether the user has provided ENOUGH DETAILS for effective complaint resolution
+4. If details are insufficient, suggest specific additional information needed
 
 Available departments:
 ${departments.map(dept => `- ${dept.departmentName}: ${dept.description || 'Municipal services'}`).join('\n')}
+
+DETAIL VALIDATION CRITERIA:
+- Location/Address: Is the specific location mentioned? (street, area, landmark)
+- Severity: How serious is the problem? (minor inconvenience, health hazard, safety risk)
+- Specific Description: Is the complaint detailed enough? (size, quantity, specific symptoms, specific nature of the issue)
+
+IMPORTANT: Only set detailsSufficient to false if:
+1. VERY BASIC details are missing (no location/address at all, completely vague description that doesn't describe any specific issue)
+2. The prompt is inappropriate or not a legitimate municipal complaint
+3. The complaint is so unclear that no department could reasonably act on it
+
+For most complaints, even if some details could be improved, set detailsSufficient to true and provide helpful suggestions for enhancement. Only block submission for genuinely insufficient or inappropriate content.
+
+Do NOT ask for time/duration or contact information.
 
 Rules:
 - Title should be clear, specific, and actionable
 - Choose the most relevant department based on the complaint type
 - If multiple departments could handle it, choose the primary one
 - Be precise and professional
+- ALWAYS check if details are sufficient for effective resolution
+- If details are insufficient, provide actionable suggestions for improvement
 
 Respond in JSON format only:
 {
   "title": "Brief descriptive title",
   "departmentId": "department_id_here",
-  "reasoning": "Brief explanation of why this department was chosen"
+  "reasoning": "Brief explanation of why this department was chosen",
+  "detailsSufficient": true/false,
+  "missingDetails": ["List of specific details that would help resolve this complaint"],
+  "suggestions": "Specific suggestions for what additional information to provide"
 }`
         },
         {
           role: 'user',
-          content: `Analyze this complaint: ${message}`
+          content: `Analyze this complaint: ${message}${address ? `\nAddress: ${address}` : ''}`
         }
       ],
-      max_tokens: 500,
+      max_tokens: 800,
       temperature: 0.3,
     }),
   });
@@ -109,7 +150,7 @@ Respond in JSON format only:
   return response.json();
 }
 
-async function callAnthropic(message, departments) {
+async function callAnthropic(message, address, departments) {
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -119,7 +160,7 @@ async function callAnthropic(message, departments) {
     },
     body: JSON.stringify({
       model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 500,
+      max_tokens: 800,
       messages: [
         {
           role: 'user',
@@ -127,24 +168,45 @@ async function callAnthropic(message, departments) {
 
 1. A concise, descriptive title (max 60 characters)
 2. The most appropriate department to handle the complaint
+3. Whether the user has provided ENOUGH DETAILS for effective complaint resolution
+4. If details are insufficient, suggest specific additional information needed
 
 Available departments:
 ${departments.map(dept => `- ${dept.departmentName}: ${dept.description || 'Municipal services'}`).join('\n')}
+
+DETAIL VALIDATION CRITERIA:
+- Location/Address: Is the specific location mentioned? (street, area, landmark)
+- Severity: How serious is the problem? (minor inconvenience, health hazard, safety risk)
+- Specific Description: Is the complaint detailed enough? (size, quantity, specific symptoms, specific nature of the issue)
+
+IMPORTANT: Only set detailsSufficient to false if:
+1. VERY BASIC details are missing (no location/address at all, completely vague description that doesn't describe any specific issue)
+2. The prompt is inappropriate or not a legitimate municipal complaint
+3. The complaint is so unclear that no department could reasonably act on it
+
+For most complaints, even if some details could be improved, set detailsSufficient to true and provide helpful suggestions for enhancement. Only block submission for genuinely insufficient or inappropriate content.
+
+Do NOT ask for time/duration or contact information.
 
 Rules:
 - Title should be clear, specific, and actionable
 - Choose the most relevant department based on the complaint type
 - If multiple departments could handle it, choose the primary one
 - Be precise and professional
+- ALWAYS check if details are sufficient for effective resolution
+- If details are insufficient, provide actionable suggestions for improvement
 
 Respond in JSON format only:
 {
   "title": "Brief descriptive title",
   "departmentId": "department_id_here",
-  "reasoning": "Brief explanation of why this department was chosen"
+  "reasoning": "Brief explanation of why this department was chosen",
+  "detailsSufficient": true/false,
+  "missingDetails": ["List of specific details that would help resolve this complaint"],
+  "suggestions": "Specific suggestions for what additional information to provide"
 }
 
-Analyze this complaint: ${message}`
+Analyze this complaint: ${message}${address ? `\nAddress: ${address}` : ''}`
         }
       ]
     }),
@@ -157,7 +219,7 @@ Analyze this complaint: ${message}`
   return response.json();
 }
 
-async function callDeepInfra(message, departments) {
+async function callDeepInfra(message, address, departments) {
   const model = 'meta-llama/Meta-Llama-3.1-70B-Instruct';
   
   const response = await fetch(`https://api.deepinfra.com/v1/openai/chat/completions`, {
@@ -175,29 +237,50 @@ async function callDeepInfra(message, departments) {
 
 1. A concise, descriptive title (max 60 characters)
 2. The most appropriate department to handle the complaint
+3. Whether the user has provided ENOUGH DETAILS for effective complaint resolution
+4. If details are insufficient, suggest specific additional information needed
 
 Available departments:
 ${departments.map(dept => `- ${dept.departmentName}: ${dept.description || 'Municipal services'}`).join('\n')}
+
+DETAIL VALIDATION CRITERIA:
+- Location/Address: Is the specific location mentioned? (street, area, landmark)
+- Severity: How serious is the problem? (minor inconvenience, health hazard, safety risk)
+- Specific Description: Is the complaint detailed enough? (size, quantity, specific symptoms, specific nature of the issue)
+
+IMPORTANT: Only set detailsSufficient to false if:
+1. VERY BASIC details are missing (no location/address at all, completely vague description that doesn't describe any specific issue)
+2. The prompt is inappropriate or not a legitimate municipal complaint
+3. The complaint is so unclear that no department could reasonably act on it
+
+For most complaints, even if some details could be improved, set detailsSufficient to true and provide helpful suggestions for enhancement. Only block submission for genuinely insufficient or inappropriate content.
+
+Do NOT ask for time/duration or contact information.
 
 Rules:
 - Title should be clear, specific, and actionable
 - Choose the most relevant department based on the complaint type
 - If multiple departments could handle it, choose the primary one
 - Be precise and professional
+- ALWAYS check if details are sufficient for effective resolution
+- If details are insufficient, provide actionable suggestions for improvement
 
 Respond in JSON format only:
 {
   "title": "Brief descriptive title",
   "departmentId": "department_id_here",
-  "reasoning": "Brief explanation of why this department was chosen"
+  "reasoning": "Brief explanation of why this department was chosen",
+  "detailsSufficient": true/false,
+  "missingDetails": ["List of specific details that would help resolve this complaint"],
+  "suggestions": "Specific suggestions for what additional information to provide"
 }`
         },
         {
           role: 'user',
-          content: `Analyze this complaint: ${message}`
+          content: `Analyze this complaint: ${message}${address ? `\nAddress: ${address}` : ''}`
         }
       ],
-      max_tokens: 500,
+      max_tokens: 800,
       temperature: 0.3,
       stream: false
     }),
@@ -210,7 +293,7 @@ Respond in JSON format only:
   return response.json();
 }
 
-async function callGemini(message, departments) {
+async function callGemini(message, address, departments) {
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
     method: 'POST',
     headers: {
@@ -223,28 +306,49 @@ async function callGemini(message, departments) {
 
 1. A concise, descriptive title (max 60 characters)
 2. The most appropriate department to handle the complaint
+3. Whether the user has provided ENOUGH DETAILS for effective complaint resolution
+4. If details are insufficient, suggest specific additional information needed
 
 Available departments:
 ${departments.map(dept => `- ${dept.departmentName}: ${dept.description || 'Municipal services'}`).join('\n')}
+
+DETAIL VALIDATION CRITERIA:
+- Location/Address: Is the specific location mentioned? (street, area, landmark)
+- Severity: How serious is the problem? (minor inconvenience, health hazard, safety risk)
+- Specific Description: Is the complaint detailed enough? (size, quantity, specific symptoms, specific nature of the issue)
+
+IMPORTANT: Only set detailsSufficient to false if:
+1. VERY BASIC details are missing (no location/address at all, completely vague description that doesn't describe any specific issue)
+2. The prompt is inappropriate or not a legitimate municipal complaint
+3. The complaint is so unclear that no department could reasonably act on it
+
+For most complaints, even if some details could be improved, set detailsSufficient to true and provide helpful suggestions for enhancement. Only block submission for genuinely insufficient or inappropriate content.
+
+Do NOT ask for time/duration or contact information.
 
 Rules:
 - Title should be clear, specific, and actionable
 - Choose the most relevant department based on the complaint type
 - If multiple departments could handle it, choose the primary one
 - Be precise and professional
+- ALWAYS check if details are sufficient for effective resolution
+- If details are insufficient, provide actionable suggestions for improvement
 
 Respond in JSON format only:
 {
   "title": "Brief descriptive title",
   "departmentId": "department_id_here",
-  "reasoning": "Brief explanation of why this department was chosen"
+  "reasoning": "Brief explanation of why this department was chosen",
+  "detailsSufficient": true/false,
+  "missingDetails": ["List of specific details that would help resolve this complaint"],
+  "suggestions": "Specific suggestions for what additional information to provide"
 }
 
-Analyze this complaint: ${message}`
+Analyze this complaint: ${message}${address ? `\nAddress: ${address}` : ''}`
         }]
       }],
       generationConfig: {
-        maxOutputTokens: 500,
+        maxOutputTokens: 800,
         temperature: 0.3,
       },
     }),
@@ -305,7 +409,7 @@ export async function POST(request) {
         if (!process.env.OPENAI_API_KEY) {
           throw new Error('OpenAI API key not configured');
         }
-        aiResponse = await callOpenAI(query, departments);
+        aiResponse = await callOpenAI(query, address, departments);
         responseText = aiResponse.choices?.[0]?.message?.content || '';
         break;
 
@@ -313,7 +417,7 @@ export async function POST(request) {
         if (!process.env.GROQ_API_KEY) {
           throw new Error('Groq API key not configured');
         }
-        aiResponse = await callGroq(query, departments);
+        aiResponse = await callGroq(query, address, departments);
         responseText = aiResponse.choices?.[0]?.message?.content || '';
         console.log(responseText);
         break;
@@ -322,7 +426,7 @@ export async function POST(request) {
         if (!process.env.ANTHROPIC_API_KEY) {
           throw new Error('Anthropic API key not configured');
         }
-        aiResponse = await callAnthropic(query, departments);
+        aiResponse = await callAnthropic(query, address, departments);
         responseText = aiResponse.content?.[0]?.text || '';
         break;
 
@@ -330,7 +434,7 @@ export async function POST(request) {
         if (!process.env.DEEPINFRA_API_KEY) {
           throw new Error('DeepInfra API key not configured');
         }
-        aiResponse = await callDeepInfra(query, departments);
+        aiResponse = await callDeepInfra(query, address, departments);
         responseText = aiResponse.choices?.[0]?.message?.content || '';
         break;
 
@@ -338,7 +442,7 @@ export async function POST(request) {
         if (!process.env.GEMINI_API_KEY) {
           throw new Error('Gemini API key not configured');
         }
-        aiResponse = await callGemini(query, departments);
+        aiResponse = await callGemini(query, address, departments);
         responseText = aiResponse.candidates?.[0]?.content?.parts?.[0]?.text || '';
         break;
 
@@ -365,6 +469,7 @@ export async function POST(request) {
     if (!parsedResponse.title || !parsedResponse.departmentId) {
       throw new Error('Invalid AI response format');
     }
+    
     // Verify the department exists
     const departmentId = await getDepartmentIdByName(parsedResponse.departmentId);
     console.log(departmentId,"departmentId");
@@ -377,7 +482,10 @@ export async function POST(request) {
         departmentName: parsedResponse.departmentId,
         reasoning: parsedResponse.reasoning || 'AI analysis completed',
         originalQuery: query,
-        address: address || ''
+        address: address || '',
+        detailsSufficient: parsedResponse.detailsSufficient !== undefined ? parsedResponse.detailsSufficient : true,
+        missingDetails: parsedResponse.missingDetails || [],
+        suggestions: parsedResponse.suggestions || ''
       }
     });
 
