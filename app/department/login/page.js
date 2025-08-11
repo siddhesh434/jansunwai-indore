@@ -1,8 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Building2, Mail, Lock, AlertCircle } from "lucide-react";
 import { useLanguage } from "../../contexts/LanguageContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function DepartmentLogin() {
   const [email, setEmail] = useState("");
@@ -11,6 +12,14 @@ export default function DepartmentLogin() {
   const [error, setError] = useState("");
   const router = useRouter();
   const { t } = useLanguage();
+  const { loginDepartmentMember, isAuthenticated, departmentMember, databaseConnectionError } = useAuth();
+
+  // Redirect if department member is already logged in
+  useEffect(() => {
+    if (isAuthenticated && departmentMember) {
+      router.push("/department/dashboard");
+    }
+  }, [isAuthenticated, departmentMember, router]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -28,6 +37,7 @@ export default function DepartmentLogin() {
 
       if (res.ok) {
         localStorage.setItem("departmentMemberId", data.departmentMemberId);
+        loginDepartmentMember(data.member);
         router.push("/department/dashboard");
       } else {
         setError(data.error || t("loginFailed"));
@@ -54,6 +64,18 @@ export default function DepartmentLogin() {
             {t("departmentLoginSubtitle")}
           </p>
         </div>
+
+        {/* Database Connection Error Message */}
+        {databaseConnectionError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+              <span className="text-red-700 text-sm">
+                Database connection issue detected. Login may not work properly.
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Error Message */}
         {error && (

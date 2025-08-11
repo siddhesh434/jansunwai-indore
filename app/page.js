@@ -10,19 +10,23 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useLanguage } from "./contexts/LanguageContext";
+import { useAuth } from "./contexts/AuthContext";
 
 export default function Home() {
   const router = useRouter();
   const { t } = useLanguage();
+  const { isAuthenticated, user, departmentMember, databaseConnectionError } = useAuth();
 
   useEffect(() => {
     // Check if user is already logged in
-    const userId = localStorage.getItem("userId");
-    const deptId = localStorage.getItem("departmentMemberId");
-
-    if (userId) router.push("/dashboard");
-    if (deptId) router.push("/department/dashboard");
-  }, []);
+    if (isAuthenticated) {
+      if (user) {
+        router.push("/dashboard");
+      } else if (departmentMember) {
+        router.push("/department/dashboard");
+      }
+    }
+  }, [isAuthenticated, user, departmentMember]);
 
   return (
     <div>
@@ -118,6 +122,41 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Database Connection Error Banner */}
+      {databaseConnectionError && (
+        <div className="bg-red-50 border-b border-red-200 px-6 py-4">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                <div>
+                  <h3 className="text-red-800 font-medium">Database Connection Issue</h3>
+                  <p className="text-red-700 text-sm mt-1">
+                    The application cannot connect to the database. Please check your MONGOURL environment variable.
+                  </p>
+                </div>
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => window.location.reload()}
+                  className="text-red-600 hover:text-red-800 text-sm font-medium underline"
+                >
+                  Retry
+                </button>
+                <a
+                  href="https://docs.mongodb.com/manual/installation/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-red-600 hover:text-red-800 text-sm font-medium underline"
+                >
+                  Setup Guide
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Features Section */}
       <div className="max-w-7xl mx-auto px-6 py-16 bg-white">

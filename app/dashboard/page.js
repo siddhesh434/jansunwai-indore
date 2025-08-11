@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import {
   Plus,
   Send,
-  User,
   MessageSquare,
   Clock,
   ChevronRight,
@@ -22,12 +21,12 @@ import {
   Circle,
 } from "lucide-react";
 import { useLanguage } from "../contexts/LanguageContext";
+import { useAuth } from "../contexts/AuthContext";
 import MapAddressSelector from "./MapAddressSelector"; // Import the new component
 import AttachmentAI from "./components/AttachmentAI";
 import { clampWords } from "../../lib/ai/wordClamp";
 
 export default function Dashboard() {
-  const [user, setUser] = useState(null);
   const [queries, setQueries] = useState([]);
   const [selectedQuery, setSelectedQuery] = useState(null);
   const [threads, setThreads] = useState([]);
@@ -59,16 +58,29 @@ export default function Dashboard() {
 
   const router = useRouter();
   const { t } = useLanguage();
+  const { user, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    const userId = localStorage.getItem("userId");
-    if (!userId) {
+    // Don't run if still loading or if user object is incomplete
+    if (!isAuthenticated || !user || !user._id) {
+      if (!isAuthenticated) {
+        router.push("/login");
+      }
+      return;
+    }
+    
+    // Use user._id as that's the standard MongoDB document ID
+    const userId = user._id;
+    
+    // Validate that userId exists and is valid
+    if (!userId || userId === "undefined" || userId === "null" || userId === "") {
       router.push("/login");
       return;
     }
+    
     fetchUserData(userId);
     fetchDepartments();
-  }, []);
+  }, [isAuthenticated, user?._id]); // Only depend on user._id, not the entire user object
 
   // Keep a ref of the latest newQuery to avoid stale closures
   useEffect(() => {
@@ -143,11 +155,17 @@ export default function Dashboard() {
   }, []); // Load once on component mount
 
   const fetchUserData = async (userId) => {
+    // Validate userId before making API call
+    if (!userId || userId === "undefined" || userId === "null" || userId === "") {
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch(`/api/users/${userId}`);
       if (!res.ok) throw new Error("Failed to fetch user");
       const userData = await res.json();
-      setUser(userData);
+      // setUser(userData); // This line is removed as per the new_code
       const userQueries = Array.isArray(userData.queries) ? userData.queries : [];
       // Sort by createdAt desc for better UX
       userQueries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -245,7 +263,7 @@ export default function Dashboard() {
 
   const fetchQueryThreads = async (queryId) => {
     try {
-      const query = queries.find(q => q._id === queryId);
+      const query = (queries || []).find(q => q._id === queryId);
       if (query) {
         setSelectedQuery(query);
         setThreads(query.objects || []);
@@ -301,7 +319,7 @@ export default function Dashboard() {
       }
       formData.append("description", baseDesc);
       formData.append("address", newQuery.address || "");
-      formData.append("author", user._id);
+      formData.append("author", user?._id || "");
       formData.append("department", deptId);
       selectedFiles.forEach((file) => formData.append("attachments", file));
 
@@ -314,7 +332,7 @@ export default function Dashboard() {
       const created = await res.json();
 
       stopVoiceInput();
-      setQueries([...queries, created]);
+      setQueries([...(queries || []), created]);
       setNewQuery({ query: "", address: "" });
       setQueryAnalysis(null);
       setSelectedFiles([]);
@@ -334,7 +352,7 @@ export default function Dashboard() {
 
     const newThreadData = {
       message: newThread,
-      authorId: user._id,
+      authorId: user?._id || "",
       authorType: "User",
       timestamp: new Date(),
     };
@@ -344,10 +362,7 @@ export default function Dashboard() {
     setNewThread("");
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("userId");
-    router.push("/");
-  };
+
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -377,10 +392,13 @@ export default function Dashboard() {
   };
 
   // Filter queries based on search and status
-  const filteredQueries = queries.filter((query) => {
+  const filteredQueries = (queries || []).filter((query) => {
+    // Ensure query and its properties exist before processing
+    if (!query || typeof query !== 'object') return false;
+    
     const matchesSearch =
-      query.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      query.description.toLowerCase().includes(searchTerm.toLowerCase());
+      (query.title?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (query.description?.toLowerCase() || "").includes(searchTerm.toLowerCase());
     const matchesStatus =
       filterStatus === "all" || query.status?.toLowerCase() === filterStatus;
     return matchesSearch && matchesStatus;
@@ -409,18 +427,7 @@ export default function Dashboard() {
             Query Dashboard
           </h1>
         </div>
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2 text-sm text-gray-600 bg-white px-3 py-2 rounded-lg border border-blue-200">
-            <User className="w-4 h-4 text-blue-500" />
-            <span>{user?.name}</span>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="text-sm text-gray-500 hover:text-gray-700 transition-colors px-3 py-1.5 rounded-md hover:bg-white/50"
-          >
-            Sign Out
-          </button>
-        </div>
+        {/* Removed user info and sign out from here */}
       </header>
 
       <div className="flex flex-1 overflow-hidden">
@@ -464,7 +471,7 @@ export default function Dashboard() {
           {/* Query Count */}
           <div className="px-4 py-2 bg-blue-50/50 border-b border-blue-200">
             <p className="text-sm text-blue-600 font-medium">
-              {filteredQueries.length} of {queries.length} queries
+              {filteredQueries.length} of {queries?.length || 0} queries
             </p>
           </div>
 
@@ -474,17 +481,17 @@ export default function Dashboard() {
               <div className="text-center py-8">
                 <MessageSquare className="w-12 h-12 text-blue-300 mx-auto mb-3" />
                 <p className="text-sm text-gray-500">
-                  {queries.length === 0 ? "No queries yet" : "No matching queries"}
+                  {!queries || queries.length === 0 ? "No queries yet" : "No matching queries"}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  {queries.length === 0 ? "Create your first query" : "Try adjusting your search"}
+                  {!queries || queries.length === 0 ? "Create your first query" : "Try adjusting your search"}
                 </p>
               </div>
             ) : (
               filteredQueries.map((query) => (
                 <div
-                  key={query._id}
-                  onClick={() => fetchQueryThreads(query._id)}
+                  key={query._id || `query-${Math.random()}`}
+                  onClick={() => query._id && fetchQueryThreads(query._id)}
                   className={`group p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-white/80 hover:shadow-md border backdrop-blur-sm ${
                     selectedQuery?._id === query._id
                       ? "bg-white border-blue-300 shadow-md ring-2 ring-blue-200"
@@ -494,10 +501,10 @@ export default function Dashboard() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
                       <h3 className="font-medium text-gray-900 text-sm truncate mb-1">
-                        {query.title}
+                        {query.title || "Untitled Query"}
                       </h3>
                       <p className="text-xs text-gray-500 mb-2 line-clamp-2 leading-relaxed">
-                        {query.description}
+                        {query.description || "No description available"}
                       </p>
                       <div className="flex items-center justify-between">
                         <div
@@ -732,23 +739,23 @@ export default function Dashboard() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                      {selectedQuery.title}
+                      {selectedQuery?.title || "Select a query"}
                     </h2>
                     <p className="text-gray-600 text-sm mb-3">
-                      {selectedQuery.description}
+                      {selectedQuery?.description || "No description available"}
                     </p>
-                    {selectedQuery.address && (
+                    {selectedQuery?.address && (
                       <div className="flex items-center text-sm text-gray-500 mb-2">
                         <MapPin className="w-4 h-4 mr-1 text-blue-500" />
-                        <span>{selectedQuery.address}</span>
+                        <span>{selectedQuery?.address}</span>
                       </div>
                     )}
 
-                    {selectedQuery.attachments?.length > 0 && (
+                    {selectedQuery?.attachments?.length > 0 && (
                       <div className="mt-3">
                         <p className="text-sm font-medium text-gray-700 mb-2">Attachments</p>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                          {selectedQuery.attachments.map((att, idx) => {
+                          {selectedQuery?.attachments?.map((att, idx) => {
                             const isImage = (att.mimetype || "").startsWith("image/");
                             const isVideo = (att.mimetype || "").startsWith("video/");
                             return (
@@ -782,7 +789,7 @@ export default function Dashboard() {
                 <div className="mt-4">
                   <div className="flex items-center justify-between">
                     {statusSteps.map((step, idx) => {
-                      const currentIdx = getCurrentStepIndex(selectedQuery.status);
+                      const currentIdx = getCurrentStepIndex(selectedQuery?.status);
                       const completed = idx <= currentIdx;
                       const isLast = idx === statusSteps.length - 1;
                       return (
@@ -802,7 +809,7 @@ export default function Dashboard() {
                   </div>
                   <div className="mt-2 flex items-center text-xs text-gray-500">
                     <Clock className="w-3 h-3 mr-1" />
-                    Updated {new Date(selectedQuery.updatedAt || selectedQuery.createdAt).toLocaleString()}
+                    Updated {selectedQuery ? new Date(selectedQuery.updatedAt || selectedQuery.createdAt).toLocaleString() : "N/A"}
                   </div>
                 </div>
               </div>

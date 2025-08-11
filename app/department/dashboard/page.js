@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Send,
-  User,
   MessageSquare,
   Clock,
   ChevronRight,
@@ -15,9 +14,9 @@ import {
   FileText,
 } from "lucide-react";
 import { useLanguage } from "../../contexts/LanguageContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function DepartmentDashboard() {
-  const [departmentMember, setDepartmentMember] = useState(null);
   const [departmentQueries, setDepartmentQueries] = useState([]);
   const [selectedQuery, setSelectedQuery] = useState(null);
   const [threads, setThreads] = useState([]);
@@ -27,6 +26,7 @@ export default function DepartmentDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
   const { t } = useLanguage();
+  const { departmentMember, isAuthenticated } = useAuth();
 
   // Map of filenames/originalNames that have saved AI analyses for quick lookup
   const analyzedNameSet = new Set(
@@ -45,28 +45,23 @@ export default function DepartmentDashboard() {
   })();
 
   useEffect(() => {
-    const departmentMemberId = localStorage.getItem("departmentMemberId");
-    if (!departmentMemberId) {
+    if (!isAuthenticated || !departmentMember) {
       router.push("/department/login");
       return;
     }
-    fetchDepartmentMemberData(departmentMemberId);
-  }, []);
+    fetchDepartmentQueries();
+  }, [isAuthenticated, departmentMember]);
 
-  const fetchDepartmentMemberData = async (memberId) => {
+  const fetchDepartmentQueries = async () => {
     try {
-      const res = await fetch(`/api/department-members/${memberId}`);
-      const memberData = await res.json();
-      setDepartmentMember(memberData);
-
       // Fetch all queries for this department
       const queriesRes = await fetch(
-        `/api/departments/${memberData.department._id}/queries`
+        `/api/departments/${departmentMember.department._id}/queries`
       );
       const queriesData = await queriesRes.json();
       setDepartmentQueries(queriesData);
     } catch (error) {
-      console.error("Error fetching department member data:", error);
+      console.error("Error fetching department queries:", error);
     } finally {
       setLoading(false);
     }
@@ -145,10 +140,7 @@ export default function DepartmentDashboard() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("departmentMemberId");
-    router.push("/");
-  };
+
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -201,18 +193,6 @@ export default function DepartmentDashboard() {
               {departmentMember?.department?.departmentName}
             </p>
           </div>
-        </div>
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <User className="w-4 h-4" />
-            <span>{departmentMember?.name}</span>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="text-sm text-gray-500 hover:text-gray-700 transition-colors px-3 py-1.5 rounded-md hover:bg-gray-100"
-          >
-            {t("signOut")}
-          </button>
         </div>
       </header>
 
@@ -483,7 +463,7 @@ export default function DepartmentDashboard() {
                           return (
                             <div key={index} className="relative pl-12">
                               <div className={`absolute left-1.5 top-2 w-5 h-5 rounded-full border-2 ${isAdmin ? 'border-green-500 bg-green-50' : 'border-blue-500 bg-blue-50'} flex items-center justify-center`}>
-                                {isAdmin ? <Building2 className="w-3 h-3 text-green-600" /> : <User className="w-3 h-3 text-blue-600" />}
+                                {isAdmin ? <Building2 className="w-3 h-3 text-green-600" /> : <span className="text-blue-600">U</span>}
                               </div>
                               <div className={`rounded-lg border ${isAdmin ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'} p-4`}>
                                 <div className="flex items-center justify-between">

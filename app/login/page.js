@@ -1,8 +1,9 @@
 // app/login/page.js
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "../contexts/LanguageContext";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -10,6 +11,14 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { t } = useLanguage();
+  const { loginUser, isAuthenticated, user, databaseConnectionError } = useAuth();
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, user, router]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -26,6 +35,7 @@ export default function Login() {
 
       if (res.ok) {
         localStorage.setItem("userId", data.userId);
+        loginUser(data.user);
         router.push("/dashboard");
       } else {
         alert(data.error || t("loginFailed"));
@@ -41,6 +51,19 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full bg-white p-8 rounded-lg shadow">
         <h2 className="text-2xl font-bold text-center mb-6">{t("login")}</h2>
+        
+        {/* Database Connection Error Message */}
+        {databaseConnectionError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+              <span className="text-red-700 text-sm">
+                Database connection issue detected. Login may not work properly.
+              </span>
+            </div>
+          </div>
+        )}
+        
         <form onSubmit={handleLogin}>
           <div className="mb-4">
             <input

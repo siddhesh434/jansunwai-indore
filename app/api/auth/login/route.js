@@ -22,11 +22,7 @@ export async function POST(request) {
     return Response.json({
       message: "Login successful",
       userId: user._id,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-      },
+      user: user, // Return the full user object as returned by MongoDB
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
