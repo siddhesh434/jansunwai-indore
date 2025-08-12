@@ -19,6 +19,7 @@ import {
   FileText,
   CheckCircle2,
   Circle,
+  User,
 } from "lucide-react";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useAuth } from "../contexts/AuthContext";
