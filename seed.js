@@ -23,6 +23,18 @@ async function connectDB() {
 // ====== Define Schemas ======
 const { Schema } = mongoose;
 
+const SuperAdminSchema = new Schema(
+  {
+    username: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    role: { type: String, default: "superadmin" },
+    permissions: [{ type: String }],
+  },
+  { timestamps: true }
+);
+
 const UserSchema = new Schema(
   {
     username: { type: String, required: true, unique: true },
@@ -123,6 +135,7 @@ async function dropAllCollectionsAndModels() {
 }
 
 // Create models
+const SuperAdmin = mongoose.model("SuperAdmin", SuperAdminSchema);
 const User = mongoose.model("User", UserSchema);
 const Department = mongoose.model("Department", DepartmentSchema);
 const DepartmentMember = mongoose.model(
@@ -992,6 +1005,16 @@ async function seedDatabase() {
       await dept.save();
     }
 
+    console.log("👑 Creating superadmin...");
+    const superadmin = await SuperAdmin.create({
+      username: "admin",
+      name: "Super Administrator",
+      email: "admin@jansunwai.gov.in",
+      password: "admin123", // In production, hash this
+      role: "superadmin",
+      permissions: ["all"],
+    });
+
     console.log("❓ Creating queries with threads...");
     let queryCount = 0;
     for (const queryData of queriesData) {
@@ -1058,6 +1081,7 @@ async function seedDatabase() {
     console.log(`   • ${Object.keys(users).length} users`);
     console.log(`   • ${Object.keys(deptMembers).length} department members`);
     console.log(`   • ${queryCount} queries with threads`);
+    console.log(`   • 1 superadmin`);
 
     console.log("\n📧 Sample user emails for testing:");
     Object.values(users)
@@ -1066,6 +1090,9 @@ async function seedDatabase() {
         const userData = usersData.find((u) => u.username === user.username);
         console.log(`   • ${user.email} / ${userData.password}`);
       });
+
+    console.log("\n👑 Superadmin credentials:");
+    console.log(`   • ${superadmin.email} / ${superadmin.password}`);
 
     process.exit(0);
   } catch (err) {

@@ -14,6 +14,9 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [departmentMember, setDepartmentMember] = useState(null);
+  const [superadmin, setSuperadmin] = useState(null);
+  const [isDepartmentAuthenticated, setIsDepartmentAuthenticated] = useState(false);
+  const [isSuperadminAuthenticated, setIsSuperadminAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [databaseConnectionError, setDatabaseConnectionError] = useState(false);
 
@@ -22,6 +25,7 @@ export const AuthProvider = ({ children }) => {
     const cleanupInvalidData = () => {
       const userId = localStorage.getItem("userId");
       const departmentMemberId = localStorage.getItem("departmentMemberId");
+      const superadminId = localStorage.getItem("superadminId");
       
       if (userId === "null" || userId === "undefined" || userId === "") {
         localStorage.removeItem("userId");
@@ -30,6 +34,10 @@ export const AuthProvider = ({ children }) => {
       if (departmentMemberId === "null" || departmentMemberId === "undefined" || departmentMemberId === "") {
         localStorage.removeItem("departmentMemberId");
       }
+
+      if (superadminId === "null" || superadminId === "undefined" || superadminId === "") {
+        localStorage.removeItem("superadminId");
+      }
     };
     
     cleanupInvalidData();
@@ -37,6 +45,7 @@ export const AuthProvider = ({ children }) => {
     // Check for existing authentication on mount
     const userId = localStorage.getItem("userId");
     const departmentMemberId = localStorage.getItem("departmentMemberId");
+    const superadminId = localStorage.getItem("superadminId");
 
     // Validate that the stored IDs are not null, undefined, or empty strings
     if (userId && userId !== "null" && userId !== "undefined" && userId.trim() !== "") {
@@ -54,10 +63,19 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem("departmentMemberId");
       setLoading(false);
     }
+
+    if (superadminId && superadminId !== "null" && superadminId !== "undefined" && superadminId.trim() !== "") {
+      fetchSuperadminData(superadminId);
+    } else if (superadminId) {
+      // Clear invalid superadminId
+      localStorage.removeItem("superadminId");
+      setLoading(false);
+    }
     
     // If no valid IDs found, set loading to false
     if ((!userId || userId === "null" || userId === "undefined" || userId.trim() === "") && 
-        (!departmentMemberId || departmentMemberId === "null" || departmentMemberId === "undefined" || departmentMemberId.trim() === "")) {
+        (!departmentMemberId || departmentMemberId === "null" || departmentMemberId === "undefined" || departmentMemberId.trim() === "") &&
+        (!superadminId || superadminId === "null" || superadminId === "undefined" || superadminId.trim() === "")) {
       setLoading(false);
     }
   }, []);
@@ -110,6 +128,7 @@ export const AuthProvider = ({ children }) => {
       if (res.ok) {
         const memberData = await res.json();
         setDepartmentMember(memberData);
+        setIsDepartmentAuthenticated(true);
       } else {
         console.warn("Department member not found or API error, clearing localStorage");
         localStorage.removeItem("departmentMemberId");
@@ -117,13 +136,43 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error("Error fetching department member data:", error);
-      // Handle database connection errors gracefully
       if (error.message.includes("Failed to fetch") || error.message.includes("500")) {
         console.warn("Database connection issue detected. Please check MONGOURL environment variable.");
         setDatabaseConnectionError(true);
-        // Don't clear localStorage on connection errors, just set loading to false
       } else {
         localStorage.removeItem("departmentMemberId");
+      }
+      setLoading(false);
+    }
+  };
+
+  const fetchSuperadminData = async (superadminId) => {
+    // Validate superadminId before making API call
+    if (!superadminId || superadminId === "null" || superadminId === "undefined" || superadminId.trim() === "") {
+      console.warn("Invalid superadminId detected, clearing localStorage");
+      localStorage.removeItem("superadminId");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/superadmin/${superadminId}`);
+      if (res.ok) {
+        const superadminData = await res.json();
+        setSuperadmin(superadminData);
+        setIsSuperadminAuthenticated(true);
+      } else {
+        console.warn("Superadmin not found or API error, clearing localStorage");
+        localStorage.removeItem("superadminId");
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error("Error fetching superadmin data:", error);
+      if (error.message.includes("Failed to fetch") || error.message.includes("500")) {
+        console.warn("Database connection issue detected. Please check MONGOURL environment variable.");
+        setDatabaseConnectionError(true);
+      } else {
+        localStorage.removeItem("superadminId");
       }
       setLoading(false);
     }
@@ -136,15 +185,26 @@ export const AuthProvider = ({ children }) => {
 
   const loginDepartmentMember = (memberData) => {
     setDepartmentMember(memberData);
-    setUser(null);
+    setIsDepartmentAuthenticated(true);
+    localStorage.setItem("departmentMemberId", memberData._id);
+  };
+
+  const loginSuperadmin = (superadminData) => {
+    setSuperadmin(superadminData);
+    setIsSuperadminAuthenticated(true);
+    localStorage.setItem("superadminId", superadminData._id);
   };
 
   const logout = () => {
     setUser(null);
     setDepartmentMember(null);
-    setDatabaseConnectionError(false);
+    setSuperadmin(null);
+    setIsAuthenticated(false);
+    setIsDepartmentAuthenticated(false);
+    setIsSuperadminAuthenticated(false);
     localStorage.removeItem("userId");
     localStorage.removeItem("departmentMemberId");
+    localStorage.removeItem("superadminId");
   };
 
   const clearInvalidData = () => {
@@ -162,7 +222,8 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   };
 
-  const isAuthenticated = !!user || !!departmentMember;
+  // Computed values
+  const isAuthenticated = !!user || !!departmentMember || !!superadmin;
   const currentUser = user || departmentMember;
 
   return (
@@ -170,12 +231,15 @@ export const AuthProvider = ({ children }) => {
       value={{
         user,
         departmentMember,
-        currentUser,
+        superadmin,
         isAuthenticated,
+        isDepartmentAuthenticated,
+        isSuperadminAuthenticated,
         loading,
         databaseConnectionError,
         loginUser,
         loginDepartmentMember,
+        loginSuperadmin,
         logout,
         clearInvalidData,
       }}

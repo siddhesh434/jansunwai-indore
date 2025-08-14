@@ -1,7 +1,9 @@
 "use client"
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../contexts/AuthContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
-import { Users, FileText, Building2, UserCheck, TrendingUp, AlertCircle, CheckCircle, Clock, Calendar, Activity, Brain, Zap, Target, RefreshCw } from 'lucide-react';
+import { Users, FileText, Building2, UserCheck, TrendingUp, AlertCircle, CheckCircle, Clock, Calendar, Activity, Brain, Zap, Target, RefreshCw, Shield, LogOut } from 'lucide-react';
 
 const Dashboard = () => {
   const [data, setData] = useState({
@@ -14,6 +16,27 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [aiInsights, setAiInsights] = useState(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
+
+  const router = useRouter();
+  const { superadmin, isSuperadminAuthenticated, logout } = useAuth();
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isSuperadminAuthenticated) {
+      router.push('/superadmin/login');
+    }
+  }, [isSuperadminAuthenticated, router]);
+
+  // Handle logout
+  const handleLogout = () => {
+    logout();
+    router.push('/superadmin/login');
+  };
+
+  // Don't render if not authenticated
+  if (!isSuperadminAuthenticated) {
+    return null;
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -170,7 +193,7 @@ const Dashboard = () => {
       name: dept.departmentName,
       queries: dept.queries?.length || 0,
       members: dept.members?.length || 0,
-      efficiency: dept.members?.length > 0 ? (dept.queries?.length / dept.members?.length).toFixed(1) : 0
+      efficiency: dept.members?.length > 0 ? ((dept.queries?.length || 0) / dept.members.length) : 0
     }));
 
     const monthlyTrends = generateMonthlyData();
@@ -206,10 +229,9 @@ const Dashboard = () => {
     }, {});
 
     const colors = {
-      'pending': '#ff6b6b',
-      'in-progress': '#4ecdc4',
+      'open': '#ff6b6b',
+      'in_progress': '#4ecdc4',
       'resolved': '#45b7d1',
-      'closed': '#96ceb4'
     };
 
     return Object.entries(statusCounts).map(([status, count]) => ({
@@ -257,39 +279,19 @@ const Dashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Jansunwai Indore</h1>
-                <p className="text-gray-600 mt-1">Public Grievance Management System</p>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="bg-green-100 px-4 py-2 rounded-full">
-                  <span className="text-green-800 font-semibold">System Active</span>
-                </div>
-                <Calendar className="h-6 w-6 text-gray-400" />
-                <span className="text-gray-600">{new Date().toLocaleDateString()}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <div className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
+      {/* Dashboard Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Navigation Tabs */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
+          <div className="flex space-x-8 px-6">
             {['overview', 'analytics', 'departments', 'insights'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`py-4 px-2 border-b-2 font-medium text-sm capitalize transition-colors ${
                   activeTab === tab
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-purple-500 text-purple-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
@@ -298,9 +300,7 @@ const Dashboard = () => {
             ))}
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'overview' && (
           <div className="space-y-8">
             {/* Key Metrics */}

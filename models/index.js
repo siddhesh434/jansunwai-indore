@@ -3,6 +3,19 @@ import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
+// SuperAdmin Schema
+const SuperAdminSchema = new Schema(
+  {
+    username: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    role: { type: String, default: "superadmin" },
+    permissions: [{ type: String }],
+  },
+  { timestamps: true }
+);
+
 // User Schema
 const UserSchema = new Schema(
   {
@@ -109,6 +122,8 @@ const QuerySchema = new Schema(
 );
 
 // Export models
+export const SuperAdmin =
+  mongoose.models.SuperAdmin || mongoose.model("SuperAdmin", SuperAdminSchema);
 export const User = mongoose.models.User || mongoose.model("User", UserSchema);
 export const Department =
   mongoose.models.Department || mongoose.model("Department", DepartmentSchema);

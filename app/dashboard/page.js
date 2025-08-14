@@ -20,6 +20,8 @@ import {
   CheckCircle2,
   Circle,
   User,
+  Menu,
+  ChevronLeft,
 } from "lucide-react";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -57,9 +59,28 @@ export default function Dashboard() {
   // Map visibility state
   const [showMap, setShowMap] = useState(false);
 
+  // Mobile states
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
   const router = useRouter();
   const { t } = useLanguage();
   const { user, isAuthenticated } = useAuth();
+
+  // Check if mobile on mount and resize
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setSidebarOpen(false);
+      }
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     // Don't run if still loading or if user object is incomplete
@@ -162,6 +183,22 @@ export default function Dashboard() {
       }
     }
   }, []); // Load once on component mount
+
+  // Close sidebar when selecting query on mobile
+  const handleQuerySelect = (queryId) => {
+    fetchQueryThreads(queryId);
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  };
+
+  // Close sidebar when creating new query on mobile
+  const handleNewQuery = () => {
+    setShowNewQueryForm(true);
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  };
 
   const fetchUserData = async (userId) => {
     // Validate userId before making API call
@@ -383,8 +420,6 @@ export default function Dashboard() {
     setNewThread("");
   };
 
-
-
   const getStatusColor = (status) => {
     switch (status) {
       case "open":
@@ -438,32 +473,70 @@ export default function Dashboard() {
 
   return (
     <div className="h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex flex-col overflow-hidden relative">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-blue-200 px-6 py-4 flex justify-between items-center shrink-0 shadow-sm">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-md">
-            <MessageSquare className="w-5 h-5 text-white" />
-          </div>
-          <h1 className="text-xl font-semibold bg-gradient-to-r from-blue-900 to-indigo-900 bg-clip-text text-transparent">
-            Query Dashboard
+      {/* Mobile Header */}
+      {isMobile && (
+        <div className="bg-white/60 backdrop-blur-sm border-b border-blue-200 p-4 flex items-center justify-between md:hidden">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 rounded-lg hover:bg-blue-100 text-blue-600"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <h1 className="text-lg font-semibold bg-gradient-to-r from-blue-900 to-indigo-900 bg-clip-text text-transparent">
+            Dashboard
           </h1>
+          <button
+            onClick={handleNewQuery}
+            className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
         </div>
-        {/* Removed user info and sign out from here */}
-      </header>
+      )}
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Sidebar Overlay for Mobile */}
+        {isMobile && sidebarOpen && (
+          <div 
+            className="absolute inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
         {/* Left Sidebar - Queries List */}
-        <div className="w-1/3 bg-white/60 backdrop-blur-sm border-r border-blue-200 flex flex-col shadow-sm">
-          {/* New Query Button */}
-          <div className="p-4 border-b border-blue-200">
-            <button
-              onClick={() => setShowNewQueryForm(true)}
-              className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-4 py-2.5 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-            >
-              <Plus className="w-4 h-4" />
-              <span>New Query</span>
-            </button>
-          </div>
+        <div className={`${
+          isMobile 
+            ? `fixed inset-y-0 left-0 z-50 w-80 transform transition-transform duration-300 ease-in-out ${
+                sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+              }` 
+            : 'w-1/3 lg:w-1/4 xl:w-1/3'
+        } bg-white/60 backdrop-blur-sm border-r border-blue-200 flex flex-col shadow-sm`}>
+          
+          {/* Mobile Close Button */}
+          {isMobile && (
+            <div className="p-4 border-b border-blue-200 flex items-center justify-between md:hidden">
+              <h2 className="text-lg font-semibold text-gray-900">Queries</h2>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="p-2 rounded-lg hover:bg-blue-100 text-gray-500"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          )}
+
+          {/* New Query Button - Desktop */}
+          {!isMobile && (
+            <div className="p-4 border-b border-blue-200">
+              <button
+                onClick={() => setShowNewQueryForm(true)}
+                className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-4 py-2.5 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              >
+                <Plus className="w-4 h-4" />
+                <span>New Query</span>
+              </button>
+            </div>
+          )}
 
           {/* Search and Filter */}
           <div className="p-4 border-b border-blue-200 space-y-3">
@@ -512,7 +585,7 @@ export default function Dashboard() {
               filteredQueries.map((query) => (
                 <div
                   key={query._id || `query-${Math.random()}`}
-                  onClick={() => query._id && fetchQueryThreads(query._id)}
+                  onClick={() => query._id && handleQuerySelect(query._id)}
                   className={`group p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-white/80 hover:shadow-md border backdrop-blur-sm ${
                     selectedQuery?._id === query._id
                       ? "bg-white border-blue-300 shadow-md ring-2 ring-blue-200"
@@ -527,7 +600,7 @@ export default function Dashboard() {
                       <p className="text-xs text-gray-500 mb-2 line-clamp-2 leading-relaxed">
                         {query.description || "No description available"}
                       </p>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
                         <div
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(
                             query.status?.toLowerCase() || "open"
@@ -549,21 +622,33 @@ export default function Dashboard() {
         </div>
 
         {/* Right Panel - Query Details and Threads */}
-        <div className="flex-1 flex flex-col bg-white/40 backdrop-blur-sm">
+        <div className="flex-1 flex flex-col bg-white/40 backdrop-blur-sm min-w-0">
           {showNewQueryForm ? (
             /* New Query Form */
-            <div className="flex-1 flex flex-col max-h-[84vh]">
-              <div className="p-6 border-b border-blue-200 bg-white/60 backdrop-blur-sm">
-                <h2 className="text-xl font-semibold bg-gradient-to-r from-blue-900 to-indigo-900 bg-clip-text text-transparent">
-                  Create New Query
-                </h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  Describe your complaint and we'll route it to the right department
-                </p>
+            <div className="flex-1 flex flex-col max-h-screen overflow-hidden">
+              <div className="p-4 md:p-6 border-b border-blue-200 bg-white/60 backdrop-blur-sm flex-shrink-0">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg md:text-xl font-semibold bg-gradient-to-r from-blue-900 to-indigo-900 bg-clip-text text-transparent">
+                      Create New Query
+                    </h2>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Describe your complaint and we'll route it to the right department
+                    </p>
+                  </div>
+                  {isMobile && (
+                    <button
+                      onClick={() => setShowNewQueryForm(false)}
+                      className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 ml-4"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <div className="flex-1 p-6 overflow-y-auto">
-                <div className="max-w-2xl space-y-6">
+              <div className="flex-1 p-4 md:p-6 overflow-y-auto">
+                <div className="max-w-2xl space-y-4 md:space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Your Complaint
@@ -588,7 +673,7 @@ export default function Dashboard() {
                             analyzeQuery(newQuery.query, newQuery.address);
                           }
                         }}
-                        className="w-full px-4 py-3 pr-12 border border-blue-200 rounded-lg h-32 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none bg-white/80 backdrop-blur-sm"
+                        className="w-full px-4 py-3 pr-12 border border-blue-200 rounded-lg h-32 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none bg-white/80 backdrop-blur-sm text-sm"
                       />
                       <button
                         type="button"
@@ -616,7 +701,7 @@ export default function Dashboard() {
                         )}
                       </button>
                     </div>
-                    <div className="flex items-center justify-between mt-1">
+                    <div className="flex items-center justify-between mt-1 flex-wrap gap-2">
                       <p className="text-xs text-gray-500">Be as detailed as possible</p>
                       {isListening && (
                         <div className="flex items-center space-x-1 text-xs text-red-600">
@@ -690,7 +775,7 @@ export default function Dashboard() {
                           <span className="text-sm font-medium text-gray-700">
                             Suggested Title:
                           </span>
-                          <p className="text-sm text-gray-900 font-medium">
+                          <p className="text-sm text-gray-900 font-medium break-words">
                             {queryAnalysis.title}
                           </p>
                         </div>
@@ -759,7 +844,7 @@ export default function Dashboard() {
                                 </div>
                               )}
                               
-                                                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                                 <p className="text-sm text-blue-800">
                                   <strong>Tip:</strong> {t('detailValidationTip')}
                                 </p>
@@ -780,9 +865,9 @@ export default function Dashboard() {
                             <span className="text-sm font-medium text-gray-700">
                               Address:
                             </span>
-                            <p className="text-sm text-gray-600 flex items-center">
-                              <MapPin className="w-3 h-3 mr-1 text-blue-500" />
-                              {newQuery.address}
+                            <p className="text-sm text-gray-600 flex items-start">
+                              <MapPin className="w-3 h-3 mr-1 text-blue-500 mt-0.5 flex-shrink-0" />
+                              <span className="break-words">{newQuery.address}</span>
                             </p>
                           </div>
                         )}
@@ -790,11 +875,11 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  <div className="flex space-x-3 pt-4">
+                  <div className="flex flex-col sm:flex-row gap-3 pt-4">
                     <button
                       onClick={handleCreateQuery}
                       disabled={!queryAnalysis || !newQuery.query.trim() || queryAnalysis.detailsSufficient === false}
-                      className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 disabled:from-gray-300 disabled:to-indigo-400 text-white px-6 py-3 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:transform-none"
+                      className="flex-1 sm:flex-none bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 disabled:from-gray-300 disabled:to-indigo-400 text-white px-6 py-3 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:transform-none text-center"
                     >
                       {analyzing ? "Analyzing..." : queryAnalysis?.detailsSufficient === false ? "Details Insufficient" : "Create Query"}
                     </button>
@@ -804,9 +889,9 @@ export default function Dashboard() {
                         setShowNewQueryForm(false);
                         setNewQuery({ query: "", address: "" });
                         setQueryAnalysis(null);
-                        setShowMap(false); // Hide map when canceling
+                        setShowMap(false);
                       }}
-                      className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg transition-colors font-medium border border-gray-300"
+                      className="flex-1 sm:flex-none bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg transition-colors font-medium border border-gray-300"
                     >
                       Cancel
                     </button>
@@ -816,28 +901,41 @@ export default function Dashboard() {
             </div>
           ) : selectedQuery ? (
             /* Query Thread View */
-            <div className="flex-1 flex flex-col max-h-[84vh]">
+            <div className="flex-1 flex flex-col max-h-screen overflow-hidden">
               {/* Query Header with Stepper */}
-              <div className="p-6 border-b border-blue-200 bg-white/60 backdrop-blur-sm">
+              <div className="p-4 md:p-6 border-b border-blue-200 bg-white/60 backdrop-blur-sm flex-shrink-0">
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                      {selectedQuery?.title || "Select a query"}
-                    </h2>
-                    <p className="text-gray-600 text-sm mb-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center mb-2">
+                      {isMobile && (
+                        <button
+                          onClick={() => {
+                            setSelectedQuery(null);
+                            setThreads([]);
+                          }}
+                          className="p-1 rounded-lg hover:bg-gray-100 text-gray-500 mr-2 md:hidden"
+                        >
+                          <ChevronLeft className="w-5 h-5" />
+                        </button>
+                      )}
+                      <h2 className="text-lg md:text-xl font-semibold text-gray-900 truncate">
+                        {selectedQuery?.title || "Select a query"}
+                      </h2>
+                    </div>
+                    <p className="text-gray-600 text-sm mb-3 break-words">
                       {selectedQuery?.description || "No description available"}
                     </p>
                     {selectedQuery?.address && (
-                      <div className="flex items-center text-sm text-gray-500 mb-2">
-                        <MapPin className="w-4 h-4 mr-1 text-blue-500" />
-                        <span>{selectedQuery?.address}</span>
+                      <div className="flex items-start text-sm text-gray-500 mb-2">
+                        <MapPin className="w-4 h-4 mr-1 text-blue-500 flex-shrink-0 mt-0.5" />
+                        <span className="break-words">{selectedQuery?.address}</span>
                       </div>
                     )}
 
                     {selectedQuery?.attachments?.length > 0 && (
                       <div className="mt-3">
                         <p className="text-sm font-medium text-gray-700 mb-2">Attachments</p>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                           {selectedQuery?.attachments?.map((att, idx) => {
                             const isImage = (att.mimetype || "").startsWith("image/");
                             const isVideo = (att.mimetype || "").startsWith("video/");
@@ -846,16 +944,22 @@ export default function Dashboard() {
                                 {isImage ? (
                                   <a href={att.url} target="_blank" rel="noreferrer" className="block">
                                     <img src={att.url} alt={att.originalName} className="w-full h-28 object-cover" />
-                                    <div className="px-2 py-1 text-xs text-gray-700 truncate flex items-center"><ImageIcon className="w-3 h-3 mr-1 text-blue-500" />{att.originalName}</div>
+                                    <div className="px-2 py-1 text-xs text-gray-700 truncate flex items-center">
+                                      <ImageIcon className="w-3 h-3 mr-1 text-blue-500 flex-shrink-0" />
+                                      <span className="truncate">{att.originalName}</span>
+                                    </div>
                                   </a>
                                 ) : isVideo ? (
                                   <div className="w-full">
                                     <video src={att.url} controls className="w-full h-28 object-cover bg-black" />
-                                    <a href={att.url} target="_blank" rel="noreferrer" className="px-2 py-1 text-xs text-gray-700 truncate flex items-center"><VideoIcon className="w-3 h-3 mr-1 text-blue-500" />{att.originalName}</a>
+                                    <a href={att.url} target="_blank" rel="noreferrer" className="px-2 py-1 text-xs text-gray-700 truncate flex items-center">
+                                      <VideoIcon className="w-3 h-3 mr-1 text-blue-500 flex-shrink-0" />
+                                      <span className="truncate">{att.originalName}</span>
+                                    </a>
                                   </div>
                                 ) : (
                                   <a href={att.url} target="_blank" rel="noreferrer" className="flex items-center space-x-2 p-2 text-xs text-gray-700 hover:bg-blue-50">
-                                    <FileText className="w-4 h-4 text-blue-500" />
+                                    <FileText className="w-4 h-4 text-blue-500 flex-shrink-0" />
                                     <span className="truncate" title={att.originalName}>{att.originalName}</span>
                                   </a>
                                 )}
@@ -876,23 +980,23 @@ export default function Dashboard() {
                       const completed = idx <= currentIdx;
                       const isLast = idx === statusSteps.length - 1;
                       return (
-                        <div key={step.key} className="flex-1 flex items-center">
-                          <div className={`flex items-center ${idx > 0 ? 'pl-2' : ''}`}>
-                            <div className={`flex items-center justify-center w-7 h-7 rounded-full border ${completed ? 'bg-green-500 border-green-500 text-white' : 'bg-white border-gray-300 text-gray-400'}`}>
-                              {completed ? <CheckCircle2 className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
+                        <div key={step.key} className="flex-1 flex items-center min-w-0">
+                          <div className={`flex items-center ${idx > 0 ? 'pl-2' : ''} min-w-0`}>
+                            <div className={`flex items-center justify-center w-6 h-6 md:w-7 md:h-7 rounded-full border flex-shrink-0 ${completed ? 'bg-green-500 border-green-500 text-white' : 'bg-white border-gray-300 text-gray-400'}`}>
+                              {completed ? <CheckCircle2 className="w-3 h-3 md:w-4 md:h-4" /> : <Circle className="w-3 h-3 md:w-4 md:h-4" />}
                             </div>
-                            <span className={`ml-2 text-sm font-medium ${completed ? 'text-green-700' : 'text-gray-500'}`}>{step.label}</span>
+                            <span className={`ml-2 text-xs md:text-sm font-medium truncate ${completed ? 'text-green-700' : 'text-gray-500'}`}>{step.label}</span>
                           </div>
                           {!isLast && (
-                            <div className={`flex-1 h-0.5 mx-2 ${idx < currentIdx ? 'bg-green-500' : 'bg-gray-200'}`} />
+                            <div className={`flex-1 h-0.5 mx-2 min-w-4 ${idx < currentIdx ? 'bg-green-500' : 'bg-gray-200'}`} />
                           )}
                         </div>
                       );
                     })}
                   </div>
                   <div className="mt-2 flex items-center text-xs text-gray-500">
-                    <Clock className="w-3 h-3 mr-1" />
-                    Updated {selectedQuery ? new Date(selectedQuery.updatedAt || selectedQuery.createdAt).toLocaleString() : "N/A"}
+                    <Clock className="w-3 h-3 mr-1 flex-shrink-0" />
+                    <span className="truncate">Updated {selectedQuery ? new Date(selectedQuery.updatedAt || selectedQuery.createdAt).toLocaleString() : "N/A"}</span>
                   </div>
                 </div>
               </div>
@@ -900,7 +1004,7 @@ export default function Dashboard() {
               {/* Threads Container */}
               <div className="flex-1 flex flex-col min-h-0">
                 {/* Timeline-style Updates List */}
-                <div className="flex-1 overflow-y-auto p-6 bg-white/50">
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white/50">
                   {threads.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center">
                       <MessageSquare className="w-16 h-16 text-blue-300 mb-4" />
@@ -913,27 +1017,27 @@ export default function Dashboard() {
                     </div>
                   ) : (
                     <div className="relative max-w-4xl">
-                      <div className="absolute left-4 top-0 bottom-0 w-px bg-gradient-to-b from-blue-300 via-blue-200 to-transparent" />
+                      <div className="absolute left-3 md:left-4 top-0 bottom-0 w-px bg-gradient-to-b from-blue-300 via-blue-200 to-transparent" />
                       <div className="space-y-5">
                         {threads.map((thread, index) => {
                           const isAdmin = thread.authorType === "DepartmentMember";
                           return (
-                            <div key={index} className="relative pl-12">
-                              <div className={`absolute left-1.5 top-2 w-5 h-5 rounded-full border-2 ${isAdmin ? 'border-green-500 bg-green-50' : 'border-blue-500 bg-blue-50'} flex items-center justify-center`}>
-                                {isAdmin ? <Building2 className="w-3 h-3 text-green-600" /> : <User className="w-3 h-3 text-blue-600" />}
+                            <div key={index} className="relative pl-10 md:pl-12">
+                              <div className={`absolute left-1 md:left-1.5 top-2 w-4 h-4 md:w-5 md:h-5 rounded-full border-2 ${isAdmin ? 'border-green-500 bg-green-50' : 'border-blue-500 bg-blue-50'} flex items-center justify-center`}>
+                                {isAdmin ? <Building2 className="w-2.5 h-2.5 md:w-3 md:h-3 text-green-600" /> : <User className="w-2.5 h-2.5 md:w-3 md:h-3 text-blue-600" />}
                               </div>
                               <div className={`rounded-lg border ${isAdmin ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'} p-4`}>
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center space-x-2">
-                                    <span className={`text-sm font-medium ${isAdmin ? 'text-green-800' : 'text-blue-800'}`}>
+                                <div className="flex items-center justify-between flex-wrap gap-2">
+                                  <div className="flex items-center space-x-2 min-w-0">
+                                    <span className={`text-sm font-medium ${isAdmin ? 'text-green-800' : 'text-blue-800'} truncate`}>
                                       {isAdmin ? 'Department Update' : 'You'}
                                     </span>
-                                    <span className="text-xs text-gray-500">
+                                    <span className="text-xs text-gray-500 whitespace-nowrap">
                                       {new Date(thread.timestamp).toLocaleString()}
                                     </span>
                                   </div>
                                 </div>
-                                <p className="mt-2 text-gray-900 leading-relaxed whitespace-pre-wrap">
+                                <p className="mt-2 text-gray-900 leading-relaxed whitespace-pre-wrap break-words">
                                   {thread.message}
                                 </p>
                                 {Array.isArray(thread.attachments) && thread.attachments.length > 0 && (
@@ -946,16 +1050,22 @@ export default function Dashboard() {
                                           {isImage ? (
                                             <a href={att.url} target="_blank" rel="noreferrer" className="block">
                                               <img src={att.url} alt={att.originalName} className="w-full h-24 object-cover" />
-                                              <div className="px-2 py-1 text-xs text-gray-700 truncate flex items-center"><ImageIcon className="w-3 h-3 mr-1 text-blue-500" />{att.originalName}</div>
+                                              <div className="px-2 py-1 text-xs text-gray-700 truncate flex items-center">
+                                                <ImageIcon className="w-3 h-3 mr-1 text-blue-500 flex-shrink-0" />
+                                                <span className="truncate">{att.originalName}</span>
+                                              </div>
                                             </a>
                                           ) : isVideo ? (
                                             <div className="w-full">
                                               <video src={att.url} controls className="w-full h-24 object-cover bg-black" />
-                                              <a href={att.url} target="_blank" rel="noreferrer" className="px-2 py-1 text-xs text-gray-700 truncate flex items-center"><VideoIcon className="w-3 h-3 mr-1 text-blue-500" />{att.originalName}</a>
+                                              <a href={att.url} target="_blank" rel="noreferrer" className="px-2 py-1 text-xs text-gray-700 truncate flex items-center">
+                                                <VideoIcon className="w-3 h-3 mr-1 text-blue-500 flex-shrink-0" />
+                                                <span className="truncate">{att.originalName}</span>
+                                              </a>
                                             </div>
                                           ) : (
                                             <a href={att.url} target="_blank" rel="noreferrer" className="flex items-center space-x-2 p-2 text-xs text-gray-700 hover:bg-blue-50">
-                                              <FileText className="w-4 h-4 text-blue-500" />
+                                              <FileText className="w-4 h-4 text-blue-500 flex-shrink-0" />
                                               <span className="truncate" title={att.originalName}>{att.originalName}</span>
                                             </a>
                                           )}
@@ -974,9 +1084,9 @@ export default function Dashboard() {
                 </div>
 
                 {/* Thread Input */}
-                <div className="border-t border-blue-200 p-6 bg-white/60 backdrop-blur-sm">
+                <div className="border-t border-blue-200 p-4 md:p-6 bg-white/60 backdrop-blur-sm flex-shrink-0">
                   <div className="max-w-4xl">
-                    <div className="flex space-x-3">
+                    <div className="flex flex-col sm:flex-row gap-3">
                       <div className="flex-1">
                         <textarea
                           placeholder="Type your message..."
@@ -988,16 +1098,16 @@ export default function Dashboard() {
                               handleAddThread(e);
                             }
                           }}
-                          className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none bg-white/80 backdrop-blur-sm"
+                          className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none bg-white/80 backdrop-blur-sm text-sm"
                           rows="3"
                         />
                       </div>
                       <button
                         onClick={handleAddThread}
                         disabled={!newThread.trim()}
-                        className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 text-white p-3 rounded-lg transition-all duration-200 shrink-0 flex items-center justify-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:transform-none"
+                        className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 text-white p-3 rounded-lg transition-all duration-200 shrink-0 flex items-center justify-center shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:transform-none self-start sm:self-stretch"
                       >
-                        <Send className="w-5 h-5" />
+                        <Send className="w-4 h-4 md:w-5 md:h-5" />
                       </button>
                     </div>
                   </div>
@@ -1006,15 +1116,23 @@ export default function Dashboard() {
             </div>
           ) : (
             /* Empty State */
-            <div className="flex-1 flex items-center justify-center">
+            <div className="flex-1 flex items-center justify-center p-4">
               <div className="text-center">
                 <MessageSquare className="w-16 h-16 text-blue-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                   Select a query to view details
                 </h3>
-                <p className="text-gray-600">
+                <p className="text-gray-600 text-center">
                   Choose a query from the list to see its details and replies
                 </p>
+                {isMobile && (
+                  <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="mt-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6 py-3 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                  >
+                    View Queries
+                  </button>
+                )}
               </div>
             </div>
           )}
