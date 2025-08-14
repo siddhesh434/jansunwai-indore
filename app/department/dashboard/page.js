@@ -25,6 +25,7 @@ import {
   Archive,
   RefreshCw,
   X,
+  Brain,
 } from "lucide-react";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { useAuth } from "../../contexts/AuthContext";
@@ -51,12 +52,11 @@ export default function DepartmentDashboard() {
       .flatMap((a) => [a?.filename, a?.originalName].filter(Boolean))
   );
 
-  const aiTextFromDescription = (() => {
+  const cleanedDescription = (() => {
     const desc = selectedQuery?.description || "";
     const marker = "=== Attachment AI Summaries ===";
     const idx = desc.indexOf(marker);
-    if (idx === -1) return "";
-    return desc.slice(idx + marker.length).trim();
+    return idx === -1 ? desc : desc.slice(0, idx).trim();
   })();
 
   useEffect(() => {
@@ -245,6 +245,57 @@ export default function DepartmentDashboard() {
       </div>
     );
   }
+
+  const generateNetConclusion = (query) => {
+    if (!query) return "No query data available for analysis.";
+    
+    // Extract attachment analysis insights
+    const attachmentInsights = query.attachmentAnalyses
+      ?.filter(analysis => analysis.summary || analysis.description)
+      .map(analysis => analysis.summary || analysis.description)
+      .filter(Boolean)
+      .join(" ");
+    
+    // Extract user complaint reasoning from objects/threads
+    const userComplaintReasoning = query.objects
+      ?.filter(object => object.message && object.message.trim())
+      .map(object => object.message.trim())
+      .filter(Boolean)
+      .join(" ");
+    
+    // Combine user description with reasoning
+    const userComplaint = `${query.description || ""} ${userComplaintReasoning}`.trim();
+    
+    // Create intelligent summary
+    let netConclusion = "";
+    
+    if (attachmentInsights && userComplaint) {
+      // Combine both sources intelligently
+      const combinedText = `${userComplaint} ${attachmentInsights}`;
+      netConclusion = combinedText.length > 200 ? 
+        combinedText.substring(0, 200) + "..." : combinedText;
+    } else if (attachmentInsights) {
+      netConclusion = attachmentInsights;
+    } else if (userComplaint) {
+      netConclusion = userComplaint;
+    } else {
+      netConclusion = "Insufficient data for comprehensive analysis.";
+    }
+    
+    // Ensure it's approximately 40 words (average word length is 5 characters)
+    const targetLength = 40 * 5; // 40 words * 5 chars per word
+    if (netConclusion.length > targetLength) {
+      netConclusion = netConclusion.substring(0, targetLength).trim();
+      // Try to end at a complete word
+      const lastSpaceIndex = netConclusion.lastIndexOf(' ');
+      if (lastSpaceIndex > targetLength * 0.8) { // If we can find a space in the last 20% of text
+        netConclusion = netConclusion.substring(0, lastSpaceIndex).trim();
+      }
+      netConclusion += "...";
+    }
+    
+    return netConclusion || "Analysis pending or unavailable.";
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -471,14 +522,161 @@ export default function DepartmentDashboard() {
                 <div className="p-6 space-y-4">
                   <div>
                     <h4 className="font-medium text-gray-900 mb-2">{selectedQuery.title}</h4>
-                    <p className="text-sm text-gray-600 mb-3">{selectedQuery.description}</p>
+                    <p className="text-sm text-gray-600 mb-3">{cleanedDescription}</p>
                     {selectedQuery.address && (
                       <div className="flex items-center space-x-2 text-sm text-gray-600 mb-3">
                         <MapPin className="w-4 h-4" />
                         <span>{selectedQuery.address}</span>
                       </div>
                     )}
+                    
+                    {/* Query Metadata */}
+                    <div className="flex items-center space-x-4 text-xs text-gray-500 mb-3">
+                      <div className="flex items-center space-x-1">
+                        <Calendar className="w-3 h-3" />
+                        <span>Created: {new Date(selectedQuery.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      {selectedQuery.updatedAt && selectedQuery.updatedAt !== selectedQuery.createdAt && (
+                        <div className="flex items-center space-x-1">
+                          <Clock className="w-3 h-3" />
+                          <span>Updated: {new Date(selectedQuery.updatedAt).toLocaleDateString()}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Net Conclusion Section */}
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+                    <h5 className="font-semibold text-blue-900 mb-2 flex items-center">
+                      <Brain className="w-4 h-4 mr-2" />
+                      AI-Powered Net Conclusion
+                    </h5>
+                    
+                    {/* Urgency Information */}
+                    {selectedQuery.urgencyLabel && (
+                      <div className="mb-3 flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs font-medium text-gray-600">Urgency Level:</span>
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            selectedQuery.urgencyLabel === 'Critical' ? 'bg-red-100 text-red-800 border border-red-200' :
+                            selectedQuery.urgencyLabel === 'High' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
+                            selectedQuery.urgencyLabel === 'Medium' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
+                            'bg-green-100 text-green-800 border border-green-200'
+                          }`}>
+                            {selectedQuery.urgencyLabel}
+                            {selectedQuery.urgencyScore && ` (${selectedQuery.urgencyScore}/5)`}
+                          </span>
+                        </div>
+                        {selectedQuery.urgencyReason && (
+                          <span className="text-xs text-gray-500 italic">
+                            "{selectedQuery.urgencyReason}"
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Main Conclusion */}
+                    <div className="bg-white/60 rounded p-3 border border-blue-100">
+                      <p className="text-sm text-blue-800 leading-relaxed">
+                        {generateNetConclusion(selectedQuery)}
+                      </p>
+                    </div>
+                    
+                    {/* Analysis Source */}
+                    <div className="mt-2 text-xs text-blue-600 flex items-center">
+                      <Brain className="w-3 h-3 mr-1" />
+                      <span>
+                        Generated from {selectedQuery.attachments?.length || 0} attachments and user complaint data
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Attachments Section */}
+                  {selectedQuery.attachments && selectedQuery.attachments.length > 0 ? (
+                    <div className="space-y-3">
+                      <h5 className="font-semibold text-gray-900 mb-3 flex items-center">
+                        <FileText className="w-4 h-4 mr-2" />
+                        Attachments ({selectedQuery.attachments.length})
+                      </h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {selectedQuery.attachments.map((attachment, idx) => {
+                          const isImage = (attachment.mimetype || "").startsWith("image/");
+                          const isVideo = (attachment.mimetype || "").startsWith("video/");
+                          const attachmentAnalysis = selectedQuery.attachmentAnalyses?.find(
+                            analysis => analysis.filename === attachment.filename || analysis.originalName === attachment.originalName
+                          );
+                          
+                          return (
+                            <div key={idx} className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+                              {/* File Preview */}
+                              <div className="p-3 border-b border-gray-100">
+                                {isImage ? (
+                                  <div className="relative">
+                                    <img 
+                                      src={attachment.url} 
+                                      alt={attachment.originalName} 
+                                      className="w-full h-32 object-cover rounded"
+                                      onError={(e) => {
+                                        e.target.style.display = 'none';
+                                        e.target.nextSibling.style.display = 'flex';
+                                      }}
+                                    />
+                                    <div className="hidden w-full h-32 bg-gray-100 items-center justify-center rounded">
+                                      <ImageIcon className="w-8 h-8 text-gray-400" />
+                                      <span className="text-xs text-gray-500 ml-2">Image Unavailable</span>
+                                    </div>
+                                    <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                                      <ImageIcon className="w-3 h-3 inline mr-1" />
+                                      Image
+                                    </div>
+                                  </div>
+                                ) : isVideo ? (
+                                  <div className="w-full h-32 bg-gray-100 flex items-center justify-center rounded">
+                                    <VideoIcon className="w-8 h-8 text-gray-400" />
+                                    <span className="text-xs text-gray-500 ml-2">Video File</span>
+                                  </div>
+                                ) : (
+                                  <div className="w-full h-32 bg-gray-100 flex items-center justify-center rounded">
+                                    <FileText className="w-8 h-8 text-gray-400" />
+                                    <span className="text-xs text-gray-500 ml-2">Document</span>
+                                  </div>
+                                )}
+                                <div className="mt-2">
+                                  <p className="text-xs font-medium text-gray-700 truncate">
+                                    {attachment.originalName}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {(attachment.size / 1024 / 1024).toFixed(2)} MB
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Removed per-attachment AI analysis as requested */}
+
+                              {/* Download Link */}
+                              <div className="p-3 bg-gray-50 border-t border-gray-100">
+                                <a 
+                                  href={attachment.url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center"
+                                >
+                                  <FileText className="w-3 h-3 mr-1" />
+                                  View/Download
+                                </a>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                      <FileText className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-600 font-medium">No Attachments</p>
+                      <p className="text-xs text-gray-500">This query doesn't have any attached files</p>
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2 text-sm text-gray-500">
