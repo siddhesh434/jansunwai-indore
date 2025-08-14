@@ -342,65 +342,98 @@ export default function Dashboard() {
         alert("No departments available. Please try again later.");
         return;
       }
+      
       const formData = new FormData();
       formData.append("title", queryAnalysis.title || "");
+      
       let baseDesc = newQuery.query || "";
+      
+      // Handle attachment analyses with proper formatting
       if (attachmentAnalyses.length > 0) {
-        const section = attachmentAnalyses
-          .map((a, idx) => {
-            if (!a?.analysis) return null;
+        const attachmentSections = attachmentAnalyses
+          .map((analysis, idx) => {
+            if (!analysis?.analysis) return null;
+            
             const lines = [];
-            lines.push(`File ${idx + 1}: ${a.file?.name || a.filename || "attachment"}`);
-            if (a.analysis.description) lines.push(`Description: ${clampWords(a.analysis.description, 50, 60)}`);
-            if (a.analysis.summary) lines.push(`Municipal Summary: ${clampWords(a.analysis.summary, 50, 60)}`);
-            return lines.join("\n");
-          })
-          .filter(Boolean)
-          .join("\n\n");
-        if (section) baseDesc += `\n\n=== Attachment AI Summaries ===\n${section}`;
-        // Also send structured data for admin
-        const structured = attachmentAnalyses
-          .map((a) => (
-            a?.analysis && {
-              filename: a.filename || a.file?.name,
-              originalName: a.file?.name || a.filename,
-              mimetype: a.file?.type,
-              description: clampWords(a.analysis.description, 50, 60),
-              summary: clampWords(a.analysis.summary, 50, 60),
-              metadata: a.analysis.metadata || null,
+            const fileName = analysis.file?.name || analysis.filename || `attachment-${idx + 1}`;
+            lines.push(`📎 File ${idx + 1}: ${fileName}`);
+            
+            if (analysis.analysis.description) {
+              lines.push(`   Description: ${clampWords(analysis.analysis.description, 50, 60)}`);
             }
-          ))
+            
+            if (analysis.analysis.summary) {
+              lines.push(`   Municipal Summary: ${clampWords(analysis.analysis.summary, 50, 60)}`);
+            }
+            
+            return lines.join('\n');
+          })
           .filter(Boolean);
-        if (structured.length > 0) {
-          formData.append("attachmentAnalyses", JSON.stringify(structured));
+        
+        if (attachmentSections.length > 0) {
+          const attachmentSection = attachmentSections.join('\n\n');
+          baseDesc += `\n\n=== Attachment AI Summaries ===\n\n${attachmentSection}`;
+        }
+        
+        // Also send structured data for admin
+        const structuredAnalyses = attachmentAnalyses
+          .map((analysis) => {
+            if (!analysis?.analysis) return null;
+            return {
+              filename: analysis.filename || analysis.file?.name,
+              originalName: analysis.file?.name || analysis.filename,
+              mimetype: analysis.file?.type,
+              description: analysis.analysis.description ? clampWords(analysis.analysis.description, 50, 60) : null,
+              summary: analysis.analysis.summary ? clampWords(analysis.analysis.summary, 50, 60) : null,
+              metadata: analysis.analysis.metadata || null,
+            };
+          })
+          .filter(Boolean);
+        
+        if (structuredAnalyses.length > 0) {
+          formData.append("attachmentAnalyses", JSON.stringify(structuredAnalyses));
         }
       }
+      
       formData.append("description", baseDesc);
       formData.append("address", newQuery.address || "");
       formData.append("author", user?._id || "");
       formData.append("department", deptId);
-      selectedFiles.forEach((file) => formData.append("attachments", file));
+      
+      // Append all selected files
+      selectedFiles.forEach((file) => {
+        formData.append("attachments", file);
+      });
+
+      console.log("Submitting query with description:", baseDesc); // Debug log
 
       const res = await fetch("/api/queries", {
         method: "POST",
         body: formData,
       });
 
-      if (!res.ok) throw new Error("Failed to create query");
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Failed to create query: ${errorText}`);
+      }
+      
       const created = await res.json();
 
       stopVoiceInput();
-      setQueries([...(queries || []), created]);
+      setQueries([created, ...(queries || [])]);
       setNewQuery({ query: "", address: "" });
       setQueryAnalysis(null);
       setSelectedFiles([]);
+      setAttachmentAnalyses([]);
       setShowNewQueryForm(false);
       setShowMap(false);
       setSelectedQuery(created);
       setThreads([]);
+      
+      console.log("Query created successfully:", created); // Debug log
     } catch (err) {
-      console.error(err);
-      alert("Unable to submit query. Please try again.");
+      console.error("Error creating query:", err);
+      alert(`Unable to submit query: ${err.message}. Please try again.`);
     }
   };
 
@@ -731,6 +764,7 @@ export default function Dashboard() {
                     </label>
                     <AttachmentAI
                       onAnalyzed={(items) => {
+                        console.log("Attachment analyses received:", items); // Debug log
                         setAttachmentAnalyses(items);
                         setSelectedFiles(items.map((i) => i.file).filter(Boolean));
                       }}
@@ -815,7 +849,7 @@ export default function Dashboard() {
                               </div>
                             )}
                             <span className={`text-sm font-medium ${queryAnalysis.detailsSufficient ? 'text-green-800' : 'text-yellow-800'}`}>
-                              {queryAnalysis.detailsSufficient ? t('detailsSufficient') : t('moreDetailsNeeded')}
+                              {queryAnalysis.detailsSufficient ? t('detailsSufficient') || 'Details Sufficient' : t('moreDetailsNeeded') || 'More Details Needed'}
                             </span>
                           </div>
                           
@@ -823,7 +857,7 @@ export default function Dashboard() {
                             <div className="space-y-2">
                               {queryAnalysis.missingDetails && queryAnalysis.missingDetails.length > 0 && (
                                 <div>
-                                  <span className="text-sm font-medium text-yellow-700">{t('missingDetails')}</span>
+                                  <span className="text-sm font-medium text-yellow-700">{t('missingDetails') || 'Missing Details:'}</span>
                                   <ul className="text-sm text-yellow-700 mt-1 space-y-1">
                                     {queryAnalysis.missingDetails.map((detail, index) => (
                                       <li key={index} className="flex items-start space-x-2">
@@ -837,7 +871,7 @@ export default function Dashboard() {
                               
                               {queryAnalysis.suggestions && (
                                 <div>
-                                  <span className="text-sm font-medium text-yellow-700">{t('suggestions')}</span>
+                                  <span className="text-sm font-medium text-yellow-700">{t('suggestions') || 'Suggestions:'}</span>
                                   <p className="text-sm text-yellow-700 mt-1 bg-yellow-100 p-2 rounded border border-yellow-200">
                                     {queryAnalysis.suggestions}
                                   </p>
@@ -846,7 +880,7 @@ export default function Dashboard() {
                               
                               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                                 <p className="text-sm text-blue-800">
-                                  <strong>Tip:</strong> {t('detailValidationTip')}
+                                  <strong>Tip:</strong> {t('detailValidationTip') || 'Please provide specific details about location, time, and the exact issue to help departments respond effectively.'}
                                 </p>
                               </div>
                               
@@ -855,7 +889,6 @@ export default function Dashboard() {
                                   <strong>⚠️ Query Submission Blocked:</strong> Your complaint cannot be submitted because it lacks very basic details or is inappropriate. Please provide a specific location/address and describe the issue clearly so departments can take action.
                                 </p>
                               </div>
- 
                             </div>
                           )}
                         </div>
@@ -871,6 +904,34 @@ export default function Dashboard() {
                             </p>
                           </div>
                         )}
+
+                        {/* Show attachment summaries preview if available */}
+                        {attachmentAnalyses.length > 0 && (
+                          <div className="border-t border-green-200 pt-3">
+                            <span className="text-sm font-medium text-gray-700">
+                              Attachment Summaries ({attachmentAnalyses.length} files):
+                            </span>
+                            <div className="mt-2 space-y-2">
+                              {attachmentAnalyses.map((analysis, idx) => (
+                                <div key={idx} className="bg-gray-50 rounded-lg p-3 text-sm">
+                                  <div className="font-medium text-gray-900 mb-1">
+                                    📎 {analysis.file?.name || analysis.filename || `File ${idx + 1}`}
+                                  </div>
+                                  {analysis.analysis?.description && (
+                                    <div className="text-gray-600 mb-1">
+                                      <strong>Description:</strong> {clampWords(analysis.analysis.description, 30, 40)}
+                                    </div>
+                                  )}
+                                  {analysis.analysis?.summary && (
+                                    <div className="text-gray-600">
+                                      <strong>Summary:</strong> {clampWords(analysis.analysis.summary, 30, 40)}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -879,7 +940,7 @@ export default function Dashboard() {
                     <button
                       onClick={handleCreateQuery}
                       disabled={!queryAnalysis || !newQuery.query.trim() || queryAnalysis.detailsSufficient === false}
-                      className="flex-1 sm:flex-none bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 disabled:from-gray-300 disabled:to-indigo-400 text-white px-6 py-3 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:transform-none text-center"
+                      className="flex-1 sm:flex-none bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 text-white px-6 py-3 rounded-lg transition-all duration-200 font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:transform-none text-center"
                     >
                       {analyzing ? "Analyzing..." : queryAnalysis?.detailsSufficient === false ? "Details Insufficient" : "Create Query"}
                     </button>
@@ -889,6 +950,8 @@ export default function Dashboard() {
                         setShowNewQueryForm(false);
                         setNewQuery({ query: "", address: "" });
                         setQueryAnalysis(null);
+                        setSelectedFiles([]);
+                        setAttachmentAnalyses([]);
                         setShowMap(false);
                       }}
                       className="flex-1 sm:flex-none bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-lg transition-colors font-medium border border-gray-300"
@@ -922,7 +985,7 @@ export default function Dashboard() {
                         {selectedQuery?.title || "Select a query"}
                       </h2>
                     </div>
-                    <p className="text-gray-600 text-sm mb-3 break-words">
+                    <p className="text-gray-600 text-sm mb-3 break-words whitespace-pre-wrap">
                       {selectedQuery?.description || "No description available"}
                     </p>
                     {selectedQuery?.address && (
