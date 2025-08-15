@@ -67,6 +67,27 @@ export default function DepartmentDashboard() {
     fetchDepartmentQueries();
   }, [isAuthenticated, departmentMember]);
 
+  // Poll for new conversations when a query is selected
+  useEffect(() => {
+    if (!selectedQuery?._id) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/conversations/${selectedQuery._id}?includeAuthorDetails=true`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.conversations.length !== threads.length) {
+            setThreads(data.conversations);
+          }
+        }
+      } catch (error) {
+        console.error("Error polling conversations:", error);
+      }
+    }, 5000); // Poll every 5 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [selectedQuery?._id, threads.length]);
+
   const fetchDepartmentQueries = async () => {
     try {
       // Fetch all queries for this department
@@ -87,9 +108,26 @@ export default function DepartmentDashboard() {
       const res = await fetch(`/api/queries/${queryId}`);
       const queryData = await res.json();
       setSelectedQuery(queryData);
-      setThreads(queryData.objects || []);
+      
+              // Fetch conversations from the API with author details
+        const conversationsRes = await fetch(`/api/conversations/${queryId}?includeAuthorDetails=true`);
+        if (conversationsRes.ok) {
+          const conversationsData = await conversationsRes.json();
+          setThreads(conversationsData.conversations || []);
+        } else {
+          // Fallback to query objects if API fails
+          setThreads(queryData.objects || []);
+        }
     } catch (error) {
       console.error("Error fetching query threads:", error);
+      // Fallback to query objects if API fails
+      try {
+        const res = await fetch(`/api/queries/${queryId}`);
+        const queryData = await res.json();
+        setThreads(queryData.objects || []);
+      } catch (fallbackError) {
+        console.error("Fallback also failed:", fallbackError);
+      }
     }
   };
 
@@ -98,35 +136,30 @@ export default function DepartmentDashboard() {
     if (!selectedQuery || !newThread.trim()) return;
 
     try {
-      const updatedThreads = [
-        ...threads,
-        {
+      const res = await fetch(`/api/conversations/${selectedQuery._id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           message: newThread,
           authorId: departmentMember._id,
           authorType: "DepartmentMember",
-          timestamp: new Date(),
-        },
-      ];
-
-      const res = await fetch(`/api/queries/${selectedQuery._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ objects: updatedThreads }),
+        }),
       });
 
       if (res.ok) {
-        setThreads(updatedThreads);
+        const data = await res.json();
+        setThreads(data.query.objects || []);
         setNewThread("");
+        setSelectedQuery(data.query);
 
-        // Update query status to in_progress if it was open
-        if (selectedQuery.status === "open") {
-          await fetch(`/api/queries/${selectedQuery._id}/status`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status: "in_progress" }),
-          });
-          setSelectedQuery({ ...selectedQuery, status: "in_progress" });
-        }
+        // Update the query in the list
+        setDepartmentQueries((queries) =>
+          queries.map((q) =>
+            q._id === selectedQuery._id ? data.query : q
+          )
+        );
+      } else {
+        console.error("Failed to add thread");
       }
     } catch (error) {
       console.error("Error adding thread:", error);
@@ -709,7 +742,10 @@ export default function DepartmentDashboard() {
                           <span className={`text-xs font-medium ${
                             thread.authorType === "DepartmentMember" ? "text-blue-700" : "text-gray-700"
                           }`}>
-                            {thread.authorType === "DepartmentMember" ? "Department" : "User"}
+                            {thread.authorType === "DepartmentMember" 
+                              ? (thread.authorDetails?.name || "Department") 
+                              : (thread.authorDetails?.name || "User")
+                            }
                           </span>
                           <span className="text-xs text-gray-500">
                             {new Date(thread.timestamp).toLocaleString()}

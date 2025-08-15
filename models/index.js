@@ -64,9 +64,21 @@ const ThreadObjectSchema = new Schema(
       refPath: "objects.authorType",
     },
     timestamp: { type: Date, default: Date.now },
+    attachments: [
+      new Schema(
+        {
+          filename: { type: String, required: true },
+          originalName: { type: String, required: true },
+          mimetype: { type: String, required: true },
+          size: { type: Number, required: true },
+          url: { type: String, required: true },
+        },
+        { _id: false }
+      ),
+    ],
   },
   { _id: false }
-);
+ );
 
 // Query Schema
 const QuerySchema = new Schema(
