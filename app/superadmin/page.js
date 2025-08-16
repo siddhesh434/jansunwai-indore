@@ -1,9 +1,9 @@
 "use client"
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
-import { Users, FileText, Building2, UserCheck, TrendingUp, AlertCircle, CheckCircle, Clock, Calendar, Activity, Brain, Zap, Target, RefreshCw, Shield, LogOut } from 'lucide-react';
+import { Users, FileText, Building2, UserCheck, TrendingUp, AlertCircle, CheckCircle, Clock, Calendar, Activity, Brain, Zap, Target, RefreshCw, Shield, LogOut, Search, Filter, SortAsc, SortDesc, Eye } from 'lucide-react';
 
 const Dashboard = () => {
   const [data, setData] = useState({
@@ -12,6 +12,11 @@ const Dashboard = () => {
     departments: [],
     departmentMembers: []
   });
+  const [allQueries, setAllQueries] = useState([]);
+  const [queriesLoading, setQueriesLoading] = useState(false);
+  const [sortOrder, setSortOrder] = useState('newest');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [aiInsights, setAiInsights] = useState(null);
@@ -27,17 +32,7 @@ const Dashboard = () => {
     }
   }, [isSuperadminAuthenticated, router]);
 
-  // Handle logout
-  const handleLogout = () => {
-    logout();
-    router.push('/superadmin/login');
-  };
-
-  // Don't render if not authenticated
-  if (!isSuperadminAuthenticated) {
-    return null;
-  }
-
+  // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -68,7 +63,7 @@ const Dashboard = () => {
           queries: Array(420).fill().map((_, i) => ({
             _id: `query_${i}`,
             title: `Query ${i + 1}`,
-            status: ['pending', 'in-progress', 'resolved', 'closed'][Math.floor(Math.random() * 4)],
+            status: ['pending', 'in_progress', 'resolved', 'closed'][Math.floor(Math.random() * 4)],
             createdAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
             department: { departmentName: ['Roads & Infrastructure', 'Water Supply', 'Electricity', 'Health', 'Education'][Math.floor(Math.random() * 5)] }
           })),
@@ -93,15 +88,62 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
-  // Auto-generate AI insights when switching to insights tab
-  useEffect(() => {
-    if (activeTab === 'insights' && !aiInsights && !loading) {
-      generateAIInsights();
+  // Function definitions - must come before useEffect hooks that use them
+  const fetchAllQueries = useCallback(async () => {
+    setQueriesLoading(true);
+    try {
+      const response = await fetch(`/api/populatedqueries?sortOrder=${sortOrder}`);
+      const queries = await response.json();
+      
+      if (Array.isArray(queries)) {
+        setAllQueries(queries);
+      } else {
+        // Fallback to mock data
+        const mockQueries = Array(50).fill().map((_, i) => ({
+          _id: `query_${i}`,
+          title: `Sample Query ${i + 1}: ${['Water shortage in area', 'Road repair needed', 'Electricity outage', 'Garbage collection issue', 'Street light maintenance'][Math.floor(Math.random() * 5)]}`,
+          status: ['open', 'in_progress', 'resolved'][Math.floor(Math.random() * 3)],
+          createdAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+          author: {
+            _id: `user_${i}`,
+            name: `Citizen ${i + 1}`,
+            email: `citizen${i + 1}@example.com`
+          },
+          department: {
+            _id: `dept_${Math.floor(Math.random() * 5)}`,
+            departmentName: ['Roads & Infrastructure', 'Water Supply', 'Electricity', 'Health', 'Education'][Math.floor(Math.random() * 5)]
+          }
+        }));
+        setAllQueries(sortOrder === 'oldest' ? mockQueries.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)) : mockQueries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+      }
+    } catch (error) {
+      console.error('Error fetching queries:', error);
+      // Fallback to mock data on error
+      const mockQueries = Array(50).fill().map((_, i) => ({
+        _id: `query_${i}`,
+        title: `Sample Query ${i + 1}: ${['Water shortage in area', 'Road repair needed', 'Electricity outage', 'Garbage collection issue', 'Street light maintenance'][Math.floor(Math.random() * 5)]}`,
+        status: ['open', 'in_progress', 'resolved'][Math.floor(Math.random() * 3)],
+        createdAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
+        updatedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+        author: {
+          _id: `user_${i}`,
+          name: `Citizen ${i + 1}`,
+          email: `citizen${i + 1}@example.com`
+        },
+        department: {
+          _id: `dept_${Math.floor(Math.random() * 5)}`,
+          departmentName: ['Roads & Infrastructure', 'Water Supply', 'Electricity', 'Health', 'Education'][Math.floor(Math.random() * 5)]
+        }
+      }));
+      setAllQueries(sortOrder === 'oldest' ? mockQueries.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)) : mockQueries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+    } finally {
+      setQueriesLoading(false);
     }
-  }, [activeTab, loading]);
+  }, [sortOrder]);
 
   // AI Analysis Functions
-  const generateAIInsights = async () => {
+  const generateAIInsights = useCallback(async () => {
     setInsightsLoading(true);
     try {
       // Prepare comprehensive data for AI analysis
@@ -153,7 +195,30 @@ const Dashboard = () => {
     } finally {
       setInsightsLoading(false);
     }
-  };
+  }, [data.users.length, data.queries.length, data.departments.length, data.departmentMembers.length]);
+
+  // Now the useEffect hooks that use these functions
+  useEffect(() => {
+    if (activeTab === 'queries') {
+      fetchAllQueries();
+    }
+  }, [activeTab, sortOrder, fetchAllQueries]);
+
+  // Auto-generate AI insights when switching to insights tab
+  useEffect(() => {
+    if (activeTab === 'insights' && !aiInsights && !loading) {
+      generateAIInsights();
+    }
+  }, [activeTab, loading, aiInsights, generateAIInsights]);
+
+  // Helper functions and computed values
+  const filteredQueries = allQueries.filter(query => {
+    const matchesSearch = query.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         query.author?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         query.department?.departmentName.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || query.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   const generateFallbackInsights = () => {
     const totalQueries = data.queries.length;
@@ -184,6 +249,7 @@ const Dashboard = () => {
         ['System operating within normal parameters']
     };
   };
+
   const generateInsights = () => {
     const totalQueries = data.queries.length;
     const resolvedQueries = data.queries.filter(q => q.status === 'resolved').length;
@@ -250,6 +316,36 @@ const Dashboard = () => {
     }));
   };
 
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'open': return 'bg-red-100 text-red-800 border-red-200';
+      case 'in_progress': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'resolved': return 'bg-green-100 text-green-800 border-green-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  // Don't render if not authenticated
+  if (!isSuperadminAuthenticated) {
+    return null;
+  }
+
+  // Handle logout
+  const handleLogout = () => {
+    logout();
+    router.push('/superadmin/login');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -280,12 +376,27 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
+      <style jsx>{`
+        .line-clamp-1 {
+          display: -webkit-box;
+          -webkit-line-clamp: 1;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        .line-clamp-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+      `}</style>
+      
       {/* Dashboard Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Navigation Tabs */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
           <div className="flex space-x-8 px-6">
-            {['overview', 'analytics', 'departments', 'insights'].map((tab) => (
+            {['overview', 'analytics', 'departments', 'queries', 'insights'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -500,6 +611,206 @@ const Dashboard = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'queries' && (
+          <div className="space-y-6">
+            {/* Queries Header with Controls */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+                    <FileText className="h-7 w-7 mr-3 text-blue-500" />
+                    All Queries ({filteredQueries.length})
+                  </h2>
+                  <p className="text-gray-600 mt-1">View and manage all citizen queries</p>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row gap-3">
+                  {/* Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search queries..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full sm:w-64"
+                    />
+                  </div>
+                  
+                  {/* Status Filter */}
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="open">Open</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                  </select>
+                  
+                  {/* Sort Order */}
+                  <button
+                    onClick={() => setSortOrder(sortOrder === 'newest' ? 'oldest' : 'newest')}
+                    className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  >
+                    {sortOrder === 'newest' ? (
+                      <>
+                        <SortDesc className="h-4 w-4 mr-2" />
+                        Newest First
+                      </>
+                    ) : (
+                      <>
+                        <SortAsc className="h-4 w-4 mr-2" />
+                        Oldest First
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Queries List */}
+            {queriesLoading ? (
+              <div className="bg-white rounded-xl shadow-lg p-12 text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading queries...</p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                {filteredQueries.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">No queries found</h3>
+                    <p className="text-gray-500">
+                      {searchQuery || statusFilter !== 'all' 
+                        ? 'Try adjusting your search or filter criteria' 
+                        : 'No queries have been submitted yet'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Query Details
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Author
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Department
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Created
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {filteredQueries.map((query) => (
+                          <tr key={query._id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-6 py-4">
+                              <div>
+                                <h4 className="text-sm font-medium text-gray-900 line-clamp-2">
+                                  {query.title}
+                                </h4>
+                                {query.description && (
+                                  <p className="text-sm text-gray-500 mt-1 line-clamp-1">
+                                    {query.description}
+                                  </p>
+                                )}
+                                <p className="text-xs text-gray-400 mt-1">
+                                  ID: {query._id}
+                                </p>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {query.author?.name || 'Unknown'}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  {query.author?.email || 'No email'}
+                                </p>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center">
+                                <Building2 className="h-4 w-4 text-gray-400 mr-2" />
+                                <span className="text-sm text-gray-900">
+                                  {query.department?.departmentName || 'Unassigned'}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(query.status)}`}>
+                                {query.status.replace('_', ' ').toUpperCase()}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div>
+                                <p className="text-sm text-gray-900">
+                                  {formatDate(query.createdAt)}
+                                </p>
+                                {query.updatedAt !== query.createdAt && (
+                                  <p className="text-xs text-gray-500">
+                                    Updated: {formatDate(query.updatedAt)}
+                                  </p>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <button className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">
+                                <Eye className="h-4 w-4 mr-1" />
+                                View
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Summary Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-white rounded-lg shadow p-4 text-center">
+                <div className="text-2xl font-bold text-blue-600">
+                  {filteredQueries.filter(q => q.status === 'open').length}
+                </div>
+                <div className="text-sm text-gray-600">Open Queries</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-4 text-center">
+                <div className="text-2xl font-bold text-yellow-600">
+                  {filteredQueries.filter(q => q.status === 'in_progress').length}
+                </div>
+                <div className="text-sm text-gray-600">In Progress</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-4 text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  {filteredQueries.filter(q => q.status === 'resolved').length}
+                </div>
+                <div className="text-sm text-gray-600">Resolved</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-4 text-center">
+                <div className="text-2xl font-bold text-gray-600">
+                  {filteredQueries.length}
+                </div>
+                <div className="text-sm text-gray-600">Total Shown</div>
+              </div>
             </div>
           </div>
         )}
