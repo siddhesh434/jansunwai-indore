@@ -17,7 +17,6 @@ export async function POST(request) {
     if (member.password !== password) {
       return Response.json({ error: "Invalid credentials" }, { status: 401 });
     }
-
     return Response.json({ 
       departmentMemberId: member._id,
       message: "Login successful",

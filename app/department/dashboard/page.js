@@ -141,7 +141,7 @@ export default function DepartmentDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: newThread,
-          authorId: departmentMember._id,
+          authorId: departmentMember.id,
           authorType: "DepartmentMember",
         }),
       });
@@ -332,36 +332,7 @@ export default function DepartmentDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
-                <Building2 className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {t("departmentDashboard")}
-                </h1>
-                <p className="text-gray-600">
-                  {departmentMember?.department?.departmentName}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={fetchDepartmentQueries}
-                className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <RefreshCw className="w-4 h-4" />
-                <span>Refresh</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    
       {/* Stats Cards */}
       <div className="max-w-7xl mx-auto px-6 py-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

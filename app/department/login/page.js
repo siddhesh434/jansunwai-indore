@@ -34,9 +34,8 @@ export default function DepartmentLogin() {
       });
 
       const data = await res.json();
-
       if (res.ok) {
-        localStorage.setItem("departmentMemberId", data.departmentMemberId);
+        localStorage.setItem("departmentMemberId", String(data.departmentMemberId));
         loginDepartmentMember(data.member);
         router.push("/department/dashboard");
       } else {
