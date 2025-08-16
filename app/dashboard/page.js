@@ -1153,7 +1153,7 @@ export default function Dashboard() {
         setQueryAnalysis({
           title: query.substring(0, 60) + (query.length > 60 ? "..." : ""),
           departmentId: departments[0]?._id || "",
-          departmentName: departments[0]?.departmentName || "Municipal Services",
+          departmentName: departments[0]?.departmentName || "Sewage",
           reasoning: "Auto-generated due to analysis failure",
           originalQuery: query,
           address: address || "",
@@ -1167,7 +1167,7 @@ export default function Dashboard() {
       setQueryAnalysis({
         title: query.substring(0, 60) + (query.length > 60 ? "..." : ""),
         departmentId: departments[0]?._id || "",
-        departmentName: departments[0]?.departmentName || "Municipal Services",
+        departmentName: departments[0]?.departmentName || "Sewage",
         reasoning: "Auto-generated due to analysis error",
         originalQuery: query,
         address: address || "",
@@ -1480,13 +1480,7 @@ export default function Dashboard() {
                   </h1>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setActiveStatusFilter("all")}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                  >
-                    <Filter className="w-4 h-4" />
-                    Filters
-                  </button>
+                  
                   
                   <div className="flex items-center border border-gray-200 rounded-lg">
                     <button

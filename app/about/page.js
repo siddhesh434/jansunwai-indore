@@ -67,52 +67,100 @@ export default function AboutPage() {
 
   const departments = [
     {
-      name: "Municipal Services",
-      description: "Garbage collection, road maintenance, street lighting, public toilets, noise pollution",
+      name: "Sewage",
+      description: "Sewage system maintenance, drainage issues, sewer line repairs, sewage treatment, clogged drains, sewage overflow, manhole maintenance, sewage infrastructure, waste water management, sewage complaints",
       icon: Building2,
       color: "bg-blue-100 text-blue-800"
     },
     {
-      name: "Water Supply",
-      description: "Water distribution, quality control, pipeline maintenance, billing issues",
+      name: "Compost with dried leaves",
+      description: "Organic waste composting, leaf collection, composting facilities, organic waste management, leaf mulching, composting programs, organic fertilizer production, waste reduction, environmental sustainability, green waste processing",
       icon: Globe,
       color: "bg-cyan-100 text-cyan-800"
     },
     {
-      name: "Traffic Management",
-      description: "Traffic signals, parking, road safety, speed breakers",
-      icon: Target,
+      name: "Water Supply",
+      description: "Water distribution, quality control, pipeline maintenance, water pressure issues, water contamination, billing disputes, meter problems, water connection, supply interruptions, water tankers",
+      icon: Globe,
+      color: "bg-blue-100 text-blue-800"
+    },
+    {
+      name: "Electricity",
+      description: "Power supply, electrical maintenance, street lighting, power outages, electrical safety, meter reading, billing issues, electrical connections, power infrastructure, electrical repairs",
+      icon: Zap,
       color: "bg-orange-100 text-orange-800"
     },
     {
-      name: "Public Health",
-      description: "Health centers, sanitation, disease control, vaccination camps",
-      icon: Shield,
+      name: "Engineering",
+      description: "Infrastructure projects, construction supervision, technical planning, structural assessments, engineering consultations, project management, quality control, technical specifications, construction permits, engineering approvals",
+      icon: Target,
       color: "bg-green-100 text-green-800"
     },
     {
-      name: "Education",
-      description: "Schools, libraries, educational programs, infrastructure",
-      icon: Users,
-      color: "bg-purple-100 text-purple-800"
-    },
-    {
       name: "Revenue",
-      description: "Tax collection, property registration, certificates, documents",
+      description: "Tax collection, property registration, certificates, birth certificates, death certificates, property tax, business licenses, revenue collection, document verification, legal documents",
       icon: FileText,
       color: "bg-yellow-100 text-yellow-800"
     },
     {
-      name: "Fire Services",
-      description: "Fire safety, emergency response, rescue operations",
+      name: "Fire Brigade",
+      description: "Fire safety, emergency response, rescue operations, fire inspections, safety certificates, fire prevention, emergency services, fire equipment, safety training, fire NOC",
       icon: Zap,
       color: "bg-red-100 text-red-800"
     },
     {
-      name: "Parks & Gardens",
-      description: "Park maintenance, tree plantation, landscaping",
+      name: "Finance",
+      description: "Budget management, financial planning, expenditure control, financial reporting, budget allocation, financial audits, cost management, financial policies, fiscal planning, financial transparency",
+      icon: FileText,
+      color: "bg-purple-100 text-purple-800"
+    },
+    {
+      name: "Garden",
+      description: "Park maintenance, tree plantation, landscaping, playground equipment, garden maintenance, public spaces, recreational facilities, green spaces, park safety, environmental conservation",
       icon: Globe,
       color: "bg-emerald-100 text-emerald-800"
+    },
+    {
+      name: "Miscellaneous Complaints",
+      description: "General complaints, unclassified issues, special cases, unique problems, general grievances, miscellaneous issues, special requests, general feedback, unassigned complaints, special handling",
+      icon: Users,
+      color: "bg-gray-100 text-gray-800"
+    },
+    {
+      name: "Parking",
+      description: "Parking management, parking violations, parking infrastructure, parking permits, parking fees, parking enforcement, parking complaints, parking facilities, traffic management, parking regulations",
+      icon: Target,
+      color: "bg-indigo-100 text-indigo-800"
+    },
+    {
+      name: "Building Allowance",
+      description: "Construction permits, building approvals, building codes, construction regulations, building inspections, construction safety, building standards, construction compliance, building permits, construction oversight",
+      icon: Building2,
+      color: "bg-amber-100 text-amber-800"
+    },
+    {
+      name: "Lake Protection",
+      description: "Water body conservation, lake maintenance, water quality, environmental protection, lake infrastructure, water pollution control, lake safety, environmental monitoring, water conservation, lake restoration",
+      icon: Globe,
+      color: "bg-teal-100 text-teal-800"
+    },
+    {
+      name: "Social Security",
+      description: "Welfare programs, social assistance, community support, social services, welfare benefits, social programs, community welfare, social assistance programs, welfare schemes, social support services",
+      icon: Shield,
+      color: "bg-pink-100 text-pink-800"
+    },
+    {
+      name: "Govardhan Project",
+      description: "Special development project, infrastructure development, project management, development initiatives, project coordination, development planning, project implementation, development oversight, project monitoring, development coordination",
+      icon: Target,
+      color: "bg-violet-100 text-violet-800"
+    },
+    {
+      name: "BRTS and BCL",
+      description: "Bus rapid transit system, public transportation, bus services, transit infrastructure, transportation planning, bus operations, transit management, transportation services, bus maintenance, transit coordination",
+      icon: Target,
+      color: "bg-slate-100 text-slate-800"
     }
   ];
 
@@ -339,10 +387,7 @@ export default function AboutPage() {
                     <h3 className="text-lg font-semibold text-gray-900">{dept.name}</h3>
                   </div>
                   <p className="text-gray-600 text-sm leading-relaxed">{dept.description}</p>
-                  <div className="mt-4 flex items-center text-blue-600 text-sm font-medium">
-                    <span>{language === "hi" ? "विशेष डैशबोर्ड" : "Specialized Dashboard"}</span>
-                    <ArrowRight className="w-4 h-4 ml-1" />
-                  </div>
+                  
                 </div>
               ))}
             </div>
@@ -496,17 +541,7 @@ export default function AboutPage() {
                   <p className="text-blue-600 font-medium mb-3">{dev.role}</p>
                   <p className="text-gray-600 text-sm leading-relaxed">{dev.description}</p>
                   
-                  <div className="flex justify-center space-x-3 mt-4">
-                    <a href="#" className="text-gray-400 hover:text-gray-600 transition-colors">
-                      <Github className="w-5 h-5" />
-                    </a>
-                    <a href="#" className="text-gray-400 hover:text-blue-600 transition-colors">
-                      <Linkedin className="w-5 h-5" />
-                    </a>
-                    <a href="#" className="text-gray-400 hover:text-red-600 transition-colors">
-                      <Mail className="w-5 h-5" />
-                    </a>
-                  </div>
+                  
                 </div>
               ))}
             </div>
@@ -532,29 +567,7 @@ export default function AboutPage() {
       </div>
 
       {/* Footer CTA */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold mb-4">
-              {language === "hi" ? "आज ही शुरू करें" : "Get Started Today"}
-            </h2>
-            <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-              {language === "hi"
-                ? "अपनी शिकायत दर्ज करें और AI-संचालित समाधान का अनुभव करें"
-                : "Register your complaint and experience AI-powered solutions"
-              }
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="px-8 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors">
-                {language === "hi" ? "शिकायत दर्ज करें" : "File a Complaint"}
-              </button>
-              <button className="px-8 py-3 border-2 border-white text-white font-semibold rounded-lg hover:bg-white hover:text-blue-600 transition-colors">
-                {language === "hi" ? "और जानें" : "Learn More"}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      
     </div>
   );
 }

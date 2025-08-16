@@ -674,13 +674,7 @@ export default function DepartmentDashboard() {
                         })}
                       </div>
                     </div>
-                  ) : (
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                      <FileText className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-gray-600 font-medium">No Attachments</p>
-                      <p className="text-xs text-gray-500">This query doesn't have any attached files</p>
-                    </div>
-                  )}
+                  ) :(<div></div> )}
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2 text-sm text-gray-500">

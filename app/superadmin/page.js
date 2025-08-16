@@ -65,14 +65,25 @@ const Dashboard = () => {
             title: `Query ${i + 1}`,
             status: ['pending', 'in_progress', 'resolved', 'closed'][Math.floor(Math.random() * 4)],
             createdAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
-            department: { departmentName: ['Roads & Infrastructure', 'Water Supply', 'Electricity', 'Health', 'Education'][Math.floor(Math.random() * 5)] }
+            department: { departmentName: ['Sewage', 'Compost with dried leaves', 'Water Supply', 'Electricity', 'Engineering', 'Revenue', 'Fire Brigade', 'Finance', 'Garden', 'Miscellaneous Complaints', 'Parking', 'Building Allowance', 'Lake Protection', 'Social Security', 'Govardhan Project', 'BRTS and BCL'][Math.floor(Math.random() * 16)] }
           })),
           departments: [
-            { _id: 'dept_1', departmentName: 'Roads & Infrastructure', members: Array(12).fill(), queries: Array(85).fill() },
-            { _id: 'dept_2', departmentName: 'Water Supply', members: Array(8).fill(), queries: Array(92).fill() },
-            { _id: 'dept_3', departmentName: 'Electricity', members: Array(10).fill(), queries: Array(78).fill() },
-            { _id: 'dept_4', departmentName: 'Health', members: Array(15).fill(), queries: Array(95).fill() },
-            { _id: 'dept_5', departmentName: 'Education', members: Array(20).fill(), queries: Array(70).fill() }
+            { _id: 'dept_1', departmentName: 'Sewage', members: Array(12).fill(), queries: Array(85).fill() },
+            { _id: 'dept_2', departmentName: 'Compost with dried leaves', members: Array(8).fill(), queries: Array(92).fill() },
+            { _id: 'dept_3', departmentName: 'Water Supply', members: Array(10).fill(), queries: Array(78).fill() },
+            { _id: 'dept_4', departmentName: 'Electricity', members: Array(15).fill(), queries: Array(95).fill() },
+            { _id: 'dept_5', departmentName: 'Engineering', members: Array(20).fill(), queries: Array(70).fill() },
+            { _id: 'dept_6', departmentName: 'Revenue', members: Array(18).fill(), queries: Array(88).fill() },
+            { _id: 'dept_7', departmentName: 'Fire Brigade', members: Array(14).fill(), queries: Array(65).fill() },
+            { _id: 'dept_8', departmentName: 'Finance', members: Array(16).fill(), queries: Array(72).fill() },
+            { _id: 'dept_9', departmentName: 'Garden', members: Array(11).fill(), queries: Array(55).fill() },
+            { _id: 'dept_10', departmentName: 'Miscellaneous Complaints', members: Array(13).fill(), queries: Array(120).fill() },
+            { _id: 'dept_11', departmentName: 'Parking', members: Array(9).fill(), queries: Array(68).fill() },
+            { _id: 'dept_12', departmentName: 'Building Allowance', members: Array(17).fill(), queries: Array(82).fill() },
+            { _id: 'dept_13', departmentName: 'Lake Protection', members: Array(7).fill(), queries: Array(45).fill() },
+            { _id: 'dept_14', departmentName: 'Social Security', members: Array(19).fill(), queries: Array(95).fill() },
+            { _id: 'dept_15', departmentName: 'Govardhan Project', members: Array(12).fill(), queries: Array(58).fill() },
+            { _id: 'dept_16', departmentName: 'BRTS and BCL', members: Array(15).fill(), queries: Array(75).fill() }
           ],
           departmentMembers: Array(65).fill().map((_, i) => ({
             _id: `member_${i}`,
@@ -101,7 +112,7 @@ const Dashboard = () => {
         // Fallback to mock data
         const mockQueries = Array(50).fill().map((_, i) => ({
           _id: `query_${i}`,
-          title: `Sample Query ${i + 1}: ${['Water shortage in area', 'Road repair needed', 'Electricity outage', 'Garbage collection issue', 'Street light maintenance'][Math.floor(Math.random() * 5)]}`,
+          title: `Sample Query ${i + 1}: ${['Water shortage in area', 'Road repair needed', 'Electricity outage', 'Garbage collection issue', 'Street light maintenance', 'Sewage overflow', 'Parking violation', 'Building permit issue', 'Lake pollution', 'Composting facility needed', 'Fire safety concern', 'Revenue collection issue', 'Garden maintenance', 'BRTS service complaint', 'Social security application', 'Govardhan project update'][Math.floor(Math.random() * 16)]}`,
           status: ['open', 'in_progress', 'resolved'][Math.floor(Math.random() * 3)],
           createdAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
           updatedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
@@ -111,8 +122,8 @@ const Dashboard = () => {
             email: `citizen${i + 1}@example.com`
           },
           department: {
-            _id: `dept_${Math.floor(Math.random() * 5)}`,
-            departmentName: ['Roads & Infrastructure', 'Water Supply', 'Electricity', 'Health', 'Education'][Math.floor(Math.random() * 5)]
+            _id: `dept_${Math.floor(Math.random() * 16)}`,
+            departmentName: ['Sewage', 'Compost with dried leaves', 'Water Supply', 'Electricity', 'Engineering', 'Revenue', 'Fire Brigade', 'Finance', 'Garden', 'Miscellaneous Complaints', 'Parking', 'Building Allowance', 'Lake Protection', 'Social Security', 'Govardhan Project', 'BRTS and BCL'][Math.floor(Math.random() * 16)]
           }
         }));
         setAllQueries(sortOrder === 'oldest' ? mockQueries.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)) : mockQueries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
@@ -122,7 +133,7 @@ const Dashboard = () => {
       // Fallback to mock data on error
       const mockQueries = Array(50).fill().map((_, i) => ({
         _id: `query_${i}`,
-        title: `Sample Query ${i + 1}: ${['Water shortage in area', 'Road repair needed', 'Electricity outage', 'Garbage collection issue', 'Street light maintenance'][Math.floor(Math.random() * 5)]}`,
+        title: `Sample Query ${i + 1}: ${['Water shortage in area', 'Road repair needed', 'Electricity outage', 'Garbage collection issue', 'Street light maintenance', 'Sewage overflow', 'Parking violation', 'Building permit issue', 'Lake pollution', 'Composting facility needed', 'Fire safety concern', 'Revenue collection issue', 'Garden maintenance', 'BRTS service complaint', 'Social security application', 'Govardhan project update'][Math.floor(Math.random() * 16)]}`,
         status: ['open', 'in_progress', 'resolved'][Math.floor(Math.random() * 3)],
         createdAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
         updatedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
@@ -132,8 +143,8 @@ const Dashboard = () => {
           email: `citizen${i + 1}@example.com`
         },
         department: {
-          _id: `dept_${Math.floor(Math.random() * 5)}`,
-          departmentName: ['Roads & Infrastructure', 'Water Supply', 'Electricity', 'Health', 'Education'][Math.floor(Math.random() * 5)]
+          _id: `dept_${Math.floor(Math.random() * 16)}`,
+          departmentName: ['Sewage', 'Compost with dried leaves', 'Water Supply', 'Electricity', 'Engineering', 'Revenue', 'Fire Brigade', 'Finance', 'Garden', 'Miscellaneous Complaints', 'Parking', 'Building Allowance', 'Lake Protection', 'Social Security', 'Govardhan Project', 'BRTS and BCL'][Math.floor(Math.random() * 16)]
         }
       }));
       setAllQueries(sortOrder === 'oldest' ? mockQueries.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)) : mockQueries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));

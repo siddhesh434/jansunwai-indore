@@ -147,36 +147,68 @@ const Query = mongoose.model("Query", QuerySchema);
 // ====== Extensive Dummy Data ======
 const departmentsData = [
   {
-    name: "Municipal Services",
-    description: "Garbage collection, road maintenance, street lighting, public toilets, noise pollution, construction permits, building maintenance, street cleaning, drainage issues, public infrastructure",
+    name: "Sewage",
+    description: "Sewage system maintenance, drainage issues, sewer line repairs, sewage treatment, clogged drains, sewage overflow, manhole maintenance, sewage infrastructure, waste water management, sewage complaints",
+  },
+  {
+    name: "Compost with dried leaves",
+    description: "Organic waste composting, leaf collection, composting facilities, organic waste management, leaf mulching, composting programs, organic fertilizer production, waste reduction, environmental sustainability, green waste processing",
   },
   {
     name: "Water Supply",
     description: "Water distribution, quality control, pipeline maintenance, water pressure issues, water contamination, billing disputes, meter problems, water connection, supply interruptions, water tankers",
   },
   {
-    name: "Traffic Management",
-    description: "Traffic signals, parking, road safety, speed breakers, traffic congestion, illegal parking, road accidents, traffic violations, pedestrian safety, road signs",
+    name: "Electricity",
+    description: "Power supply, electrical maintenance, street lighting, power outages, electrical safety, meter reading, billing issues, electrical connections, power infrastructure, electrical repairs",
   },
   {
-    name: "Public Health",
-    description: "Health centers, sanitation, disease control, vaccination camps, medical facilities, health inspections, mosquito control, public hygiene, health awareness, epidemic prevention",
-  },
-  {
-    name: "Education",
-    description: "Schools, libraries, educational programs, school infrastructure, teacher issues, student facilities, educational materials, school maintenance, academic programs, educational policies",
+    name: "Engineering",
+    description: "Infrastructure projects, construction supervision, technical planning, structural assessments, engineering consultations, project management, quality control, technical specifications, construction permits, engineering approvals",
   },
   {
     name: "Revenue",
     description: "Tax collection, property registration, certificates, birth certificates, death certificates, property tax, business licenses, revenue collection, document verification, legal documents",
   },
   {
-    name: "Fire Services",
+    name: "Fire Brigade",
     description: "Fire safety, emergency response, rescue operations, fire inspections, safety certificates, fire prevention, emergency services, fire equipment, safety training, fire NOC",
   },
   {
-    name: "Parks & Gardens",
+    name: "Finance",
+    description: "Budget management, financial planning, expenditure control, financial reporting, budget allocation, financial audits, cost management, financial policies, fiscal planning, financial transparency",
+  },
+  {
+    name: "Garden",
     description: "Park maintenance, tree plantation, landscaping, playground equipment, garden maintenance, public spaces, recreational facilities, green spaces, park safety, environmental conservation",
+  },
+  {
+    name: "Miscellaneous Complaints",
+    description: "General complaints, unclassified issues, special cases, unique problems, general grievances, miscellaneous issues, special requests, general feedback, unassigned complaints, special handling",
+  },
+  {
+    name: "Parking",
+    description: "Parking management, parking violations, parking infrastructure, parking permits, parking fees, parking enforcement, parking complaints, parking facilities, traffic management, parking regulations",
+  },
+  {
+    name: "Building Allowance",
+    description: "Construction permits, building approvals, building codes, construction regulations, building inspections, construction safety, building standards, construction compliance, building permits, construction oversight",
+  },
+  {
+    name: "Lake Protection",
+    description: "Water body conservation, lake maintenance, water quality, environmental protection, lake infrastructure, water pollution control, lake safety, environmental monitoring, water conservation, lake restoration",
+  },
+  {
+    name: "Social Security",
+    description: "Welfare programs, social assistance, community support, social services, welfare benefits, social programs, community welfare, social assistance programs, welfare schemes, social support services",
+  },
+  {
+    name: "Govardhan Project",
+    description: "Special development project, infrastructure development, project management, development initiatives, project coordination, development planning, project implementation, development oversight, project monitoring, development coordination",
+  },
+  {
+    name: "BRTS and BCL",
+    description: "Bus rapid transit system, public transportation, bus services, transit infrastructure, transportation planning, bus operations, transit management, transportation services, bus maintenance, transit coordination",
   },
 ];
 
@@ -289,27 +321,43 @@ const usersData = [
 ];
 
 const departmentMembersData = [
-  // Municipal Services
+  // Sewage
   {
     name: "Inspector Ramesh",
     username: "ramesh_inspector",
-    email: "ramesh@municipal.gov.in",
-    dept: "Municipal Services",
+    email: "ramesh@sewage.gov.in",
+    dept: "Sewage",
     password: "ramesh123",
   },
   {
     name: "Supervisor Lakshmi",
     username: "lakshmi_supervisor",
-    email: "lakshmi@municipal.gov.in",
-    dept: "Municipal Services",
+    email: "lakshmi@sewage.gov.in",
+    dept: "Sewage",
     password: "lakshmi123",
   },
   {
     name: "Officer Vinod",
     username: "vinod_officer",
-    email: "vinod@municipal.gov.in",
-    dept: "Municipal Services",
+    email: "vinod@sewage.gov.in",
+    dept: "Sewage",
     password: "vinod123",
+  },
+
+  // Compost with dried leaves
+  {
+    name: "Manager Priya",
+    username: "priya_manager",
+    email: "priya@compost.gov.in",
+    dept: "Compost with dried leaves",
+    password: "priya123",
+  },
+  {
+    name: "Technician Rajesh",
+    username: "rajesh_tech",
+    email: "rajesh@compost.gov.in",
+    dept: "Compost with dried leaves",
+    password: "rajesh123",
   },
 
   // Water Supply
@@ -335,115 +383,171 @@ const departmentMembersData = [
     password: "seema123",
   },
 
-  // Traffic Management
+  // Electricity
   {
-    name: "Inspector Ajay",
-    username: "ajay_traffic",
-    email: "ajay@traffic.gov.in",
-    dept: "Traffic Management",
-    password: "ajay123",
+    name: "Engineer Amit",
+    username: "amit_electrical",
+    email: "amit@electricity.gov.in",
+    dept: "Electricity",
+    password: "amit123",
   },
   {
-    name: "Constable Mohan",
-    username: "mohan_constable",
-    email: "mohan@traffic.gov.in",
-    dept: "Traffic Management",
-    password: "mohan123",
-  },
-
-  // Public Health
-  {
-    name: "Dr. Ashok",
-    username: "dr_ashok",
-    email: "ashok@health.gov.in",
-    dept: "Public Health",
-    password: "ashok123",
-  },
-  {
-    name: "Nurse Kamala",
-    username: "kamala_nurse",
-    email: "kamala@health.gov.in",
-    dept: "Public Health",
-    password: "kamala123",
-  },
-  {
-    name: "Health Officer Prakash",
-    username: "prakash_health",
-    email: "prakash@health.gov.in",
-    dept: "Public Health",
-    password: "prakash123",
+    name: "Technician Suresh",
+    username: "suresh_tech",
+    email: "suresh@electricity.gov.in",
+    dept: "Electricity",
+    password: "suresh123",
   },
 
-  // Education
+  // Engineering
   {
-    name: "Principal Madhuri",
-    username: "madhuri_principal",
-    email: "madhuri@education.gov.in",
-    dept: "Education",
-    password: "madhuri123",
+    name: "Chief Engineer Kumar",
+    username: "kumar_chief",
+    email: "kumar@engineering.gov.in",
+    dept: "Engineering",
+    password: "kumar123",
   },
   {
-    name: "Coordinator Sanjay",
-    username: "sanjay_coord",
-    email: "sanjay@education.gov.in",
-    dept: "Education",
-    password: "sanjay123",
+    name: "Project Manager Neha",
+    username: "neha_project",
+    email: "neha@engineering.gov.in",
+    dept: "Engineering",
+    password: "neha123",
   },
 
   // Revenue
   {
-    name: "Clerk Narayan",
-    username: "narayan_clerk",
-    email: "narayan@revenue.gov.in",
+    name: "Revenue Officer Singh",
+    username: "singh_revenue",
+    email: "singh@revenue.gov.in",
     dept: "Revenue",
-    password: "narayan123",
+    password: "singh123",
   },
   {
-    name: "Officer Shobha",
-    username: "shobha_revenue",
-    email: "shobha@revenue.gov.in",
+    name: "Tax Inspector Gupta",
+    username: "gupta_tax",
+    email: "gupta@revenue.gov.in",
     dept: "Revenue",
-    password: "shobha123",
+    password: "gupta123",
   },
 
-  // Fire Services
+  // Fire Brigade
   {
-    name: "Chief Raghav",
-    username: "raghav_fire",
-    email: "raghav@fire.gov.in",
-    dept: "Fire Services",
-    password: "raghav123",
+    name: "Fire Chief Sharma",
+    username: "sharma_fire",
+    email: "sharma@fire.gov.in",
+    dept: "Fire Brigade",
+    password: "sharma123",
   },
   {
-    name: "Officer Dinesh",
-    username: "dinesh_fire",
-    email: "dinesh@fire.gov.in",
-    dept: "Fire Services",
-    password: "dinesh123",
+    name: "Firefighter Verma",
+    username: "verma_fire",
+    email: "verma@fire.gov.in",
+    dept: "Fire Brigade",
+    password: "verma123",
   },
 
-  // Parks & Gardens
+  // Finance
   {
-    name: "Gardener Mukesh",
-    username: "mukesh_gardener",
-    email: "mukesh@parks.gov.in",
-    dept: "Parks & Gardens",
-    password: "mukesh123",
+    name: "Finance Manager Joshi",
+    username: "joshi_finance",
+    email: "joshi@finance.gov.in",
+    dept: "Finance",
+    password: "joshi123",
   },
   {
-    name: "Supervisor Anita",
-    username: "anita_parks",
-    email: "anita@parks.gov.in",
-    dept: "Parks & Gardens",
-    password: "anita123",
+    name: "Accountant Patel",
+    username: "patel_accountant",
+    email: "patel@finance.gov.in",
+    dept: "Finance",
+    password: "patel123",
+  },
+
+  // Garden
+  {
+    name: "Horticulturist Malviya",
+    username: "malviya_horticulture",
+    email: "malviya@garden.gov.in",
+    dept: "Garden",
+    password: "malviya123",
+  },
+  {
+    name: "Garden Supervisor Solanki",
+    username: "solanki_garden",
+    email: "solanki@garden.gov.in",
+    dept: "Garden",
+    password: "solanki123",
+  },
+
+  // Miscellaneous Complaints
+  {
+    name: "General Officer Tiwari",
+    username: "tiwari_general",
+    email: "tiwari@misc.gov.in",
+    dept: "Miscellaneous Complaints",
+    password: "tiwari123",
+  },
+
+  // Parking
+  {
+    name: "Parking Inspector Yadav",
+    username: "yadav_parking",
+    email: "yadav@parking.gov.in",
+    dept: "Parking",
+    password: "yadav123",
+  },
+
+  // Building Allowance
+  {
+    name: "Building Inspector Chauhan",
+    username: "chauhan_building",
+    email: "chauhan@building.gov.in",
+    dept: "Building Allowance",
+    password: "chauhan123",
+  },
+
+  // Lake Protection
+  {
+    name: "Environmental Officer Saxena",
+    username: "saxena_environment",
+    email: "saxena@lake.gov.in",
+    dept: "Lake Protection",
+    password: "saxena123",
+  },
+
+  // Social Security
+  {
+    name: "Welfare Officer Dubey",
+    username: "dubey_welfare",
+    email: "dubey@social.gov.in",
+    dept: "Social Security",
+    password: "dubey123",
+  },
+
+  // Govardhan Project
+  {
+    name: "Project Director Mishra",
+    username: "mishra_project",
+    email: "mishra@govardhan.gov.in",
+    dept: "Govardhan Project",
+    password: "mishra123",
+  },
+
+  // BRTS and BCL
+  {
+    name: "Transport Manager Trivedi",
+    username: "trivedi_transport",
+    email: "trivedi@brts.gov.in",
+    dept: "BRTS and BCL",
+    password: "trivedi123",
   },
 ];
 
 const queriesData = [
-  // Municipal Services Queries
+  // Sewage Queries
   {
-    title: "Garbage not collected for 1 week",
-    department: "Municipal Services",
+    title: "Sewage overflow in street",
+    department: "Sewage",
     author: "rajesh_k",
     status: "in_progress",
     threads: [
@@ -451,30 +555,30 @@ const queriesData = [
         author: "rajesh_k",
         type: "User",
         message:
-          "The garbage truck has not come to our area (Vijay Nagar) for the past 7 days. The situation is getting very unhygienic.",
+          "There is sewage overflow in our street (Vijay Nagar) for the past 3 days. The smell is unbearable.",
       },
       {
         author: "ramesh_inspector",
         type: "DepartmentMember",
         message:
-          "We apologize for the inconvenience. Our truck broke down but we have arranged an alternate vehicle.",
+          "We apologize for the inconvenience. Our team will visit today to fix the clogged sewer line.",
       },
       {
         author: "rajesh_k",
         type: "User",
-        message: "When can we expect the collection to resume?",
+        message: "When can we expect this to be resolved?",
       },
       {
         author: "ramesh_inspector",
         type: "DepartmentMember",
         message:
-          "Collection will resume from tomorrow morning. We will also do a cleanup of the accumulated garbage.",
+          "We will complete the repair by evening today. We will also clean the area thoroughly.",
       },
     ],
   },
   {
-    title: "Street light not working",
-    department: "Municipal Services",
+    title: "Clogged drainage system",
+    department: "Sewage",
     author: "priya_s",
     status: "resolved",
     threads: [
@@ -482,30 +586,21 @@ const queriesData = [
         author: "priya_s",
         type: "User",
         message:
-          "The street light near Palasia Square bus stop has been flickering and now completely stopped working.",
+          "The drainage system near Palasia Square is completely clogged and water is accumulating.",
       },
       {
         author: "vinod_officer",
         type: "DepartmentMember",
         message:
-          "Thank you for reporting. We will send our electrician team to check this today.",
-      },
-      {
-        author: "vinod_officer",
-        type: "DepartmentMember",
-        message:
-          "The faulty bulb has been replaced and the street light is now working properly.",
-      },
-      {
-        author: "priya_s",
-        type: "User",
-        message: "Thank you! The light is working fine now.",
+          "Thank you for reporting. We have cleared the blockage and the drainage is working properly now.",
       },
     ],
   },
+
+  // Compost with dried leaves Queries
   {
-    title: "Road pothole causing accidents",
-    department: "Municipal Services",
+    title: "Composting facility needed",
+    department: "Compost with dried leaves",
     author: "amit_p",
     status: "open",
     threads: [
@@ -513,13 +608,7 @@ const queriesData = [
         author: "amit_p",
         type: "User",
         message:
-          "There is a huge pothole on New Palasia main road that has caused 2 bike accidents this week.",
-      },
-      {
-        author: "lakshmi_supervisor",
-        type: "DepartmentMember",
-        message:
-          "We have noted your complaint. Our road maintenance team will inspect the location within 2 days.",
+          "We need a composting facility in our area (New Palasia) to handle organic waste and dried leaves.",
       },
     ],
   },
@@ -541,236 +630,105 @@ const queriesData = [
         author: "sunil_engineer",
         type: "DepartmentMember",
         message:
-          "There was a major pipeline burst in the main supply line. We are working on repairs.",
-      },
-      {
-        author: "sunita_g",
-        type: "User",
-        message:
-          "When will the supply be restored? We are facing severe water shortage.",
-      },
-      {
-        author: "sunil_engineer",
-        type: "DepartmentMember",
-        message:
-          "Repairs will be completed by tomorrow evening. We are arranging water tankers for immediate relief.",
-      },
-    ],
-  },
-  {
-    title: "Dirty water from tap",
-    department: "Water Supply",
-    author: "vikash_s",
-    status: "open",
-    threads: [
-      {
-        author: "vikash_s",
-        type: "User",
-        message:
-          "The water coming from our taps is muddy and has a bad smell. This started 2 days ago.",
-      },
-      {
-        author: "ravi_tech",
-        type: "DepartmentMember",
-        message:
-          "This could be due to maintenance work upstream. We will test the water quality and clean the supply line.",
+          "We are aware of the issue. There was a major pipeline break. We are working to restore supply by tomorrow.",
       },
     ],
   },
   {
     title: "Low water pressure",
     department: "Water Supply",
-    author: "kavita_j",
+    author: "vikash_s",
     status: "resolved",
+    threads: [
+      {
+        author: "vikash_s",
+        type: "User",
+        message:
+          "Water pressure is very low in our building (AB Road). Can't even fill a bucket properly.",
+      },
+      {
+        author: "seema_manager",
+        type: "DepartmentMember",
+        message:
+          "We have increased the pressure for your area. Please check now and let us know if it's better.",
+      },
+    ],
+  },
+
+  // Electricity Queries
+  {
+    title: "Power outage in sector",
+    department: "Electricity",
+    author: "kavita_j",
+    status: "open",
     threads: [
       {
         author: "kavita_j",
         type: "User",
         message:
-          "Water pressure in Bhawarkua area is very low, especially during morning hours.",
-      },
-      {
-        author: "seema_manager",
-        type: "DepartmentMember",
-        message:
-          "We will check the pump stations and pressure boosters in your area.",
-      },
-      {
-        author: "seema_manager",
-        type: "DepartmentMember",
-        message:
-          "The pressure booster has been repaired and water pressure should be normal now.",
+          "Our entire sector (Bhawarkua) has been without electricity for 6 hours. Please restore power.",
       },
     ],
   },
 
-  // Traffic Management Queries
+  // Engineering Queries
   {
-    title: "Traffic signal not working",
-    department: "Traffic Management",
+    title: "Road construction needed",
+    department: "Engineering",
     author: "rohit_a",
-    status: "in_progress",
+    status: "open",
     threads: [
       {
         author: "rohit_a",
         type: "User",
         message:
-          "The traffic signal at Sapna Sangeeta intersection has been blinking yellow for 2 days causing traffic jams.",
-      },
-      {
-        author: "ajay_traffic",
-        type: "DepartmentMember",
-        message:
-          "Our technical team will check the signal system today. We have deployed traffic police for manual control.",
-      },
-    ],
-  },
-  {
-    title: "Illegal parking blocking road",
-    department: "Traffic Management",
-    author: "meera_v",
-    status: "open",
-    threads: [
-      {
-        author: "meera_v",
-        type: "User",
-        message:
-          "Vehicles are illegally parked on both sides of Tilak Nagar main road making it difficult for traffic to pass.",
-      },
-      {
-        author: "mohan_constable",
-        type: "DepartmentMember",
-        message:
-          "We will increase patrolling in that area and issue challans to illegally parked vehicles.",
-      },
-    ],
-  },
-
-  // Public Health Queries
-  {
-    title: "Stagnant water breeding mosquitoes",
-    department: "Public Health",
-    author: "suresh_y",
-    status: "in_progress",
-    threads: [
-      {
-        author: "suresh_y",
-        type: "User",
-        message:
-          "There is stagnant water in the construction site near our colony which is breeding mosquitoes and causing dengue risk.",
-      },
-      {
-        author: "dr_ashok",
-        type: "DepartmentMember",
-        message:
-          "We will send our fumigation team and also coordinate with municipal services to drain the stagnant water.",
-      },
-      {
-        author: "suresh_y",
-        type: "User",
-        message: "Please also check other similar sites in Rau area.",
-      },
-      {
-        author: "prakash_health",
-        type: "DepartmentMember",
-        message:
-          "We are conducting a survey of all potential breeding sites in Rau area.",
-      },
-    ],
-  },
-  {
-    title: "Medical center closed frequently",
-    department: "Public Health",
-    author: "anjali_d",
-    status: "open",
-    threads: [
-      {
-        author: "anjali_d",
-        type: "User",
-        message:
-          "The primary health center in Dewas Naka area remains closed most of the time. Patients have to travel far for basic treatment.",
-      },
-      {
-        author: "kamala_nurse",
-        type: "DepartmentMember",
-        message:
-          "We are facing staff shortage. We are trying to arrange for regular duty schedule and additional staff.",
-      },
-    ],
-  },
-
-  // Education Queries
-  {
-    title: "School building needs repair",
-    department: "Education",
-    author: "manish_t",
-    status: "open",
-    threads: [
-      {
-        author: "manish_t",
-        type: "User",
-        message:
-          "The government school in Sukhliya has damaged roof and walls. It becomes difficult during monsoon.",
-      },
-      {
-        author: "madhuri_principal",
-        type: "DepartmentMember",
-        message:
-          "We have submitted the repair proposal to higher authorities. Waiting for budget approval.",
-      },
-    ],
-  },
-  {
-    title: "Lack of books in library",
-    department: "Education",
-    author: "pooja_c",
-    status: "in_progress",
-    threads: [
-      {
-        author: "pooja_c",
-        type: "User",
-        message:
-          "The public library in Kanadiya has very few books and most are very old. Please add new books.",
-      },
-      {
-        author: "sanjay_coord",
-        type: "DepartmentMember",
-        message:
-          "We have received budget for new books. We will purchase and add 500 new books next month.",
+          "The road in Sapna Sangeeta area is in very bad condition. Needs immediate repair and construction.",
       },
     ],
   },
 
   // Revenue Queries
   {
-    title: "Property tax calculation error",
+    title: "Property tax assessment issue",
     department: "Revenue",
+    author: "meera_v",
+    status: "in_progress",
+    threads: [
+      {
+        author: "meera_v",
+        type: "User",
+        message:
+          "My property tax assessment seems incorrect. The amount is much higher than expected.",
+      },
+      {
+        author: "singh_revenue",
+        type: "DepartmentMember",
+        message:
+          "We will review your property details and tax assessment. Please provide your property documents.",
+      },
+    ],
+  },
+
+  // Fire Brigade Queries
+  {
+    title: "Fire safety inspection needed",
+    department: "Fire Brigade",
     author: "deepak_m",
-    status: "resolved",
+    status: "open",
     threads: [
       {
         author: "deepak_m",
         type: "User",
         message:
-          "My property tax has been calculated incorrectly. The area mentioned is wrong.",
-      },
-      {
-        author: "narayan_clerk",
-        type: "DepartmentMember",
-        message:
-          "Please bring your property documents. We will re-verify and correct the calculation.",
-      },
-      {
-        author: "narayan_clerk",
-        type: "DepartmentMember",
-        message:
-          "The area measurement has been corrected and revised tax amount has been updated in system.",
+          "Our commercial building needs fire safety inspection and certification. Please schedule a visit.",
       },
     ],
   },
+
+  // Finance Queries
   {
-    title: "Birth certificate delay",
-    department: "Revenue",
+    title: "Budget allocation query",
+    department: "Finance",
     author: "ritu_j",
     status: "open",
     threads: [
@@ -778,143 +736,37 @@ const queriesData = [
         author: "ritu_j",
         type: "User",
         message:
-          "I applied for my child's birth certificate 3 weeks ago but have not received it yet.",
-      },
-      {
-        author: "shobha_revenue",
-        type: "DepartmentMember",
-        message:
-          "Please provide your application number. We will check the status and expedite the process.",
+          "I need information about budget allocation for public infrastructure projects in our area.",
       },
     ],
   },
 
-  // Fire Services Queries
+  // Garden Queries
   {
-    title: "Fire safety inspection needed",
-    department: "Fire Services",
+    title: "Park maintenance needed",
+    department: "Garden",
     author: "arjun_sol",
-    status: "in_progress",
+    status: "resolved",
     threads: [
       {
         author: "arjun_sol",
         type: "User",
         message:
-          "Our residential complex needs fire safety inspection for NOC. Please schedule an inspection.",
+          "The children's park in LIG Colony needs maintenance. Equipment is broken and grass needs cutting.",
       },
       {
-        author: "raghav_fire",
+        author: "malviya_horticulture",
         type: "DepartmentMember",
         message:
-          "We will schedule inspection next week. Please ensure all fire safety equipment is in place.",
+          "We have completed the maintenance. All equipment is repaired and the park is clean now.",
       },
     ],
   },
 
-  // Parks & Gardens Queries
+  // Miscellaneous Complaints Queries
   {
-    title: "Park maintenance required",
-    department: "Parks & Gardens",
-    author: "rajesh_k",
-    status: "open",
-    threads: [
-      {
-        author: "rajesh_k",
-        type: "User",
-        message:
-          "The children's park in Vijay Nagar needs maintenance. Swings are broken and grass is overgrown.",
-      },
-      {
-        author: "mukesh_gardener",
-        type: "DepartmentMember",
-        message:
-          "We will send maintenance team this week to repair equipment and trim the grass.",
-      },
-    ],
-  },
-
-  // Additional queries for more data
-  {
-    title: "Noise pollution from construction",
-    department: "Municipal Services",
-    author: "kavita_j",
-    status: "open",
-    threads: [
-      {
-        author: "kavita_j",
-        type: "User",
-        message:
-          "Construction work near our house starts at 6 AM and continues till 10 PM causing noise pollution.",
-      },
-    ],
-  },
-  {
-    title: "Water bill discrepancy",
-    department: "Water Supply",
-    author: "manish_t",
-    status: "open",
-    threads: [
-      {
-        author: "manish_t",
-        type: "User",
-        message:
-          "My water bill shows unusual high consumption this month. Please check for leakage or meter error.",
-      },
-    ],
-  },
-  {
-    title: "Speed breaker needed",
-    department: "Traffic Management",
-    author: "deepak_m",
-    status: "open",
-    threads: [
-      {
-        author: "deepak_m",
-        type: "User",
-        message:
-          "Vehicles drive very fast on our residential road. We need speed breakers for safety.",
-      },
-    ],
-  },
-
-  // More queries for comprehensive testing
-  {
-    title: "Public toilet maintenance",
-    department: "Municipal Services",
-    author: "sunita_g",
-    status: "open",
-    threads: [
-      {
-        author: "sunita_g",
-        type: "User",
-        message:
-          "The public toilet near MG Road market is in very poor condition and needs urgent cleaning.",
-      },
-    ],
-  },
-  {
-    title: "Water contamination report",
-    department: "Water Supply",
-    author: "vikash_s",
-    status: "in_progress",
-    threads: [
-      {
-        author: "vikash_s",
-        type: "User",
-        message:
-          "Several people in our area have fallen sick after drinking tap water. Please test the water quality.",
-      },
-      {
-        author: "seema_manager",
-        type: "DepartmentMember",
-        message:
-          "We are sending a team to collect water samples for testing immediately.",
-      },
-    ],
-  },
-  {
-    title: "Traffic congestion at school hours",
-    department: "Traffic Management",
+    title: "General complaint about noise",
+    department: "Miscellaneous Complaints",
     author: "pooja_c",
     status: "open",
     threads: [
@@ -922,32 +774,109 @@ const queriesData = [
         author: "pooja_c",
         type: "User",
         message:
-          "Traffic becomes very congested during school pickup/drop hours near Kanadiya school.",
+          "There is excessive noise from construction work near our residential area. Please help.",
       },
     ],
   },
+
+  // Parking Queries
   {
-    title: "Vaccination camp request",
-    department: "Public Health",
-    author: "ritu_j",
-    status: "resolved",
+    title: "Illegal parking issue",
+    department: "Parking",
+    author: "pooja_c",
+    status: "open",
     threads: [
       {
-        author: "ritu_j",
+        author: "pooja_c",
         type: "User",
         message:
-          "Please organize a vaccination camp in Scheme 78 area for children.",
+          "Vehicles are parked illegally on the main road causing traffic congestion. Please take action.",
+      },
+    ],
+  },
+
+  // Building Allowance Queries
+  {
+    title: "Building permit application",
+    department: "Building Allowance",
+    author: "pooja_c",
+    status: "in_progress",
+    threads: [
+      {
+        author: "pooja_c",
+        type: "User",
+        message:
+          "I have submitted my building permit application 2 weeks ago. Please update on the status.",
       },
       {
-        author: "dr_ashok",
+        author: "chauhan_building",
         type: "DepartmentMember",
         message:
-          "We will organize a vaccination camp next Saturday at the community center.",
+          "Your application is under review. We will complete the inspection by next week.",
       },
+    ],
+  },
+
+  // Lake Protection Queries
+  {
+    title: "Lake pollution concern",
+    department: "Lake Protection",
+    author: "pooja_c",
+    status: "open",
+    threads: [
       {
-        author: "ritu_j",
+        author: "pooja_c",
         type: "User",
-        message: "Thank you! This will be very helpful for the community.",
+        message:
+          "The lake near our area is getting polluted with garbage and sewage. Please take action.",
+      },
+    ],
+  },
+
+  // Social Security Queries
+  {
+    title: "Welfare scheme application",
+    department: "Social Security",
+    author: "pooja_c",
+    status: "open",
+    threads: [
+      {
+        author: "pooja_c",
+        type: "User",
+        message:
+          "I want to apply for the elderly welfare scheme. Please guide me through the process.",
+      },
+    ],
+  },
+
+  // Govardhan Project Queries
+  {
+    title: "Project update request",
+    department: "Govardhan Project",
+    author: "pooja_c",
+    status: "open",
+    threads: [
+      {
+        author: "pooja_c",
+        type: "User",
+        message:
+          "Can you provide an update on the Govardhan project development in our area?",
+      },
+    ],
+  },
+
+  // BRTS and BCL Queries
+  {
+    title: "BRTS service complaint",
+    department: "BRTS and BCL",
+    author: "pooja_c",
+    status: "open",
+    threads: [
+      {
+        author: "pooja_c",
+        type: "User",
+        message:
+          "BRTS buses are not running on schedule. Many buses are delayed or cancelled.",
       },
     ],
   },
@@ -1102,3 +1031,4 @@ async function seedDatabase() {
 }
 
 seedDatabase();
+

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../contexts/AuthContext";
 import { Shield, Eye, EyeOff, AlertCircle } from "lucide-react";
@@ -14,9 +14,15 @@ export default function SuperadminLogin() {
   const router = useRouter();
   const { loginSuperadmin, isSuperadminAuthenticated } = useAuth();
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated - use useEffect to avoid render-time redirects
+  useEffect(() => {
+    if (isSuperadminAuthenticated) {
+      router.push("/superadmin");
+    }
+  }, [isSuperadminAuthenticated, router]);
+
+  // Don't render if already authenticated
   if (isSuperadminAuthenticated) {
-    router.push("/superadmin");
     return null;
   }
 
