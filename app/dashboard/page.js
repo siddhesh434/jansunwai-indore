@@ -298,323 +298,7 @@ const ProgressStepper = ({ currentStatus }) => {
   );
 };
 
-// Create Complaint Modal
-const CreateComplaintModal = ({ 
-  isOpen, 
-  onClose, 
-  newQuery, 
-  setNewQuery, 
-  queryAnalysis, 
-  analyzing, 
-  selectedFiles,
-  attachmentAnalyses,
-  setAttachmentAnalyses,
-  setSelectedFiles,
-  showMap,
-  setShowMap,
-  isListening,
-  toggleVoiceInput,
-  stopVoiceInput,
-  isSupported,
-  analyzeQuery,
-  handleCreateQuery
-}) => {
-  if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity" onClick={onClose} />
-      
-      {/* Modal */}
-      <div className="relative min-h-full flex items-center justify-center p-2 sm:p-4">
-        <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-          {/* Modal Header */}
-          <div className="bg-white border-b border-gray-200 p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Create New Complaint</h2>
-                <p className="text-sm sm:text-base text-gray-600 mt-1">Describe your complaint and we'll route it to the right department</p>
-              </div>
-              <button
-                onClick={onClose}
-                className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors self-end sm:self-auto"
-              >
-                <X className="w-5 h-5 sm:w-6 sm:h-6" />
-              </button>
-            </div>
-          </div>
-
-          {/* Modal Content */}
-          <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-4 sm:p-6 bg-gray-50">
-            <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8">
-              {/* Query Input */}
-              <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm">
-                <label className="block text-sm font-semibold text-gray-900 mb-3">
-                  Describe Your Complaint
-                </label>
-                <div className="relative">
-                  <textarea
-                    placeholder="Please describe your issue in detail. Be specific about what happened, when it occurred, and where it took place..."
-                    value={newQuery.query}
-                    onChange={(e) => setNewQuery({ ...newQuery, query: e.target.value })}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        if (newQuery.query.trim()) {
-                          analyzeQuery(newQuery.query, newQuery.address);
-                        }
-                      }
-                    }}
-                    onBlur={() => {
-                      if (newQuery.query.trim()) {
-                        analyzeQuery(newQuery.query, newQuery.address);
-                      }
-                    }}
-                    className="w-full px-4 py-4 pr-12 border border-gray-300 rounded-lg h-40 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none text-sm placeholder-gray-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={toggleVoiceInput}
-                    disabled={!isSupported}
-                    className={`absolute right-3 top-3 p-2.5 rounded-lg transition-all duration-200 ${
-                      isListening
-                        ? "bg-red-500 text-white shadow-lg animate-pulse"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                    } ${!isSupported ? "opacity-50 cursor-not-allowed" : ""}`}
-                    title={isListening ? "Stop Recording" : isSupported ? "Start Voice Input" : "Voice Input Not Supported"}
-                  >
-                    {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                  </button>
-                </div>
-                <div className="flex items-center justify-between mt-3">
-                  <p className="text-xs text-gray-500">Be as detailed and specific as possible for faster resolution</p>
-                  {isListening && (
-                    <div className="flex items-center gap-2 text-xs text-red-600 font-medium">
-                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                      <span>Listening...</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Address Input */}
-              <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm">
-                <label className="block text-sm font-semibold text-gray-900 mb-3">
-                  Location <span className="text-gray-500 font-normal">(Optional but recommended)</span>
-                </label>
-                <MapAddressSelector
-                  value={newQuery.address}
-                  onChange={(value) => setNewQuery({ ...newQuery, address: value })}
-                  placeholder="Search or click on map to select address..."
-                  showMap={showMap}
-                  onToggleMap={() => setShowMap(!showMap)}
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  Providing an accurate location helps departments respond more effectively
-                </p>
-              </div>
-
-              {/* File Attachments */}
-              <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm">
-                <label className="block text-sm font-semibold text-gray-900 mb-3">
-                  Attach Supporting Files
-                </label>
-                <AttachmentAI
-                  onAnalyzed={(items) => {
-                    setAttachmentAnalyses(items);
-                    setSelectedFiles(items.map((i) => i.file).filter(Boolean));
-                  }}
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  Upload photos, videos, or documents that support your complaint
-                </p>
-              </div>
-
-              {/* Analysis Loading */}
-              {analyzing && (
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-                  <div className="flex items-center gap-4">
-                    <LoadingSpinner size="md" />
-                    <div>
-                      <p className="font-semibold text-blue-900">Analyzing your complaint...</p>
-                      <p className="text-sm text-blue-700 mt-1">We're determining the best department to handle your request</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Analysis Results */}
-              {queryAnalysis && !analyzing && (
-                <div className={`rounded-xl border p-6 shadow-sm ${
-                  queryAnalysis.detailsSufficient ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'
-                }`}>
-                  <div className="flex items-center gap-3 mb-4">
-                    {queryAnalysis.detailsSufficient ? (
-                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                        <CheckCircle className="w-5 h-5 text-white" />
-                      </div>
-                    ) : (
-                      <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center">
-                        <AlertCircle className="w-5 h-5 text-white" />
-                      </div>
-                    )}
-                    <div>
-                      <h3 className={`font-semibold ${queryAnalysis.detailsSufficient ? 'text-green-900' : 'text-amber-900'}`}>
-                        {queryAnalysis.detailsSufficient ? 'Analysis Complete - Ready to Submit' : 'More Details Needed'}
-                      </h3>
-                      <p className={`text-sm ${queryAnalysis.detailsSufficient ? 'text-green-700' : 'text-amber-700'}`}>
-                        {queryAnalysis.detailsSufficient ? 'Your complaint has been analyzed successfully' : 'Please provide additional information'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="text-sm font-semibold text-gray-900 mb-1">Suggested Title</h4>
-                        <p className="text-sm text-gray-700 bg-white/70 rounded-lg p-3 border">
-                          {queryAnalysis.title}
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <h4 className="text-sm font-semibold text-gray-900 mb-1">Assigned Department</h4>
-                        <div className="flex items-center gap-2 bg-white/70 rounded-lg p-3 border">
-                          <Building2 className="w-4 h-4 text-blue-600" />
-                          <span className="text-sm font-medium text-gray-900">{queryAnalysis.departmentName}</span>
-                        </div>
-                      </div>
-
-                      {newQuery.address && (
-                        <div>
-                          <h4 className="text-sm font-semibold text-gray-900 mb-1">Location</h4>
-                          <div className="flex items-start gap-2 bg-white/70 rounded-lg p-3 border">
-                            <MapPin className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                            <span className="text-sm text-gray-700 break-words">{newQuery.address}</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="text-sm font-semibold text-gray-900 mb-1">Analysis Reasoning</h4>
-                        <p className="text-sm text-gray-600 bg-white/70 rounded-lg p-3 border leading-relaxed">
-                          {queryAnalysis.reasoning}
-                        </p>
-                      </div>
-
-                      {/* Detail Validation */}
-                      {!queryAnalysis.detailsSufficient && (
-                        <div className="bg-white/70 rounded-lg p-4 border border-amber-200">
-                          {queryAnalysis.missingDetails && queryAnalysis.missingDetails.length > 0 && (
-                            <div className="mb-3">
-                              <h5 className="text-sm font-semibold text-amber-900 mb-2">Missing Information:</h5>
-                              <ul className="space-y-1">
-                                {queryAnalysis.missingDetails.map((detail, index) => (
-                                  <li key={index} className="flex items-start gap-2 text-sm text-amber-800">
-                                    <span className="text-amber-600 mt-1">•</span>
-                                    <span>{detail}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                          
-                          {queryAnalysis.suggestions && (
-                            <div className="bg-amber-100 rounded-lg p-3 border border-amber-200">
-                              <h5 className="text-sm font-semibold text-amber-900 mb-1">Suggestions:</h5>
-                              <p className="text-sm text-amber-800">{queryAnalysis.suggestions}</p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Attachment Summaries */}
-                      {attachmentAnalyses.length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-semibold text-gray-900 mb-2">
-                            Attachment Analysis ({attachmentAnalyses.length} files)
-                          </h4>
-                          <div className="space-y-2">
-                            {attachmentAnalyses.map((analysis, idx) => (
-                              <div key={idx} className="bg-white/70 rounded-lg p-3 border text-sm">
-                                <div className="font-medium text-gray-900 mb-1 flex items-center gap-2">
-                                  <FileUp className="w-4 h-4 text-blue-500" />
-                                  {analysis.file?.name || analysis.filename || `File ${idx + 1}`}
-                                </div>
-                                {analysis.analysis?.description && (
-                                  <p className="text-gray-600 mb-1">
-                                    <strong>Content:</strong> {clampWords(analysis.analysis.description, 20, 25)}
-                                  </p>
-                                )}
-                                {analysis.analysis?.summary && (
-                                  <p className="text-gray-600">
-                                    <strong>Summary:</strong> {clampWords(analysis.analysis.summary, 20, 25)}
-                                  </p>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Submission Warning */}
-                  {queryAnalysis.detailsSufficient === false && (
-                    <div className="mt-6 bg-red-50 border border-red-200 rounded-lg p-4">
-                      <div className="flex items-start gap-3">
-                        <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <h4 className="font-semibold text-red-900">Submission Blocked</h4>
-                          <p className="text-sm text-red-800 mt-1">
-                            Your complaint cannot be submitted because it lacks essential details or may be inappropriate. 
-                            Please provide specific location information and describe the issue clearly so departments can take effective action.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6 border-t border-gray-200">
-                <button
-                  onClick={handleCreateQuery}
-                  disabled={!queryAnalysis || !newQuery.query.trim() || queryAnalysis.detailsSufficient === false}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-6 sm:px-8 py-3 rounded-lg font-medium transition-colors"
-                >
-                  {analyzing ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <LoadingSpinner size="sm" />
-                      Analyzing...
-                    </div>
-                  ) : queryAnalysis?.detailsSufficient === false ? (
-                    "Cannot Submit - Details Insufficient"
-                  ) : (
-                    "Submit Complaint"
-                  )}
-                </button>
-                <button
-                  onClick={() => {
-                    stopVoiceInput();
-                    onClose();
-                  }}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 sm:px-8 py-3 rounded-lg font-medium transition-colors border border-gray-300"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // Query Sidebar
 const QuerySidebar = ({ 
@@ -922,7 +606,6 @@ export default function Dashboard() {
   // Navigation items for sidebar
   const navigationItems = [
     { icon: Home, label: "Dashboard", active: true },
-    { icon: MessageSquare, label: "Complaints", active: false },
   ];
 
   // Check if mobile on mount and resize
@@ -1118,13 +801,7 @@ export default function Dashboard() {
     }
   };
 
-  // Close sidebar when creating new query on mobile
-  const handleNewQuery = () => {
-    setShowNewQueryForm(true);
-    if (isMobile || isTablet) {
-      setSidebarOpen(false);
-    }
-  };
+
 
   const fetchUserData = async (userId) => {
     if (!userId || userId === "undefined" || userId === "null" || userId === "") {
@@ -1452,19 +1129,37 @@ export default function Dashboard() {
       {(isMobile || isTablet) && (
         <div className="lg:hidden bg-white border-b border-gray-200 sticky top-0 z-30 flex-shrink-0">
           <div className="flex items-center justify-between p-4">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <Menu className="w-5 h-5 text-gray-700" />
-            </button>
-            <h1 className="text-lg font-semibold text-gray-900">Complaints Management</h1>
-            <button
-              onClick={handleNewQuery}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-            >
-              {isMobile ? "New" : "Create Complaint"}
-            </button>
+            {!showNewQueryForm ? (
+              <>
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <Menu className="w-5 h-5 text-gray-700" />
+                </button>
+                <h1 className="text-lg font-semibold text-gray-900">Complaints Management</h1>
+                <div className="w-10"></div>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    stopVoiceInput();
+                    setShowNewQueryForm(false);
+                    setNewQuery({ query: "", address: "" });
+                    setQueryAnalysis(null);
+                    setSelectedFiles([]);
+                    setAttachmentAnalyses([]);
+                    setShowMap(false);
+                  }}
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5 text-gray-700" />
+                </button>
+                <h1 className="text-lg font-semibold text-gray-900">Create Complaint</h1>
+                <div className="w-10"></div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -1493,6 +1188,17 @@ export default function Dashboard() {
               {navigationItems.map((item, index) => (
                 <div
                   key={index}
+                  onClick={() => {
+                    if (item.label === "Dashboard" && showNewQueryForm) {
+                      stopVoiceInput();
+                      setShowNewQueryForm(false);
+                      setNewQuery({ query: "", address: "" });
+                      setQueryAnalysis(null);
+                      setSelectedFiles([]);
+                      setAttachmentAnalyses([]);
+                      setShowMap(false);
+                    }
+                  }}
                   className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg cursor-pointer transition-colors ${
                     item.active 
                       ? 'bg-blue-50 text-blue-700 font-medium' 
@@ -1504,6 +1210,19 @@ export default function Dashboard() {
                 </div>
               ))}
             </nav>
+            
+                         {/* Create Complaint Button - Desktop Only */}
+             {!showNewQueryForm && !isMobile && !isTablet && (
+               <div className="px-3 mt-6">
+                 <button
+                   onClick={() => setShowNewQueryForm(true)}
+                   className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 justify-center shadow-sm hover:shadow-md"
+                 >
+                   <Plus className="w-5 h-5" />
+                   <span>Create Complaint</span>
+                 </button>
+               </div>
+             )}
           </div>
 
           {/* User Profile */}
@@ -1535,166 +1254,508 @@ export default function Dashboard() {
                 <div>
                   <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
                     <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-                    Complaints Management
+                    {showNewQueryForm ? "Create New Complaint" : "Complaints Management"}
                   </h1>
+                  {showNewQueryForm && (
+                    <p className="text-sm text-gray-600 mt-1">Describe your complaint and we'll route it to the right department</p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="flex items-center border border-gray-200 rounded-lg">
+                  {!showNewQueryForm && (
+                    <div className="flex items-center border border-gray-200 rounded-lg">
+                      <button
+                        onClick={() => setViewMode('list')}
+                        className={`p-2 ${viewMode === 'list' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}
+                      >
+                        <List className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setViewMode('grid')}
+                        className={`p-2 ${viewMode === 'grid' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}
+                      >
+                        <Grid3X3 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                  {showNewQueryForm && (
                     <button
-                      onClick={() => setViewMode('list')}
-                      className={`p-2 ${viewMode === 'list' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}
+                      onClick={() => {
+                        stopVoiceInput();
+                        setShowNewQueryForm(false);
+                        setNewQuery({ query: "", address: "" });
+                        setQueryAnalysis(null);
+                        setSelectedFiles([]);
+                        setAttachmentAnalyses([]);
+                        setShowMap(false);
+                      }}
+                      className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
                     >
-                      <List className="w-4 h-4" />
+                      <X className="w-4 h-4" />
+                      <span className="hidden sm:inline">Cancel</span>
+                      <span className="sm:hidden">Back</span>
                     </button>
-                    <button
-                      onClick={() => setViewMode('grid')}
-                      className={`p-2 ${viewMode === 'grid' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}
-                    >
-                      <Grid3X3 className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <button
-                    onClick={() => setShowNewQueryForm(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span className="hidden sm:inline">Create Complaint</span>
-                    <span className="sm:hidden">New</span>
-                  </button>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Status Cards */}
-            <div className="p-4 sm:p-6 bg-gray-50 flex-shrink-0">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
-                <StatusCard
-                  icon={FileText}
-                  title="Total"
-                  count={statusCounts.total}
-                  subtitle="Complaints"
-                  color="blue"
-                  isActive={activeStatusFilter === "all"}
-                  onClick={() => setActiveStatusFilter("all")}
-                />
-                <StatusCard
-                  icon={Clock}
-                  title="Pending"
-                  count={statusCounts.pending}
-                  subtitle="Pending Review"
-                  color="blue"
-                  isActive={activeStatusFilter === "pending"}
-                  onClick={() => setActiveStatusFilter("pending")}
-                />
-                <StatusCard
-                  icon={Settings}
-                  title="In Progress"
-                  count={statusCounts.inProgress}
-                  subtitle="Being Handled"
-                  color="amber"
-                  isActive={activeStatusFilter === "in_progress"}
-                  onClick={() => setActiveStatusFilter("in_progress")}
-                />
-                <StatusCard
-                  icon={CheckCircle2}
-                  title="Resolved"
-                  count={statusCounts.resolved}
-                  subtitle="Fixed Issues"
-                  color="green"
-                  isActive={activeStatusFilter === "resolved"}
-                  onClick={() => setActiveStatusFilter("resolved")}
-                />
-              </div>
+                         {/* Content Area */}
+             {showNewQueryForm ? (
+               /* Create Complaint Form */
+               <div className="flex-1 overflow-y-auto bg-gray-50 p-4 sm:p-6">
+                 <div className="max-w-7xl mx-auto">
+                   <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
+                     {/* Left Column - Form Inputs */}
+                     <div className="space-y-6">
+                       {/* Query Input */}
+                       <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm">
+                         <label className="block text-sm font-semibold text-gray-900 mb-3">
+                           Describe Your Complaint
+                         </label>
+                         <div className="relative">
+                           <textarea
+                             placeholder="Please describe your issue in detail. Be specific about what happened, when it occurred, and where it took place..."
+                             value={newQuery.query}
+                             onChange={(e) => setNewQuery({ ...newQuery, query: e.target.value })}
+                             onKeyDown={(e) => {
+                               if (e.key === "Enter" && !e.shiftKey) {
+                                 e.preventDefault();
+                                 if (newQuery.query.trim()) {
+                                   analyzeQuery(newQuery.query, newQuery.address);
+                                 }
+                               }
+                             }}
+                             onBlur={() => {
+                               if (newQuery.query.trim()) {
+                                 analyzeQuery(newQuery.query, newQuery.address);
+                               }
+                             }}
+                             className="w-full px-4 py-4 pr-12 border border-gray-300 rounded-lg h-40 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none text-sm placeholder-gray-500"
+                           />
+                           <button
+                             type="button"
+                             onClick={toggleVoiceInput}
+                             disabled={!isSupported}
+                             className={`absolute right-3 top-3 p-2.5 rounded-lg transition-all duration-200 ${
+                               isListening
+                                 ? "bg-red-500 text-white shadow-lg animate-pulse"
+                                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                             } ${!isSupported ? "opacity-50 cursor-not-allowed" : ""}`}
+                             title={isListening ? "Stop Recording" : isSupported ? "Start Voice Input" : "Voice Input Not Supported"}
+                           >
+                             {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                           </button>
+                         </div>
+                         <div className="flex items-center justify-between mt-3">
+                           <p className="text-xs text-gray-500">Be as detailed and specific as possible for faster resolution</p>
+                           {isListening && (
+                             <div className="flex items-center gap-2 text-xs text-red-600 font-medium">
+                               <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                               <span>Listening...</span>
+                             </div>
+                           )}
+                         </div>
+                       </div>
 
-              {/* Advanced Filters */}
-              <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 mb-6 flex-shrink-0">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
-                  <div className="flex items-center gap-2">
-                    <Filter className="w-5 h-5 text-blue-600" />
-                    <h3 className="text-lg font-semibold text-gray-900">Advanced Filters</h3>
-                  </div>
-                  <button 
-                    onClick={() => {
-                      setSearchTerm("");
-                      setFilterStatus("all");
-                      setActiveStatusFilter("all");
-                    }}
-                    className="sm:ml-auto text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                    Reset Filters
-                  </button>
-                </div>
-                
-                <div className="grid grid-cols-1 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
-                    <div className="relative">
-                      <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="Search complaints..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
+                       {/* Address Input */}
+                       <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm">
+                         <label className="block text-sm font-semibold text-gray-900 mb-3">
+                           Location <span className="text-gray-500 font-normal">(Optional but recommended)</span>
+                         </label>
+                         <MapAddressSelector
+                           value={newQuery.address}
+                           onChange={(value) => setNewQuery({ ...newQuery, address: value })}
+                           placeholder="Search or click on map to select address..."
+                           showMap={showMap}
+                           onToggleMap={() => setShowMap(!showMap)}
+                         />
+                         <p className="text-xs text-gray-500 mt-2">
+                           Providing an accurate location helps departments respond more effectively
+                         </p>
+                       </div>
+
+                       {/* File Attachments */}
+                       <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm">
+                         <label className="block text-sm font-semibold text-gray-900 mb-3">
+                           Attach Supporting Files
+                         </label>
+                         <AttachmentAI
+                           onAnalyzed={(items) => {
+                             setAttachmentAnalyses(items);
+                             setSelectedFiles(items.map((i) => i.file).filter(Boolean));
+                           }}
+                         />
+                         <p className="text-xs text-gray-500 mt-2">
+                           Upload photos, videos, or documents that support your complaint
+                         </p>
+                       </div>
+
+                                               {/* Action Buttons - Desktop Only */}
+                        <div className="hidden lg:flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6">
+                          <button
+                            onClick={handleCreateQuery}
+                            disabled={!queryAnalysis || !newQuery.query.trim() || queryAnalysis.detailsSufficient === false}
+                            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-6 sm:px-8 py-3 rounded-lg font-medium transition-colors"
+                          >
+                            {analyzing ? (
+                              <div className="flex items-center justify-center gap-2">
+                                <LoadingSpinner size="sm" />
+                                Analyzing...
+                              </div>
+                            ) : queryAnalysis?.detailsSufficient === false ? (
+                              "Cannot Submit - Details Insufficient"
+                            ) : (
+                              "Submit Complaint"
+                            )}
+                          </button>
+                          <button
+                            onClick={() => {
+                              stopVoiceInput();
+                              setShowNewQueryForm(false);
+                              setNewQuery({ query: "", address: "" });
+                              setQueryAnalysis(null);
+                              setSelectedFiles([]);
+                              setAttachmentAnalyses([]);
+                              setShowMap(false);
+                            }}
+                            className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 sm:px-8 py-3 rounded-lg font-medium transition-colors border border-gray-300"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                     </div>
+
+                     {/* Right Column - AI Analysis */}
+                     <div className="space-y-6">
+                       {/* Analysis Loading */}
+                       {analyzing && (
+                         <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 sticky top-6">
+                           <div className="flex items-center gap-4">
+                             <LoadingSpinner size="md" />
+                             <div>
+                               <p className="font-semibold text-blue-900">Analyzing your complaint...</p>
+                               <p className="text-sm text-blue-700 mt-1">We're determining the best department to handle your request</p>
+                             </div>
+                           </div>
+                         </div>
+                       )}
+
+                       {/* Analysis Results */}
+                       {queryAnalysis && !analyzing && (
+                         <div className={`rounded-xl border p-6 shadow-sm sticky top-6 ${
+                           queryAnalysis.detailsSufficient ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'
+                         }`}>
+                           <div className="flex items-center gap-3 mb-4">
+                             {queryAnalysis.detailsSufficient ? (
+                               <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                 <CheckCircle className="w-5 h-5 text-white" />
+                               </div>
+                             ) : (
+                               <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center">
+                                 <AlertCircle className="w-5 h-5 text-white" />
+                               </div>
+                             )}
+                             <div>
+                               <h3 className={`font-semibold ${queryAnalysis.detailsSufficient ? 'text-green-900' : 'text-amber-900'}`}>
+                                 {queryAnalysis.detailsSufficient ? 'Analysis Complete - Ready to Submit' : 'More Details Needed'}
+                               </h3>
+                               <p className={`text-sm ${queryAnalysis.detailsSufficient ? 'text-green-700' : 'text-amber-700'}`}>
+                                 {queryAnalysis.detailsSufficient ? 'Your complaint has been analyzed successfully' : 'Please provide additional information'}
+                               </p>
+                             </div>
+                           </div>
+
+                           <div className="space-y-4">
+                             <div>
+                               <h4 className="text-sm font-semibold text-gray-900 mb-1">Suggested Title</h4>
+                               <p className="text-sm text-gray-700 bg-white/70 rounded-lg p-3 border">
+                                 {queryAnalysis.title}
+                               </p>
+                             </div>
+                             
+                             <div>
+                               <h4 className="text-sm font-semibold text-gray-900 mb-1">Assigned Department</h4>
+                               <div className="flex items-center gap-2 bg-white/70 rounded-lg p-3 border">
+                                 <Building2 className="w-4 h-4 text-blue-600" />
+                                 <span className="text-sm font-medium text-gray-900">{queryAnalysis.departmentName}</span>
+                               </div>
+                             </div>
+
+                             {newQuery.address && (
+                               <div>
+                                 <h4 className="text-sm font-semibold text-gray-900 mb-1">Location</h4>
+                                 <div className="flex items-start gap-2 bg-white/70 rounded-lg p-3 border">
+                                   <MapPin className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                                   <span className="text-sm text-gray-700 break-words">{newQuery.address}</span>
+                                 </div>
+                               </div>
+                             )}
+
+                             <div>
+                               <h4 className="text-sm font-semibold text-gray-900 mb-1">Analysis Reasoning</h4>
+                               <p className="text-sm text-gray-600 bg-white/70 rounded-lg p-3 border leading-relaxed">
+                                 {queryAnalysis.reasoning}
+                               </p>
+                             </div>
+
+                             {/* Detail Validation */}
+                             {!queryAnalysis.detailsSufficient && (
+                               <div className="bg-white/70 rounded-lg p-4 border border-amber-200">
+                                 {queryAnalysis.missingDetails && queryAnalysis.missingDetails.length > 0 && (
+                                   <div className="mb-3">
+                                     <h5 className="text-sm font-semibold text-amber-900 mb-2">Missing Information:</h5>
+                                     <ul className="space-y-1">
+                                       {queryAnalysis.missingDetails.map((detail, index) => (
+                                         <li key={index} className="flex items-start gap-2 text-sm text-amber-800">
+                                           <span className="text-amber-600 mt-1">•</span>
+                                           <span>{detail}</span>
+                                         </li>
+                                       ))}
+                                     </ul>
+                                   </div>
+                                 )}
+                                 
+                                 {queryAnalysis.suggestions && (
+                                   <div className="bg-amber-100 rounded-lg p-3 border border-amber-200">
+                                     <h5 className="text-sm font-semibold text-amber-900 mb-1">Suggestions:</h5>
+                                     <p className="text-sm text-amber-800">{queryAnalysis.suggestions}</p>
+                                   </div>
+                                 )}
+                               </div>
+                             )}
+
+                             {/* Attachment Summaries */}
+                             {attachmentAnalyses.length > 0 && (
+                               <div>
+                                 <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                                   Attachment Analysis ({attachmentAnalyses.length} files)
+                                 </h4>
+                                 <div className="space-y-2">
+                                   {attachmentAnalyses.map((analysis, idx) => (
+                                     <div key={idx} className="bg-white/70 rounded-lg p-3 border text-sm">
+                                       <div className="font-medium text-gray-900 mb-1 flex items-center gap-2">
+                                         <FileUp className="w-4 h-4 text-blue-500" />
+                                         {analysis.file?.name || analysis.filename || `File ${idx + 1}`}
+                                       </div>
+                                       {analysis.analysis?.description && (
+                                         <p className="text-gray-600 mb-1">
+                                           <strong>Content:</strong> {clampWords(analysis.analysis.description, 20, 25)}
+                                         </p>
+                                       )}
+                                       {analysis.analysis?.summary && (
+                                         <p className="text-gray-600">
+                                           <strong>Summary:</strong> {clampWords(analysis.analysis.summary, 20, 25)}
+                                         </p>
+                                       )}
+                                     </div>
+                                   ))}
+                                 </div>
+                               </div>
+                             )}
+
+                             {/* Submission Warning */}
+                             {queryAnalysis.detailsSufficient === false && (
+                               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                                 <div className="flex items-start gap-3">
+                                   <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+                                   <div>
+                                     <h4 className="font-semibold text-red-900">Submission Blocked</h4>
+                                     <p className="text-sm text-red-800 mt-1">
+                                       Your complaint cannot be submitted because it lacks essential details or may be inappropriate. 
+                                       Please provide specific location information and describe the issue clearly so departments can take effective action.
+                                     </p>
+                                   </div>
+                                 </div>
+                               </div>
+                                                           )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Action Buttons - Mobile/Tablet Only */}
+                        <div className="lg:hidden flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6">
+                          <button
+                            onClick={handleCreateQuery}
+                            disabled={!queryAnalysis || !newQuery.query.trim() || queryAnalysis.detailsSufficient === false}
+                            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-6 sm:px-8 py-3 rounded-lg font-medium transition-colors"
+                          >
+                            {analyzing ? (
+                              <div className="flex items-center justify-center gap-2">
+                                <LoadingSpinner size="sm" />
+                                Analyzing...
+                              </div>
+                            ) : queryAnalysis?.detailsSufficient === false ? (
+                              "Cannot Submit - Details Insufficient"
+                            ) : (
+                              "Submit Complaint"
+                            )}
+                          </button>
+                          <button
+                            onClick={() => {
+                              stopVoiceInput();
+                              setShowNewQueryForm(false);
+                              setNewQuery({ query: "", address: "" });
+                              setQueryAnalysis(null);
+                              setSelectedFiles([]);
+                              setAttachmentAnalyses([]);
+                              setShowMap(false);
+                            }}
+                            className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 sm:px-8 py-3 rounded-lg font-medium transition-colors border border-gray-300"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
+            ) : (
+              /* Dashboard View */
+              <>
+                                 {/* Create Complaint Button - Mobile/Tablet Only */}
+                 {(isMobile || isTablet) && !showNewQueryForm && (
+                   <div className="p-4 sm:p-6 bg-gray-50 flex-shrink-0">
+                     <button
+                       onClick={() => setShowNewQueryForm(true)}
+                       className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-lg text-base font-medium transition-colors flex items-center gap-3 justify-center shadow-sm hover:shadow-md"
+                     >
+                       <Plus className="w-6 h-6" />
+                       <span>Create New Complaint</span>
+                     </button>
+                   </div>
+                 )}
 
-                {/* Status Filter Tabs */}
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { key: "all", label: "All Complaints", color: "blue" },
-                    { key: "pending", label: "Pending", color: "blue" },
-                    { key: "in_progress", label: "In Progress", color: "amber" },
-                    { key: "resolved", label: "Resolved", color: "green" }
-                  ].map((status) => (
-                    <button
-                      key={status.key}
-                      onClick={() => setActiveStatusFilter(status.key)}
-                      className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors ${
-                        activeStatusFilter === status.key
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      {status.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+                 {/* Status Cards */}
+                 <div className="p-4 sm:p-6 bg-gray-50 flex-shrink-0">
+                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+                    <StatusCard
+                      icon={FileText}
+                      title="Total"
+                      count={statusCounts.total}
+                      subtitle="Complaints"
+                      color="blue"
+                      isActive={activeStatusFilter === "all"}
+                      onClick={() => setActiveStatusFilter("all")}
+                    />
+                    <StatusCard
+                      icon={Clock}
+                      title="Pending"
+                      count={statusCounts.pending}
+                      subtitle="Pending Review"
+                      color="blue"
+                      isActive={activeStatusFilter === "pending"}
+                      onClick={() => setActiveStatusFilter("pending")}
+                    />
+                    <StatusCard
+                      icon={Settings}
+                      title="In Progress"
+                      count={statusCounts.inProgress}
+                      subtitle="Being Handled"
+                      color="amber"
+                      isActive={activeStatusFilter === "in_progress"}
+                      onClick={() => setActiveStatusFilter("in_progress")}
+                    />
+                    <StatusCard
+                      icon={CheckCircle2}
+                      title="Resolved"
+                      count={statusCounts.resolved}
+                      subtitle="Fixed Issues"
+                      color="green"
+                      isActive={activeStatusFilter === "resolved"}
+                      onClick={() => setActiveStatusFilter("resolved")}
+                    />
+                  </div>
 
-              {/* Results */}
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex-1 min-h-0">
-                {filteredQueries.length === 0 ? (
-                  <EmptyState
-                    icon={FileSpreadsheet}
-                    title="No complaints found"
-                    description="Try changing your search or filter criteria"
-                  />
-                ) : (
-                  <div className="p-4 sm:p-6 overflow-y-auto flex-1">
-                    <div className={`${
-                      viewMode === 'grid' 
-                        ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4' 
-                        : 'space-y-3'
-                    }`}>
-                      {filteredQueries.map((query) => (
-                        <QueryCard
-                          key={query._id || `query-${Math.random()}`}
-                          query={query}
-                          isSelected={selectedQuery?._id === query._id}
-                          onClick={handleQuerySelect}
-                          viewMode={viewMode}
-                        />
+                  {/* Advanced Filters */}
+                  <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 mb-6 flex-shrink-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
+                      <div className="flex items-center gap-2">
+                        <Filter className="w-5 h-5 text-blue-600" />
+                        <h3 className="text-lg font-semibold text-gray-900">Advanced Filters</h3>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          setSearchTerm("");
+                          setFilterStatus("all");
+                          setActiveStatusFilter("all");
+                        }}
+                        className="sm:ml-auto text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                        Reset Filters
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-4 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                        <div className="relative">
+                          <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                          <input
+                            type="text"
+                            placeholder="Search complaints..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status Filter Tabs */}
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { key: "all", label: "All Complaints", color: "blue" },
+                        { key: "pending", label: "Pending", color: "blue" },
+                        { key: "in_progress", label: "In Progress", color: "amber" },
+                        { key: "resolved", label: "Resolved", color: "green" }
+                      ].map((status) => (
+                        <button
+                          key={status.key}
+                          onClick={() => setActiveStatusFilter(status.key)}
+                          className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors ${
+                            activeStatusFilter === status.key
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          {status.label}
+                        </button>
                       ))}
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
+
+                  {/* Results */}
+                  <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex-1 min-h-0">
+                    {filteredQueries.length === 0 ? (
+                      <EmptyState
+                        icon={FileSpreadsheet}
+                        title="No complaints found"
+                        description="Try changing your search or filter criteria"
+                      />
+                    ) : (
+                      <div className="p-4 sm:p-6 overflow-y-auto flex-1">
+                        <div className={`${
+                          viewMode === 'grid' 
+                            ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4' 
+                            : 'space-y-3'
+                        }`}>
+                          {filteredQueries.map((query) => (
+                            <QueryCard
+                              key={query._id || `query-${Math.random()}`}
+                              query={query}
+                              isSelected={selectedQuery?._id === query._id}
+                              onClick={handleQuerySelect}
+                              viewMode={viewMode}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -1716,35 +1777,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Create Complaint Modal */}
-      <CreateComplaintModal
-        isOpen={showNewQueryForm}
-        onClose={() => {
-          stopVoiceInput();
-          setShowNewQueryForm(false);
-          setNewQuery({ query: "", address: "" });
-          setQueryAnalysis(null);
-          setSelectedFiles([]);
-          setAttachmentAnalyses([]);
-          setShowMap(false);
-        }}
-        newQuery={newQuery}
-        setNewQuery={setNewQuery}
-        queryAnalysis={queryAnalysis}
-        analyzing={analyzing}
-        selectedFiles={selectedFiles}
-        attachmentAnalyses={attachmentAnalyses}
-        setAttachmentAnalyses={setAttachmentAnalyses}
-        setSelectedFiles={setSelectedFiles}
-        showMap={showMap}
-        setShowMap={setShowMap}
-        isListening={isListening}
-        toggleVoiceInput={toggleVoiceInput}
-        stopVoiceInput={stopVoiceInput}
-        isSupported={isSupported}
-        analyzeQuery={analyzeQuery}
-        handleCreateQuery={handleCreateQuery}
-      />
+
     </div>
   );
 }
