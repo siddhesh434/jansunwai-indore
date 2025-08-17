@@ -14,7 +14,10 @@ export default function NavBar() {
 
   const handleLogout = () => {
     logout();
-    router.push("/");
+    // Add a small delay to ensure all cleanup is complete
+    setTimeout(() => {
+      router.push("/");
+    }, 100);
   };
 
   return (
@@ -50,12 +53,20 @@ export default function NavBar() {
               >
                 {language === "hi" ? "होम" : "Home"}
               </button>
-              <button
-                onClick={() => router.push("/about")}
-                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-all duration-200"
-              >
-                {language === "hi" ? "हमारे बारे में" : "About Us"}
-              </button>
+                             <button
+                 onClick={() => router.push("/about")}
+                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-all duration-200"
+               >
+                 {language === "hi" ? "हमारे बारे में" : "About Us"}
+               </button>
+               {user && (
+                 <button
+                   onClick={() => router.push("/dashboard")}
+                   className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                 >
+                   {language === "hi" ? "डैशबोर्ड" : "Dashboard"}
+                 </button>
+               )}
               {/* Authentication Section */}
               {user ? (
                 <div className="flex items-center space-x-3">
@@ -167,15 +178,26 @@ export default function NavBar() {
                 >
                   {language === "hi" ? "होम" : "Home"}
                 </button>
-                <button
-                  onClick={() => {
-                    router.push("/about");
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="block w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-all duration-200"
-                >
-                  {language === "hi" ? "हमारे बारे में" : "About Us"}
-                </button>
+                                 <button
+                   onClick={() => {
+                     router.push("/about");
+                     setIsMobileMenuOpen(false);
+                   }}
+                   className="block w-full text-left px-4 py-3 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-lg transition-all duration-200"
+                 >
+                   {language === "hi" ? "हमारे बारे में" : "About Us"}
+                 </button>
+                 {user && (
+                   <button
+                     onClick={() => {
+                       router.push("/dashboard");
+                       setIsMobileMenuOpen(false);
+                     }}
+                     className="block w-full text-left px-4 py-3 text-sm font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                   >
+                     {language === "hi" ? "डैशबोर्ड" : "Dashboard"}
+                   </button>
+                 )}
 
                 {/* Divider */}
                 <div className="border-t border-gray-100 my-2"></div>

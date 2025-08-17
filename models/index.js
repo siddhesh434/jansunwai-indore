@@ -1,4 +1,4 @@
-// models/index.js
+// models/index.js - Fixed User Schema
 import mongoose from "mongoose";
 
 const { Schema } = mongoose;
@@ -16,16 +16,60 @@ const SuperAdminSchema = new Schema(
   { timestamps: true }
 );
 
-// User Schema
+// FIXED User Schema
 const UserSchema = new Schema(
   {
-    username: { type: String, required: true, unique: true },
-    name: { type: String, required: true },
-    password: { type: String, required: true },
-    address: { type: String },
-    queries: [{ type: Schema.Types.ObjectId, ref: "Query" }],
+    username: { 
+      type: String, 
+      required: true, 
+      unique: true 
+    },
+    name: { 
+      type: String, 
+      required: true 
+    },
+    email: { 
+      type: String, 
+      required: true, 
+      unique: true,
+      trim: true,
+      lowercase: true
+    },
+    password: { 
+      type: String, 
+      required: function() {
+        return this.authMethod === 'local';
+      }
+    },
+    address: { 
+      type: String,
+      default: ""
+    },
+    queries: [{ 
+      type: Schema.Types.ObjectId, 
+      ref: "Query" 
+    }],
+    // Google OAuth fields
+    googleId: { 
+      type: String, 
+      sparse: true, 
+      unique: true 
+    },
+    profilePicture: { 
+      type: String 
+    },
+    authMethod: { 
+      type: String, 
+      enum: ['local', 'google'], 
+      default: 'local' 
+    },
   },
-  { timestamps: true }
+  { 
+    timestamps: true,
+    // These options help with debugging
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
 );
 
 // Department Schema
@@ -133,10 +177,15 @@ const QuerySchema = new Schema(
   { timestamps: true }
 );
 
+// Clear existing models to avoid caching issues
+if (mongoose.models.User) {
+  delete mongoose.models.User;
+}
+
 // Export models
 export const SuperAdmin =
   mongoose.models.SuperAdmin || mongoose.model("SuperAdmin", SuperAdminSchema);
-export const User = mongoose.models.User || mongoose.model("User", UserSchema);
+export const User = mongoose.model("User", UserSchema);
 export const Department =
   mongoose.models.Department || mongoose.model("Department", DepartmentSchema);
 export const DepartmentMember =

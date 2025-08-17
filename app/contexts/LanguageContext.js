@@ -71,6 +71,36 @@ export const LanguageProvider = ({ children }) => {
       loggingIn: "Logging in...",
       loginFailed: "Login failed",
       logout: "Logout",
+      
+      // New login/register translations
+      jansunwaiIndore: "Jansunwai Indore",
+      citizenPortal: "Citizen Portal",
+      createNewId: "Create New ID",
+      welcomeBack: "Welcome Back",
+      or: "or",
+      continueWithGoogle: "Continue with Google",
+      dontHaveAccount: "Don't have an account?",
+      createNewAccount: "Create New Account",
+      fullName: "Full Name",
+      username: "Username",
+      addressOptional: "Address (Optional)",
+      confirmPassword: "Confirm Password",
+      createAccount: "Create Account",
+      creatingAccount: "Creating Account...",
+      alreadyHaveAccount: "Already have an account?",
+      passwordsDoNotMatch: "Passwords do not match",
+      emailRequired: "Email is required",
+      registrationSuccess: "Account created successfully! You can now login.",
+      registrationFailed: "Registration failed. Please try again.",
+      googleLoginComingSoon: "Google login will be available soon!",
+      databaseConnectionIssue: "Database connection issue detected. Login may not work properly.",
+      
+      // Error messages
+      googleAuthFailed: "Google authentication failed. Please try again.",
+      noAuthCode: "Authentication code not received. Please try again.",
+      oauthInitFailed: "Failed to initialize OAuth. Please try again.",
+      serverError: "Server error occurred. Please try again later.",
+      unknownError: "An unknown error occurred. Please try again.",
 
       // Department Login translations
       departmentLoginTitle: "Department Login",
@@ -208,6 +238,36 @@ export const LanguageProvider = ({ children }) => {
       password: "पासवर्ड",
       loggingIn: "लॉगिन हो रहा है...",
       loginFailed: "लॉगिन विफल",
+      
+      // New login/register translations
+      jansunwaiIndore: "जनसुनवाई इंदौर",
+      citizenPortal: "नागरिक पोर्टल",
+      createNewId: "नया आईडी बनाएं",
+      welcomeBack: "वापसी पर स्वागत है",
+      or: "या",
+      continueWithGoogle: "Google के साथ जारी रखें",
+      dontHaveAccount: "खाता नहीं है?",
+      createNewAccount: "नया खाता बनाएं",
+      fullName: "पूरा नाम",
+      username: "उपयोगकर्ता नाम",
+      addressOptional: "पता (वैकल्पिक)",
+      confirmPassword: "पासवर्ड की पुष्टि करें",
+      createAccount: "खाता बनाएं",
+      creatingAccount: "खाता बन रहा है...",
+      alreadyHaveAccount: "पहले से ही खाता है?",
+      passwordsDoNotMatch: "पासवर्ड मेल नहीं खाते",
+      emailRequired: "ईमेल आवश्यक है",
+      registrationSuccess: "खाता सफलतापूर्वक बनाया गया! अब आप लॉगिन कर सकते हैं।",
+      registrationFailed: "पंजीकरण विफल। कृपया पुनः प्रयास करें।",
+      googleLoginComingSoon: "Google लॉगिन जल्द ही उपलब्ध होगा!",
+      databaseConnectionIssue: "डेटाबेस कनेक्शन समस्या का पता चला। लॉगिन ठीक से काम नहीं कर सकता।",
+      
+      // Error messages
+      googleAuthFailed: "Google प्रमाणीकरण विफल। कृपया पुनः प्रयास करें।",
+      noAuthCode: "प्रमाणीकरण कोड प्राप्त नहीं हुआ। कृपया पुनः प्रयास करें।",
+      oauthInitFailed: "OAuth प्रारंभ करने में विफल। कृपया पुनः प्रयास करें।",
+      serverError: "सर्वर त्रुटि हुई। कृपया बाद में पुनः प्रयास करें।",
+      unknownError: "एक अज्ञात त्रुटि हुई। कृपया पुनः प्रयास करें।",
 
       // Department Login translations
       departmentLoginTitle: "विभाग लॉगिन",

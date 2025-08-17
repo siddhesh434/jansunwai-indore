@@ -917,7 +917,7 @@ export default function Dashboard() {
 
   const router = useRouter();
   const { t } = useLanguage();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loginUserFromGoogle } = useAuth();
 
   // Navigation items for sidebar
   const navigationItems = [
@@ -944,8 +944,48 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
+    // Check for Google OAuth authentication via cookies and localStorage
+    const checkGoogleAuth = () => {
+      // Check for user-session cookie first
+
+
+      // Check for backup userId cookie (from Google OAuth)
+      const backupUserIdCookie = (() => {
+        if (typeof document === 'undefined') return null;
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; google-auth-user-id=`);
+        if (parts.length === 2) {
+          const cookieValue = parts.pop().split(';').shift();
+          return cookieValue;
+        }
+        return null;
+      })();
+      
+      // Use backup cookie if localStorage is empty
+      if (backupUserIdCookie && backupUserIdCookie !== "null" && backupUserIdCookie !== "undefined" && backupUserIdCookie.trim() !== "") {
+        if (!localStorage.getItem("userId") || localStorage.getItem("userId") === "null") {
+          localStorage.setItem("userId", backupUserIdCookie);
+          console.log('Dashboard: Set localStorage from backup cookie:', backupUserIdCookie);
+        }
+      }
+
+      const userId = localStorage.getItem("userId");
+      if (userId && userId !== "null" && userId !== "undefined" && userId.trim() !== "") {
+        console.log('Dashboard: User authenticated via Google OAuth:', userId);
+        if (!user || !user._id) {
+          // Fetch user data if not already loaded
+          fetchUserData(userId);
+        }
+        fetchDepartments();
+        return;
+      }
+    };
+
     if (!isAuthenticated || !user || !user._id) {
-      if (!isAuthenticated) {
+      // Try to check for Google OAuth authentication
+      checkGoogleAuth();
+      
+      if (!isAuthenticated && !localStorage.getItem("userId")) {
         router.push("/login");
       }
       return;
@@ -1096,6 +1136,12 @@ export default function Dashboard() {
       const res = await fetch(`/api/users/${userId}`);
       if (!res.ok) throw new Error("Failed to fetch user");
       const userData = await res.json();
+      
+      // Update AuthContext if user is not already set
+      if (!user || !user._id) {
+        loginUserFromGoogle(userData);
+      }
+      
       const userQueries = Array.isArray(userData.queries) ? userData.queries : [];
       userQueries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setQueries(userQueries);
