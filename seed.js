@@ -101,6 +101,8 @@ const QuerySchema = new Schema(
       enum: ["open", "in_progress", "resolved"],
       default: "open",
     },
+    urgencyScore: { type: Number, default: 0 },
+    urgencyLabel: { type: String },
   },
   { timestamps: true }
 );
@@ -550,6 +552,9 @@ const queriesData = [
     department: "Sewage",
     author: "rajesh_k",
     status: "in_progress",
+    urgencyScore: 5,
+    urgencyLabel: "High",
+    createdAt: "2025-08-05T09:42:15.000Z",
     threads: [
       {
         author: "rajesh_k",
@@ -581,6 +586,9 @@ const queriesData = [
     department: "Sewage",
     author: "priya_s",
     status: "resolved",
+    urgencyScore: 4,
+    urgencyLabel: "High",
+    createdAt: "2025-08-03T14:27:49.000Z",
     threads: [
       {
         author: "priya_s",
@@ -603,6 +611,9 @@ const queriesData = [
     department: "Compost with dried leaves",
     author: "amit_p",
     status: "open",
+    urgencyScore: 2,
+    urgencyLabel: "Low",
+    createdAt: "2025-07-29T11:18:37.000Z",
     threads: [
       {
         author: "amit_p",
@@ -619,6 +630,9 @@ const queriesData = [
     department: "Water Supply",
     author: "sunita_g",
     status: "in_progress",
+    urgencyScore: 5,
+    urgencyLabel: "High",
+    createdAt: "2025-08-07T07:54:03.000Z",
     threads: [
       {
         author: "sunita_g",
@@ -639,6 +653,9 @@ const queriesData = [
     department: "Water Supply",
     author: "vikash_s",
     status: "resolved",
+    urgencyScore: 3,
+    urgencyLabel: "Medium",
+    createdAt: "2025-08-01T16:43:21.000Z",
     threads: [
       {
         author: "vikash_s",
@@ -661,6 +678,9 @@ const queriesData = [
     department: "Electricity",
     author: "kavita_j",
     status: "open",
+    urgencyScore: 5,
+    urgencyLabel: "High",
+    createdAt: "2025-08-06T22:11:57.000Z",
     threads: [
       {
         author: "kavita_j",
@@ -677,6 +697,9 @@ const queriesData = [
     department: "Engineering",
     author: "rohit_a",
     status: "open",
+    urgencyScore: 4,
+    urgencyLabel: "High",
+    createdAt: "2025-07-28T10:05:11.000Z",
     threads: [
       {
         author: "rohit_a",
@@ -693,6 +716,9 @@ const queriesData = [
     department: "Revenue",
     author: "meera_v",
     status: "in_progress",
+    urgencyScore: 3,
+    urgencyLabel: "Medium",
+    createdAt: "2025-08-04T13:36:44.000Z",
     threads: [
       {
         author: "meera_v",
@@ -715,6 +741,9 @@ const queriesData = [
     department: "Fire Brigade",
     author: "deepak_m",
     status: "open",
+    urgencyScore: 4,
+    urgencyLabel: "High",
+    createdAt: "2025-08-02T08:21:19.000Z",
     threads: [
       {
         author: "deepak_m",
@@ -731,6 +760,9 @@ const queriesData = [
     department: "Finance",
     author: "ritu_j",
     status: "open",
+    urgencyScore: 2,
+    urgencyLabel: "Low",
+    createdAt: "2025-07-30T15:09:42.000Z",
     threads: [
       {
         author: "ritu_j",
@@ -747,6 +779,9 @@ const queriesData = [
     department: "Garden",
     author: "arjun_sol",
     status: "resolved",
+    urgencyScore: 2,
+    urgencyLabel: "Low",
+    createdAt: "2025-08-01T19:25:33.000Z",
     threads: [
       {
         author: "arjun_sol",
@@ -769,6 +804,9 @@ const queriesData = [
     department: "Miscellaneous Complaints",
     author: "pooja_c",
     status: "open",
+    urgencyScore: 3,
+    urgencyLabel: "Medium",
+    createdAt: "2025-08-05T06:57:09.000Z",
     threads: [
       {
         author: "pooja_c",
@@ -785,6 +823,9 @@ const queriesData = [
     department: "Parking",
     author: "pooja_c",
     status: "open",
+    urgencyScore: 3,
+    urgencyLabel: "Medium",
+    createdAt: "2025-08-04T12:14:26.000Z",
     threads: [
       {
         author: "pooja_c",
@@ -801,6 +842,9 @@ const queriesData = [
     department: "Building Allowance",
     author: "pooja_c",
     status: "in_progress",
+    urgencyScore: 2,
+    urgencyLabel: "Low",
+    createdAt: "2025-08-06T09:48:51.000Z",
     threads: [
       {
         author: "pooja_c",
@@ -823,6 +867,9 @@ const queriesData = [
     department: "Lake Protection",
     author: "pooja_c",
     status: "open",
+    urgencyScore: 4,
+    urgencyLabel: "High",
+    createdAt: "2025-08-03T17:31:05.000Z",
     threads: [
       {
         author: "pooja_c",
@@ -839,6 +886,9 @@ const queriesData = [
     department: "Social Security",
     author: "pooja_c",
     status: "open",
+    urgencyScore: 2,
+    urgencyLabel: "Low",
+    createdAt: "2025-07-31T21:16:58.000Z",
     threads: [
       {
         author: "pooja_c",
@@ -855,6 +905,9 @@ const queriesData = [
     department: "Govardhan Project",
     author: "pooja_c",
     status: "open",
+    urgencyScore: 1,
+    urgencyLabel: "Low",
+    createdAt: "2025-08-02T07:44:22.000Z",
     threads: [
       {
         author: "pooja_c",
@@ -871,6 +924,9 @@ const queriesData = [
     department: "BRTS and BCL",
     author: "pooja_c",
     status: "open",
+    urgencyScore: 3,
+    urgencyLabel: "Medium",
+    createdAt: "2025-08-06T18:02:40.000Z",
     threads: [
       {
         author: "pooja_c",
@@ -983,10 +1039,14 @@ async function seedDatabase() {
 
       const query = await Query.create({
         title: queryData.title,
+        description: queryData.threads && queryData.threads.length > 0 ? queryData.threads[0].message : "",
         author: author._id,
         department: department._id,
         status: queryData.status || "open",
         objects: threadObjects,
+        urgencyScore: queryData.urgencyScore,
+        urgencyLabel: queryData.urgencyLabel,
+        createdAt: new Date(queryData.createdAt),
       });
 
       // Update user and department with query reference
