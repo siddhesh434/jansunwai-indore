@@ -56,3 +56,28 @@ a {
 * {
   scroll-behavior: smooth;
 }
+
+/* Mobile viewport fixes */
+@media (max-width: 768px) {
+  html, body {
+    height: 100%;
+    overflow-x: hidden;
+  }
+  
+  /* Prevent mobile browser address bar from affecting layout */
+  .min-h-screen {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+  
+  /* Ensure proper mobile layout */
+  .mobile-safe-area {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Prevent content from being hidden behind mobile browser UI */
+  .mobile-content {
+    height: 100vh;
+    height: -webkit-fill-available;
+  }
+}

@@ -127,21 +127,21 @@ const StatusCard = ({ icon: Icon, title, count, subtitle, color, onClick, isActi
 
   return (
     <div 
-      className={`p-6 rounded-lg border cursor-pointer transition-all duration-200 ${colorClasses[color]} ${
+      className={`p-3 sm:p-6 rounded-lg border cursor-pointer transition-all duration-200 ${colorClasses[color]} ${
         isActive ? 'ring-2 ring-blue-500 border-blue-300' : ''
       }`}
       onClick={onClick}
     >
       <div className="flex items-start justify-between">
-        <div>
+        <div className="w-full">
           <div className="flex items-center gap-2 mb-2">
-            <div className={`p-2 rounded-lg ${iconColors[color]}`}>
-              <Icon className="w-5 h-5" />
+            <div className={`p-1.5 sm:p-2 rounded-lg ${iconColors[color]}`}>
+              <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <span className="text-sm font-medium text-gray-700">{title}</span>
+            <span className="text-xs sm:text-sm font-medium text-gray-700">{title}</span>
           </div>
-          <div className="text-3xl font-bold text-gray-900 mb-1">{count}</div>
-          <div className="text-sm text-gray-500">{subtitle}</div>
+          <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">{count}</div>
+          <div className="text-xs sm:text-sm text-gray-500">{subtitle}</div>
         </div>
       </div>
     </div>
@@ -150,12 +150,12 @@ const StatusCard = ({ icon: Icon, title, count, subtitle, color, onClick, isActi
 
 // Empty state component
 const EmptyState = ({ icon: Icon, title, description, action }) => (
-  <div className="flex flex-col items-center justify-center p-12 text-center">
-    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-      <Icon className="w-10 h-10 text-gray-400" />
+  <div className="flex flex-col items-center justify-center p-6 sm:p-12 text-center">
+    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+      <Icon className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
     </div>
-    <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-    <p className="text-gray-600 mb-6 max-w-sm">{description}</p>
+    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+    <p className="text-sm sm:text-base text-gray-600 mb-6 max-w-sm">{description}</p>
     {action}
   </div>
 );
@@ -168,13 +168,13 @@ const QueryCard = ({ query, isSelected, onClick, viewMode }) => {
     return (
       <div
         onClick={() => onClick(query._id)}
-        className={`group p-4 rounded-lg cursor-pointer transition-all duration-200 border bg-white hover:shadow-md ${
+        className={`group p-3 sm:p-4 rounded-lg cursor-pointer transition-all duration-200 border bg-white hover:shadow-md ${
           isSelected ? "border-blue-300 shadow-md ring-2 ring-blue-100" : "border-gray-200 hover:border-blue-200"
         }`}
       >
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-gray-900 text-sm mb-2 line-clamp-2">
+            <h3 className="font-medium text-gray-900 text-xs sm:text-sm mb-2 line-clamp-2">
               {query.title || "Untitled Query"}
             </h3>
             <p className="text-xs text-gray-600 line-clamp-3 mb-3">
@@ -210,44 +210,42 @@ const QueryCard = ({ query, isSelected, onClick, viewMode }) => {
   return (
     <div
       onClick={() => onClick(query._id)}
-      className={`group p-4 rounded-lg cursor-pointer transition-all duration-200 border bg-white hover:shadow-sm ${
+      className={`group p-3 sm:p-4 rounded-lg cursor-pointer transition-all duration-200 border bg-white hover:shadow-sm ${
         isSelected ? "border-blue-300 shadow-sm ring-1 ring-blue-100" : "border-gray-200 hover:border-blue-200"
       }`}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex-1 min-w-0 flex items-center gap-4">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-gray-900 text-sm truncate mb-1">
-              {query.title || "Untitled Query"}
-            </h3>
-            <p className="text-xs text-gray-600 truncate">
-              {query.description || "No description available"}
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-6 text-xs text-gray-500">
-            <StatusBadge status={query.status} />
-            
-            <span className="flex items-center gap-1">
-              <MessageSquare className="w-3 h-3" />
-              {query.objects?.length || 0}
-            </span>
-            
-            <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              {new Date(query.createdAt).toLocaleDateString()}
-            </span>
-            
-            {query.attachments?.length > 0 && (
-              <span className="flex items-center gap-1 text-blue-600">
-                <Paperclip className="w-3 h-3" />
-                {query.attachments.length}
-              </span>
-            )}
-          </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
+        <div className="flex-1 min-w-0">
+          <h3 className="font-medium text-gray-900 text-sm truncate mb-1">
+            {query.title || "Untitled Query"}
+          </h3>
+          <p className="text-xs text-gray-600 truncate">
+            {query.description || "No description available"}
+          </p>
         </div>
         
-        <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 ml-2 transition-colors" />
+        <div className="flex items-center gap-2 sm:gap-6 text-xs text-gray-500">
+          <StatusBadge status={query.status} />
+          
+          <span className="flex items-center gap-1">
+            <MessageSquare className="w-3 h-3" />
+            <span className="hidden sm:inline">{query.objects?.length || 0}</span>
+          </span>
+          
+          <span className="flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            <span className="hidden sm:inline">{new Date(query.createdAt).toLocaleDateString()}</span>
+          </span>
+          
+          {query.attachments?.length > 0 && (
+            <span className="flex items-center gap-1 text-blue-600">
+              <Paperclip className="w-3 h-3" />
+              <span className="hidden sm:inline">{query.attachments.length}</span>
+            </span>
+          )}
+          
+          <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
+        </div>
       </div>
     </div>
   );
@@ -329,29 +327,29 @@ const CreateComplaintModal = ({
       <div className="fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity" onClick={onClose} />
       
       {/* Modal */}
-      <div className="relative min-h-full flex items-center justify-center p-4">
+      <div className="relative min-h-full flex items-center justify-center p-2 sm:p-4">
         <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
           {/* Modal Header */}
-          <div className="bg-white border-b border-gray-200 p-6">
-            <div className="flex items-center justify-between">
+          <div className="bg-white border-b border-gray-200 p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Create New Complaint</h2>
-                <p className="text-gray-600 mt-1">Describe your complaint and we'll route it to the right department</p>
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Create New Complaint</h2>
+                <p className="text-sm sm:text-base text-gray-600 mt-1">Describe your complaint and we'll route it to the right department</p>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+                className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors self-end sm:self-auto"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             </div>
           </div>
 
           {/* Modal Content */}
-          <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-6 bg-gray-50">
-            <div className="max-w-3xl mx-auto space-y-8">
+          <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-4 sm:p-6 bg-gray-50">
+            <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8">
               {/* Query Input */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+              <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm">
                 <label className="block text-sm font-semibold text-gray-900 mb-3">
                   Describe Your Complaint
                 </label>
@@ -401,7 +399,7 @@ const CreateComplaintModal = ({
               </div>
 
               {/* Address Input */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+              <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm">
                 <label className="block text-sm font-semibold text-gray-900 mb-3">
                   Location <span className="text-gray-500 font-normal">(Optional but recommended)</span>
                 </label>
@@ -418,7 +416,7 @@ const CreateComplaintModal = ({
               </div>
 
               {/* File Attachments */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+              <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm">
                 <label className="block text-sm font-semibold text-gray-900 mb-3">
                   Attach Supporting Files
                 </label>
@@ -583,11 +581,11 @@ const CreateComplaintModal = ({
               )}
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6 border-t border-gray-200">
                 <button
                   onClick={handleCreateQuery}
                   disabled={!queryAnalysis || !newQuery.query.trim() || queryAnalysis.detailsSufficient === false}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-8 py-3 rounded-lg font-medium transition-colors"
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-6 sm:px-8 py-3 rounded-lg font-medium transition-colors"
                 >
                   {analyzing ? (
                     <div className="flex items-center justify-center gap-2">
@@ -605,7 +603,7 @@ const CreateComplaintModal = ({
                     stopVoiceInput();
                     onClose();
                   }}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-8 py-3 rounded-lg font-medium transition-colors border border-gray-300"
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 sm:px-8 py-3 rounded-lg font-medium transition-colors border border-gray-300"
                 >
                   Cancel
                 </button>
@@ -626,28 +624,41 @@ const QuerySidebar = ({
   newThread, 
   setNewThread, 
   handleAddThread, 
-  threadsContainerRef 
+  threadsContainerRef,
+  isMobile 
 }) => {
     const [sidebarHeaderCollapsed, setSidebarHeaderCollapsed] = useState(false);
   if (!query) return null;
   return (
-   <div className="fixed right-0 top-0 h-full w-[28rem] bg-white border-l border-gray-200 shadow-xl z-50 flex flex-col">
+   <div className={`fixed right-0 top-0 h-full bg-white border-l border-gray-200 shadow-xl z-50 flex flex-col ${
+     isMobile ? 'w-full' : 'w-[28rem]'
+   }`} style={{ height: '100vh' }}>
       {/* Sidebar Header */}
-      <div className="bg-white border-b border-gray-200 p-4">
+      <div className="bg-white border-b border-gray-200 p-4 flex-shrink-0">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1 min-w-0">
             <div className="flex items-center mb-2">
-              <h2 className="text-lg font-bold text-gray-900 truncate">
+              {isMobile && (
+                <button
+                  onClick={onClose}
+                  className="mr-3 p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+              )}
+              <h2 className="text-base sm:text-lg font-bold text-gray-900 truncate">
                 {query.title || "Query Details"}
               </h2>
-              <button
-                onClick={onClose}
-                className="ml-3 p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              {!isMobile && (
+                <button
+                  onClick={onClose}
+                  className="ml-3 p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
             </div>
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3">
               <StatusBadge status={query.status} />
               <span className="text-xs text-gray-500 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
@@ -741,7 +752,7 @@ const QuerySidebar = ({
 
       {/* Conversation Thread */}
      
-<div className="flex-1 flex flex-col min-h-0">
+<div className="flex-1 flex flex-col min-h-0 overflow-hidden">
   <div ref={threadsContainerRef} className="flex-1 overflow-y-auto bg-gray-50 p-3" style={{ minHeight: 0 }}>
           {threads.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-6 text-center">
@@ -839,7 +850,7 @@ const QuerySidebar = ({
         </div>
 
         {/* Message Input */}
-        <div className="bg-white border-t border-gray-200 p-3">
+        <div className="bg-white border-t border-gray-200 p-3 flex-shrink-0">
           <div className="flex gap-2">
             <textarea
               placeholder="Type your message..."
@@ -885,8 +896,6 @@ export default function Dashboard() {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [attachmentAnalyses, setAttachmentAnalyses] = useState([]);
 
-
-
   // Voice-to-text states
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
@@ -904,6 +913,7 @@ export default function Dashboard() {
   // Mobile states
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
 
   const router = useRouter();
   const { t } = useLanguage();
@@ -917,17 +927,20 @@ export default function Dashboard() {
 
   // Check if mobile on mount and resize
   useEffect(() => {
-    const checkMobile = () => {
-      const mobile = window.innerWidth < 1024;
+    const checkScreenSize = () => {
+      const width = window.innerWidth;
+      const mobile = width < 768;
+      const tablet = width >= 768 && width < 1024;
       setIsMobile(mobile);
-      if (!mobile) {
+      setIsTablet(tablet);
+      if (width >= 1024) {
         setSidebarOpen(false);
       }
     };
 
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
   useEffect(() => {
@@ -1060,7 +1073,7 @@ export default function Dashboard() {
   // Close sidebar when selecting query on mobile
   const handleQuerySelect = (queryId) => {
     fetchQueryThreads(queryId);
-    if (isMobile) {
+    if (isMobile || isTablet) {
       setSidebarOpen(false);
     }
   };
@@ -1068,7 +1081,7 @@ export default function Dashboard() {
   // Close sidebar when creating new query on mobile
   const handleNewQuery = () => {
     setShowNewQueryForm(true);
-    if (isMobile) {
+    if (isMobile || isTablet) {
       setSidebarOpen(false);
     }
   };
@@ -1388,10 +1401,10 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col mobile-content">
       {/* Mobile Header */}
-      {isMobile && (
-        <div className="lg:hidden bg-white border-b border-gray-200 sticky top-0 z-30">
+      {(isMobile || isTablet) && (
+        <div className="lg:hidden bg-white border-b border-gray-200 sticky top-0 z-30 flex-shrink-0">
           <div className="flex items-center justify-between p-4">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -1402,17 +1415,17 @@ export default function Dashboard() {
             <h1 className="text-lg font-semibold text-gray-900">Complaints Management</h1>
             <button
               onClick={handleNewQuery}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
             >
-              Create Complaint
+              {isMobile ? "New" : "Create Complaint"}
             </button>
           </div>
         </div>
       )}
 
-      <div className="flex h-screen lg:h-auto lg:min-h-screen">
+      <div className="flex flex-1 min-h-0">
         {/* Mobile Sidebar Overlay */}
-        {isMobile && sidebarOpen && (
+        {(isMobile || isTablet) && sidebarOpen && (
           <div 
             className="fixed inset-0 bg-black/50 z-40 lg:hidden"
             onClick={() => setSidebarOpen(false)}
@@ -1421,7 +1434,7 @@ export default function Dashboard() {
 
         {/* Sidebar */}
         <div className={`${
-          isMobile 
+          (isMobile || isTablet)
             ? `fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ${
                 sidebarOpen ? 'translate-x-0' : '-translate-x-full'
               }` 
@@ -1466,22 +1479,20 @@ export default function Dashboard() {
         </div>
 
         {/* Main Content */}
-       <div className={`flex-1 flex flex-col min-w-0 ${selectedQuery ? 'pr-[28rem]' : ''}`}>
+        <div className={`flex-1 flex flex-col min-w-0 overflow-hidden mobile-safe-area ${selectedQuery && !isMobile ? 'pr-[28rem]' : ''} ${selectedQuery && isMobile ? 'hidden' : ''}`}>
 
           {/* Main Dashboard View */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col overflow-hidden">
             {/* Dashboard Header */}
-            <div className="bg-white border-b border-gray-200 p-6">
-              <div className="flex items-center justify-between">
+            <div className="bg-white border-b border-gray-200 p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    <FileText className="w-6 h-6 text-blue-600" />
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                     Complaints Management
                   </h1>
                 </div>
-                <div className="flex items-center gap-3">
-                  
-                  
+                <div className="flex items-center gap-2 sm:gap-3">
                   <div className="flex items-center border border-gray-200 rounded-lg">
                     <button
                       onClick={() => setViewMode('list')}
@@ -1499,18 +1510,19 @@ export default function Dashboard() {
 
                   <button
                     onClick={() => setShowNewQueryForm(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
                   >
                     <Plus className="w-4 h-4" />
-                    Create Complaint
+                    <span className="hidden sm:inline">Create Complaint</span>
+                    <span className="sm:hidden">New</span>
                   </button>
                 </div>
               </div>
             </div>
 
             {/* Status Cards */}
-            <div className="p-6 bg-gray-50">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="p-4 sm:p-6 bg-gray-50 flex-shrink-0">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
                 <StatusCard
                   icon={FileText}
                   title="Total"
@@ -1550,24 +1562,26 @@ export default function Dashboard() {
               </div>
 
               {/* Advanced Filters */}
-              <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Filter className="w-5 h-5 text-blue-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">Advanced Filters</h3>
+              <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 mb-6 flex-shrink-0">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-5 h-5 text-blue-600" />
+                    <h3 className="text-lg font-semibold text-gray-900">Advanced Filters</h3>
+                  </div>
                   <button 
                     onClick={() => {
                       setSearchTerm("");
                       setFilterStatus("all");
                       setActiveStatusFilter("all");
                     }}
-                    className="ml-auto text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                    className="sm:ml-auto text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
                   >
                     <RotateCcw className="w-4 h-4" />
                     Reset Filters
                   </button>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <div className="grid grid-cols-1 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
                     <div className="relative">
@@ -1594,7 +1608,7 @@ export default function Dashboard() {
                     <button
                       key={status.key}
                       onClick={() => setActiveStatusFilter(status.key)}
-                      className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors ${
                         activeStatusFilter === status.key
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -1607,7 +1621,7 @@ export default function Dashboard() {
               </div>
 
               {/* Results */}
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex-1 min-h-0">
                 {filteredQueries.length === 0 ? (
                   <EmptyState
                     icon={FileSpreadsheet}
@@ -1615,10 +1629,10 @@ export default function Dashboard() {
                     description="Try changing your search or filter criteria"
                   />
                 ) : (
-                  <div className="p-6">
+                  <div className="p-4 sm:p-6 overflow-y-auto flex-1">
                     <div className={`${
                       viewMode === 'grid' 
-                        ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' 
+                        ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4' 
                         : 'space-y-3'
                     }`}>
                       {filteredQueries.map((query) => (
@@ -1639,18 +1653,21 @@ export default function Dashboard() {
         </div>
 
         {/* Query Sidebar */}
-        <QuerySidebar
-          query={selectedQuery}
-          threads={threads}
-          onClose={() => {
-            setSelectedQuery(null);
-            setThreads([]);
-          }}
-          newThread={newThread}
-          setNewThread={setNewThread}
-          handleAddThread={handleAddThread}
-          threadsContainerRef={threadsContainerRef}
-        />
+        {selectedQuery && (
+          <QuerySidebar
+            query={selectedQuery}
+            threads={threads}
+            onClose={() => {
+              setSelectedQuery(null);
+              setThreads([]);
+            }}
+            newThread={newThread}
+            setNewThread={setNewThread}
+            handleAddThread={handleAddThread}
+            threadsContainerRef={threadsContainerRef}
+            isMobile={isMobile}
+          />
+        )}
       </div>
 
       {/* Create Complaint Modal */}
