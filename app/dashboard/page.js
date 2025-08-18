@@ -1116,8 +1116,8 @@ export default function Dashboard() {
               filename: analysis.filename || analysis.file?.name,
               originalName: analysis.file?.name || analysis.filename,
               mimetype: analysis.file?.type,
-              description: analysis.analysis.description ? clampWords(analysis.analysis.description, 50, 60) : null,
-              summary: analysis.analysis.summary ? clampWords(analysis.analysis.summary, 50, 60) : null,
+                              description: analysis.analysis.description ? clampWords(analysis.analysis.description, 100, 150) : null,
+                summary: analysis.analysis.summary ? clampWords(analysis.analysis.summary, 100, 150) : null,
               metadata: analysis.analysis.metadata || null,
             };
           })
@@ -1725,12 +1725,12 @@ export default function Dashboard() {
                                        </div>
                                        {analysis.analysis?.description && (
                                          <p className="text-gray-600 mb-1">
-                                           <strong>Content:</strong> {clampWords(analysis.analysis.description, 20, 25)}
+                                           <strong>Content:</strong> {clampWords(analysis.analysis.description, 50, 75)}
                                          </p>
                                        )}
                                        {analysis.analysis?.summary && (
                                          <p className="text-gray-600">
-                                           <strong>Summary:</strong> {clampWords(analysis.analysis.summary, 20, 25)}
+                                           <strong>Summary:</strong> {clampWords(analysis.analysis.summary, 50, 75)}
                                          </p>
                                        )}
                                      </div>
