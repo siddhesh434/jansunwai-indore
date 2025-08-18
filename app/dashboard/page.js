@@ -1092,13 +1092,13 @@ export default function Dashboard() {
             const fileName = analysis.file?.name || analysis.filename || `attachment-${idx + 1}`;
             lines.push(`📎 File ${idx + 1}: ${fileName}`);
             
-            if (analysis.analysis.description) {
-              lines.push(`   Description: ${(analysis.analysis.description, 50, 60)}`);
-            }
-            
-            if (analysis.analysis.summary) {
-              lines.push(`   Municipal Summary: ${(analysis.analysis.summary, 50, 60)}`);
-            }
+                         if (analysis.analysis.description) {
+               lines.push(`   Description: ${clampWords(analysis.analysis.description, 50, 60)}`);
+             }
+             
+             if (analysis.analysis.summary) {
+               lines.push(`   Municipal Summary: ${clampWords(analysis.analysis.summary, 50, 60)}`);
+             }
             
             return lines.join('\n');
           })
