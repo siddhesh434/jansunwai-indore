@@ -4,7 +4,11 @@ import { User } from "../../../../models";
 
 export async function POST(request) {
   try {
-    await dbConnect();
+    const dbConnection = await dbConnect();
+    if (!dbConnection) {
+      return Response.json({ error: "Database connection not available" }, { status: 503 });
+    }
+
     const { email, password } = await request.json();
 
     // Find user by email

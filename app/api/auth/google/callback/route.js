@@ -65,7 +65,13 @@ export async function GET(request) {
 
     console.log('Redirect path extracted:', redirectPath);
 
-    await dbConnect();
+    const dbConnection = await dbConnect();
+    if (!dbConnection) {
+      console.error('Database connection not available');
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login?error=database_unavailable`
+      );
+    }
 
     try {
       // Exchange authorization code for access token
