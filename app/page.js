@@ -1,12 +1,15 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Building2,
   User,
   ArrowRight,
   MessageSquare,
   ShieldCheck,
+  AlertTriangle,
+  Clock,
+  MapPin,
 } from "lucide-react";
 import { useLanguage } from "./contexts/LanguageContext";
 import { useAuth } from "./contexts/AuthContext";
@@ -15,6 +18,26 @@ export default function Home() {
   const router = useRouter();
   const { t } = useLanguage();
   const { isAuthenticated, user, departmentMember, databaseConnectionError } = useAuth();
+  const [topQueries, setTopQueries] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTopQueries = async () => {
+      try {
+        const response = await fetch('/api/queries/top-urgent');
+        if (response.ok) {
+          const data = await response.json();
+          setTopQueries(data);
+        }
+      } catch (error) {
+        console.error('Error fetching top queries:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTopQueries();
+  }, []);
 
   return (
     <div className="relative min-h-screen">
@@ -75,7 +98,7 @@ export default function Home() {
                 <span className="text-blue-600">{t("heroTitleHighlight")}</span>
               </h1>
               <p className="text-lg text-gray-600 mb-10 max-w-2xl">
-                {t("heroDescription")}
+                {t("heroDescription") || "We are working on improving our municipal complaint management system. Track the most urgent issues and see how we're addressing them in real-time."}
               </p>
 
               <div className="flex flex-wrap gap-4">
@@ -99,62 +122,107 @@ export default function Home() {
             <div className="relative">
               <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
                 <div className="flex items-center space-x-3 mb-6">
-                  <ShieldCheck className="w-6 h-6 text-blue-600" />
-                  <h3 className="text-xl font-semibold text-gray-900">
-                    {t("secureLoginOptions")}
-                  </h3>
-                </div>
-
-                {/* Citizen Login Card */}
-                <div
-                  onClick={() => router.push("/login")}
-                  className="group border border-gray-200 rounded-xl p-6 mb-4 cursor-pointer transition-all hover:border-blue-300 hover:bg-blue-50"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                        <User className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-gray-900">
-                          {t("citizenLoginCard")}
-                        </h4>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {t("citizenLoginDesc")}
-                        </p>
-                      </div>
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                  <AlertTriangle className="w-6 h-6 text-orange-600" />
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900">
+                      Top Urgent Issues
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">We are working on these</p>
                   </div>
                 </div>
 
-                {/* Department Login Card */}
-                <div
-                  onClick={() => router.push("/department/login")}
-                  className="group border border-gray-200 rounded-xl p-6 cursor-pointer transition-all hover:border-blue-300 hover:bg-blue-50"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Building2 className="w-5 h-5 text-blue-600" />
+                {loading ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="animate-pulse">
+                        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
                       </div>
-                      <div>
-                        <h4 className="font-medium text-gray-900">
-                          {t("departmentLoginCard")}
-                        </h4>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {t("departmentLoginDesc")}
-                        </p>
-                      </div>
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                    ))}
                   </div>
+                ) : topQueries.length > 0 ? (
+                  <div className="space-y-4">
+                    {topQueries.map((query, index) => (
+                                             <div
+                         key={query._id}
+                         className="border border-gray-200 rounded-xl p-4 transition-all"
+                       >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center space-x-2">
+                            <div className={`w-3 h-3 rounded-full ${
+                              query.urgencyScore >= 4 ? 'bg-red-500' :
+                              query.urgencyScore >= 3 ? 'bg-orange-500' :
+                              'bg-yellow-500'
+                            }`}></div>
+                            <span className="text-sm font-medium text-gray-600">
+                              {query.urgencyLabel || `Score: ${query.urgencyScore}`}
+                            </span>
+                          </div>
+                          <span className="text-xs text-gray-500">
+                            {new Date(query.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        
+                        <h4 className="font-medium text-gray-900 mb-1 line-clamp-2">
+                          {query.title}
+                        </h4>
+                        
+                        {query.address && (
+                          <div className="flex items-center space-x-1 mb-2 text-sm text-blue-600 font-medium">
+                            <MapPin className="w-4 h-4" />
+                            <span className="line-clamp-1">{query.address}</span>
+                          </div>
+                        )}
+                        
+                        {query.description && (
+                          <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                            {query.description}
+                          </p>
+                        )}
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4 text-xs text-gray-500">
+                            {query.department && (
+                              <div className="flex items-center space-x-1">
+                                <Building2 className="w-3 h-3" />
+                                <span>{query.department.departmentName}</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            query.status === 'resolved' ? 'bg-green-100 text-green-800' :
+                            query.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {query.status.replace('_', ' ')}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Clock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500">No urgent queries at the moment</p>
+                    <p className="text-sm text-gray-400 mt-1">We're working on improving our system</p>
+                  </div>
+                )}
+
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => router.push("/login")}
+                    className="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium text-sm"
+                  >
+                    <span>Report Your Issue</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
 
               {/* Decorative Elements */}
-              <div className="absolute -top-6 -right-6 w-24 h-24 bg-blue-200 rounded-full opacity-30"></div>
-              <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-orange-200 rounded-full opacity-30"></div>
+              <div className="absolute -top-6 -right-6 w-24 h-24 bg-orange-200 rounded-full opacity-30"></div>
+              <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-red-200 rounded-full opacity-30"></div>
             </div>
           </div>
         </div>
