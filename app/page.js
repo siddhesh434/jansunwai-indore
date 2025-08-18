@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { useLanguage } from "./contexts/LanguageContext";
 import { useAuth } from "./contexts/AuthContext";
-import IndoreMap from "./components/Map";
 
 export default function Home() {
   const router = useRouter();
@@ -227,7 +226,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <IndoreMap />
         {/* Database Connection Error Banner */}
         {databaseConnectionError && (
           <div className="bg-red-50 border-b border-red-200 px-6 py-4">

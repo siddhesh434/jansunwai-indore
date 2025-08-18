@@ -3,7 +3,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
-import { Users, FileText, Building2, UserCheck, TrendingUp, AlertCircle, CheckCircle, Clock, Calendar, Activity, Brain, Zap, Target, RefreshCw, Shield, LogOut, Search, Filter, SortAsc, SortDesc, Eye } from 'lucide-react';
+import { Users, FileText, Building2, UserCheck, TrendingUp, AlertCircle, CheckCircle, Clock, Calendar, Activity, Brain, Zap, Target, RefreshCw, Shield, LogOut, Search, Filter, SortAsc, SortDesc, Eye, MapPin, Star, MessageSquare, ThumbsUp, ThumbsDown } from 'lucide-react';
+import IndoreMap from '../components/Map';
 
 const Dashboard = () => {
   const [data, setData] = useState({
@@ -21,6 +22,11 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [aiInsights, setAiInsights] = useState(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
+  const [feedbackData, setFeedbackData] = useState([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackAIInsights, setFeedbackAIInsights] = useState(null);
+  const [feedbackAILoading, setFeedbackAILoading] = useState(false);
+  const [feedbackDepartmentFilter, setFeedbackDepartmentFilter] = useState('all');
 
   const router = useRouter();
   const { superadmin, isSuperadminAuthenticated, logout } = useAuth();
@@ -60,13 +66,19 @@ const Dashboard = () => {
             createdAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
             queries: Array(Math.floor(Math.random() * 5)).fill().map((_, j) => `query_${i}_${j}`)
           })),
-          queries: Array(420).fill().map((_, i) => ({
-            _id: `query_${i}`,
-            title: `Query ${i + 1}`,
-            status: ['pending', 'in_progress', 'resolved', 'closed'][Math.floor(Math.random() * 4)],
-            createdAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
-            department: { departmentName: ['Sewage', 'Compost with dried leaves', 'Water Supply', 'Electricity', 'Engineering', 'Revenue', 'Fire Brigade', 'Finance', 'Garden', 'Miscellaneous Complaints', 'Parking', 'Building Allowance', 'Lake Protection', 'Social Security', 'Govardhan Project', 'BRTS and BCL'][Math.floor(Math.random() * 16)] }
-          })),
+                     queries: Array(420).fill().map((_, i) => {
+             const currentDate = new Date();
+             const randomDaysAgo = Math.floor(Math.random() * 365); // Spread across the year
+             const createdAt = new Date(currentDate.getTime() - randomDaysAgo * 24 * 60 * 60 * 1000);
+             
+             return {
+               _id: `query_${i}`,
+               title: `Query ${i + 1}`,
+               status: ['open', 'in_progress', 'resolved'][Math.floor(Math.random() * 3)],
+               createdAt: createdAt.toISOString(),
+               department: { departmentName: ['Sewage', 'Compost with dried leaves', 'Water Supply', 'Electricity', 'Engineering', 'Revenue', 'Fire Brigade', 'Finance', 'Garden', 'Miscellaneous Complaints', 'Parking', 'Building Allowance', 'Lake Protection', 'Social Security', 'Govardhan Project', 'BRTS and BCL'][Math.floor(Math.random() * 16)] }
+             };
+           }),
           departments: [
             { _id: 'dept_1', departmentName: 'Sewage', members: Array(12).fill(), queries: Array(85).fill() },
             { _id: 'dept_2', departmentName: 'Compost with dried leaves', members: Array(8).fill(), queries: Array(92).fill() },
@@ -222,6 +234,263 @@ const Dashboard = () => {
     }
   }, [activeTab, loading, aiInsights, generateAIInsights]);
 
+  // Fetch feedback data when switching to feedbacks tab
+  useEffect(() => {
+    if (activeTab === 'feedbacks') {
+      fetchFeedbackData();
+    }
+  }, [activeTab]);
+
+  // Fetch feedback data
+  const fetchFeedbackData = async () => {
+    setFeedbackLoading(true);
+    try {
+      const response = await fetch('/api/populatedqueries');
+      if (response.ok) {
+        const queries = await response.json();
+        // Filter queries that have feedback
+        const queriesWithFeedback = Array.isArray(queries) ? 
+          queries.filter(query => query.feedback) : [];
+        setFeedbackData(queriesWithFeedback);
+      } else {
+        // Fallback to mock feedback data
+        setFeedbackData([
+          {
+            _id: '1',
+            title: 'Water supply issue resolved',
+            feedback: {
+              rating: 5,
+              description: 'Excellent service! The water supply was restored within 24 hours.',
+              submittedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            department: { departmentName: 'Water Supply' },
+            status: 'resolved',
+            createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+          },
+          {
+            _id: '2',
+            title: 'Street light repair',
+            feedback: {
+              rating: 4,
+              description: 'Good response time. The street light was fixed quickly.',
+              submittedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            department: { departmentName: 'Electricity' },
+            status: 'resolved',
+            createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+          },
+          {
+            _id: '3',
+            title: 'Garbage collection complaint',
+            feedback: {
+              rating: 3,
+              description: 'Issue was resolved but took longer than expected.',
+              submittedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            department: { departmentName: 'Miscellaneous Complaints' },
+            status: 'resolved',
+            createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+          },
+          {
+            _id: '4',
+            title: 'Road repair request',
+            feedback: {
+              rating: 2,
+              description: 'Poor communication about the timeline. Still waiting for updates.',
+              submittedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            department: { departmentName: 'Engineering' },
+            status: 'in_progress',
+            createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
+          },
+          {
+            _id: '5',
+            title: 'Sewage overflow issue',
+            feedback: {
+              rating: 1,
+              description: 'Very disappointed with the response. Issue still not resolved.',
+              submittedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            department: { departmentName: 'Sewage' },
+            status: 'open',
+            createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString()
+          }
+        ]);
+      }
+    } catch (error) {
+      console.error('Error fetching feedback data:', error);
+      // Use mock data on error
+      setFeedbackData([
+        {
+          _id: '1',
+          title: 'Water supply issue resolved',
+          feedback: {
+            rating: 5,
+            description: 'Excellent service! The water supply was restored within 24 hours.',
+            submittedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+          },
+          department: { departmentName: 'Water Supply' },
+          status: 'resolved',
+          createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          _id: '2',
+          title: 'Street light repair',
+          feedback: {
+            rating: 4,
+            description: 'Good response time. The street light was fixed quickly.',
+            submittedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+            },
+          department: { departmentName: 'Electricity' },
+          status: 'resolved',
+          createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          _id: '3',
+          title: 'Garbage collection complaint',
+          feedback: {
+            rating: 3,
+            description: 'Issue was resolved but took longer than expected.',
+            submittedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+          },
+          department: { departmentName: 'Miscellaneous Complaints' },
+          status: 'resolved',
+          createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          _id: '4',
+          title: 'Road repair request',
+          feedback: {
+            rating: 2,
+            description: 'Poor communication about the timeline. Still waiting for updates.',
+            submittedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString()
+          },
+          department: { departmentName: 'Engineering' },
+          status: 'in_progress',
+          createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          _id: '5',
+          title: 'Sewage overflow issue',
+          feedback: {
+            rating: 1,
+            description: 'Very disappointed with the response. Issue still not resolved.',
+            submittedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+          },
+          department: { departmentName: 'Sewage' },
+          status: 'open',
+          createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      ]);
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
+
+  // Generate AI feedback insights
+  const generateFeedbackAIInsights = async () => {
+    setFeedbackAILoading(true);
+    try {
+      const feedbackAnalytics = {
+        totalFeedback: feedbackData.length,
+        averageRating: feedbackData.length > 0 ? 
+          (feedbackData.reduce((sum, item) => sum + item.feedback.rating, 0) / feedbackData.length).toFixed(1) : 0,
+        ratingDistribution: feedbackData.reduce((acc, item) => {
+          acc[item.feedback.rating] = (acc[item.feedback.rating] || 0) + 1;
+          return acc;
+        }, {}),
+        departmentPerformance: feedbackData.reduce((acc, item) => {
+          const dept = item.department?.departmentName || 'Unknown';
+          if (!acc[dept]) {
+            acc[dept] = { total: 0, sum: 0, ratings: [] };
+          }
+          acc[dept].total += 1;
+          acc[dept].sum += item.feedback.rating;
+          acc[dept].ratings.push(item.feedback.rating);
+          return acc;
+        }, {}),
+        sentimentAnalysis: feedbackData.map(item => ({
+          rating: item.feedback.rating,
+          description: item.feedback.description,
+          department: item.department?.departmentName,
+          status: item.status
+        }))
+      };
+
+      const response = await fetch('/api/dashboard-analysis', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          data: feedbackAnalytics,
+          analysisType: 'feedback_sentiment_analysis'
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setFeedbackAIInsights(result.analysis);
+      } else {
+        // Fallback insights if AI analysis fails
+        setFeedbackAIInsights(generateFallbackFeedbackInsights());
+      }
+    } catch (error) {
+      console.error('Feedback AI Analysis failed:', error);
+      setFeedbackAIInsights(generateFallbackFeedbackInsights());
+    } finally {
+      setFeedbackAILoading(false);
+    }
+  };
+
+  const generateFallbackFeedbackInsights = () => {
+    const avgRating = feedbackData.length > 0 ? 
+      (feedbackData.reduce((sum, item) => sum + item.feedback.rating, 0) / feedbackData.length).toFixed(1) : 0;
+    
+    const ratingDistribution = feedbackData.reduce((acc, item) => {
+      acc[item.feedback.rating] = (acc[item.feedback.rating] || 0) + 1;
+      return acc;
+    }, {});
+
+    const departmentPerformance = feedbackData.reduce((acc, item) => {
+      const dept = item.department?.departmentName || 'Unknown';
+      if (!acc[dept]) {
+        acc[dept] = { total: 0, sum: 0 };
+      }
+      acc[dept].total += 1;
+      acc[dept].sum += item.feedback.rating;
+      return acc;
+    }, {});
+
+    return {
+      overallSatisfaction: avgRating >= 4 ? 'High' : avgRating >= 3 ? 'Moderate' : 'Low',
+      keyFindings: [
+        `Average satisfaction rating: ${avgRating}/5`,
+        `${feedbackData.length} feedback responses analyzed`,
+        `Most common rating: ${Object.keys(ratingDistribution).reduce((a, b) => ratingDistribution[a] > ratingDistribution[b] ? a : b)}/5`,
+        `${Object.keys(departmentPerformance).length} departments received feedback`
+      ],
+      recommendations: [
+        'Focus on improving response times for departments with lower ratings',
+        'Implement regular feedback collection for all resolved queries',
+        'Provide training on customer communication for staff',
+        'Set up automated follow-up systems for ongoing issues'
+      ],
+      departmentInsights: Object.entries(departmentPerformance).map(([dept, data]) => ({
+        department: dept,
+        averageRating: (data.sum / data.total).toFixed(1),
+        totalFeedback: data.total,
+        performance: (data.sum / data.total) >= 4 ? 'Excellent' : 
+                    (data.sum / data.total) >= 3 ? 'Good' : 'Needs Improvement'
+      })),
+      sentimentTrends: {
+        positive: Object.values(ratingDistribution).slice(4).reduce((a, b) => a + b, 0),
+        neutral: ratingDistribution[3] || 0,
+        negative: Object.values(ratingDistribution).slice(0, 3).reduce((a, b) => a + b, 0)
+      }
+    };
+  };
+
   // Helper functions and computed values
   const filteredQueries = allQueries.filter(query => {
     const matchesSearch = query.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -229,6 +498,13 @@ const Dashboard = () => {
                          query.department?.departmentName.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || query.status === statusFilter;
     return matchesSearch && matchesStatus;
+  });
+
+  // Filter feedback data based on department
+  const filteredFeedbackData = feedbackData.filter(item => {
+    const matchesDepartment = feedbackDepartmentFilter === 'all' || 
+      item.department?.departmentName === feedbackDepartmentFilter;
+    return matchesDepartment;
   });
 
   const generateFallbackInsights = () => {
@@ -290,13 +566,44 @@ const Dashboard = () => {
   };
 
   const generateMonthlyData = () => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'];
-    return months.map(month => ({
-      month,
-      queries: Math.floor(Math.random() * 50) + 20,
-      resolved: Math.floor(Math.random() * 40) + 15,
-      pending: Math.floor(Math.random() * 20) + 5
-    }));
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const currentYear = new Date().getFullYear();
+    
+    // Group queries by month
+    const monthlyData = {};
+    
+    // Initialize all months with 0 values
+    months.forEach((month, index) => {
+      monthlyData[index] = {
+        month,
+        queries: 0,
+        resolved: 0,
+        pending: 0
+      };
+    });
+    
+    // Process actual query data
+    data.queries.forEach(query => {
+      const queryDate = new Date(query.createdAt);
+      const queryYear = queryDate.getFullYear();
+      
+      // Only process current year data
+      if (queryYear === currentYear) {
+        const monthIndex = queryDate.getMonth();
+        
+        if (monthlyData[monthIndex]) {
+          monthlyData[monthIndex].queries += 1;
+          
+          if (query.status === 'resolved') {
+            monthlyData[monthIndex].resolved += 1;
+          } else if (query.status === 'open' || query.status === 'pending') {
+            monthlyData[monthIndex].pending += 1;
+          }
+        }
+      }
+    });
+    
+    return Object.values(monthlyData);
   };
 
   const getStatusData = () => {
@@ -407,7 +714,7 @@ const Dashboard = () => {
         {/* Navigation Tabs */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
           <div className="flex space-x-8 px-6">
-            {['overview', 'analytics', 'departments', 'queries', 'insights'].map((tab) => (
+            {['overview', 'analytics', 'departments', 'queries', 'insights', 'map', 'feedbacks'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -956,6 +1263,349 @@ const Dashboard = () => {
                   Generate AI Insights
                 </button>
               </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'map' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+                    <MapPin className="h-7 w-7 mr-3 text-blue-500" />
+                    Indore City Map
+                  </h2>
+                  <p className="text-gray-600 mt-1">Geographic overview of query locations and city landmarks</p>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-4">
+                <IndoreMap />
+              </div>
+              
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-blue-800 mb-2">Map Features</h3>
+                  <ul className="text-sm text-blue-700 space-y-1">
+                    <li>• Interactive city landmarks</li>
+                    <li>• Query location tracking</li>
+                    <li>• Department coverage areas</li>
+                  </ul>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-green-800 mb-2">Current Status</h3>
+                  <ul className="text-sm text-green-700 space-y-1">
+                    <li>• 5 active landmarks</li>
+                    <li>• Real-time updates</li>
+                    <li>• Mobile responsive</li>
+                  </ul>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-purple-800 mb-2">Future Enhancements</h3>
+                  <ul className="text-sm text-purple-700 space-y-1">
+                    <li>• Query clustering</li>
+                    <li>• Heat map analytics</li>
+                    <li>• Route optimization</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'feedbacks' && (
+          <div className="space-y-6">
+            {/* Feedback Header */}
+            <div className="bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl shadow-lg p-8 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold mb-4 flex items-center">
+                    <MessageSquare className="h-8 w-8 mr-3" />
+                    Citizen Feedback Analytics
+                  </h2>
+                  <p className="text-purple-100">AI-powered sentiment analysis and performance insights from citizen feedback</p>
+                </div>
+                <button
+                  onClick={generateFeedbackAIInsights}
+                  disabled={feedbackAILoading}
+                  className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center disabled:opacity-50"
+                >
+                  <Brain className={`h-4 w-4 mr-2 ${feedbackAILoading ? 'animate-spin' : ''}`} />
+                  {feedbackAILoading ? 'Analyzing...' : 'AI Analysis'}
+                </button>
+              </div>
+            </div>
+
+            {feedbackLoading ? (
+              <div className="bg-white rounded-xl shadow-lg p-12 text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading feedback data...</p>
+              </div>
+            ) : (
+              <>
+                                 {/* Feedback Filters */}
+                 <div className="bg-white rounded-xl shadow-lg p-6">
+                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                     <div>
+                       <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                         <Filter className="h-5 w-5 mr-2 text-purple-500" />
+                         Filter Feedback
+                       </h3>
+                                               <p className="text-gray-600 mt-1">Filter feedback by department</p>
+                     </div>
+                     
+                                           <div className="flex flex-col sm:flex-row gap-3">
+                        {/* Department Filter */}
+                        <select
+                          value={feedbackDepartmentFilter}
+                          onChange={(e) => setFeedbackDepartmentFilter(e.target.value)}
+                          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        >
+                          <option value="all">All Departments</option>
+                          {Array.from(new Set(feedbackData.map(item => item.department?.departmentName))).map(dept => (
+                            <option key={dept} value={dept}>{dept}</option>
+                          ))}
+                        </select>
+                      </div>
+                   </div>
+                 </div>
+
+                 {/* Feedback Statistics */}
+                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                   <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+                     <div className="text-3xl font-bold text-purple-600 mb-2">
+                       {filteredFeedbackData.length}
+                     </div>
+                     <div className="text-sm text-gray-600">Filtered Feedback</div>
+                     <div className="text-xs text-gray-500 mt-1">
+                       of {feedbackData.length} total
+                     </div>
+                   </div>
+                   <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+                     <div className="text-3xl font-bold text-green-600 mb-2">
+                       {filteredFeedbackData.length > 0 ? 
+                         (filteredFeedbackData.reduce((sum, item) => sum + item.feedback.rating, 0) / filteredFeedbackData.length).toFixed(1) : '0.0'}
+                     </div>
+                     <div className="text-sm text-gray-600">Average Rating</div>
+                   </div>
+                   <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+                     <div className="text-3xl font-bold text-blue-600 mb-2">
+                       {filteredFeedbackData.filter(item => item.feedback.rating >= 4).length}
+                     </div>
+                     <div className="text-sm text-gray-600">Positive Reviews</div>
+                   </div>
+                   <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+                     <div className="text-3xl font-bold text-orange-600 mb-2">
+                       {new Set(filteredFeedbackData.map(item => item.department?.departmentName)).size}
+                     </div>
+                     <div className="text-sm text-gray-600">Departments Rated</div>
+                   </div>
+                 </div>
+
+                {/* Rating Distribution Chart */}
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center">
+                    <Star className="h-5 w-5 mr-2 text-yellow-500" />
+                    Rating Distribution
+                  </h3>
+                                     <ResponsiveContainer width="100%" height={300}>
+                     <BarChart data={Array.from({ length: 5 }, (_, i) => {
+                       const rating = i + 1;
+                       const count = filteredFeedbackData.filter(item => item.feedback.rating === rating).length;
+                       return { rating: `${rating}★`, count, percentage: filteredFeedbackData.length > 0 ? (count / filteredFeedbackData.length * 100).toFixed(1) : 0 };
+                     })}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="rating" />
+                      <YAxis />
+                      <Tooltip formatter={(value, name) => [value, name === 'count' ? 'Count' : 'Percentage']} />
+                      <Bar dataKey="count" fill="#8b5cf6" name="Count" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* AI Insights */}
+                {feedbackAILoading ? (
+                  <div className="bg-white rounded-xl shadow-lg p-12 text-center">
+                    <div className="animate-pulse">
+                      <Brain className="h-16 w-16 text-purple-500 mx-auto mb-4 animate-bounce" />
+                      <h3 className="text-lg font-semibold text-gray-700 mb-2">AI Analysis in Progress</h3>
+                      <p className="text-gray-500">Analyzing feedback sentiment and generating insights...</p>
+                    </div>
+                  </div>
+                ) : feedbackAIInsights ? (
+                  <div className="space-y-6">
+                    {/* Overall Satisfaction */}
+                    <div className="bg-white rounded-xl shadow-lg p-6">
+                      <h3 className="text-lg font-semibold mb-4 flex items-center">
+                        <ThumbsUp className="h-5 w-5 mr-2 text-green-500" />
+                        Overall Satisfaction Analysis
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="text-center p-4 bg-gradient-to-b from-green-50 to-green-100 rounded-lg">
+                          <div className="text-2xl font-bold text-green-600">
+                            {feedbackAIInsights.overallSatisfaction || 'Moderate'}
+                          </div>
+                          <p className="text-sm text-green-700">Overall Satisfaction</p>
+                        </div>
+                        <div className="text-center p-4 bg-gradient-to-b from-blue-50 to-blue-100 rounded-lg">
+                          <div className="text-2xl font-bold text-blue-600">
+                            {feedbackAIInsights.sentimentTrends?.positive || 0}
+                          </div>
+                          <p className="text-sm text-blue-700">Positive Feedback</p>
+                        </div>
+                        <div className="text-center p-4 bg-gradient-to-b from-red-50 to-red-100 rounded-lg">
+                          <div className="text-2xl font-bold text-red-600">
+                            {feedbackAIInsights.sentimentTrends?.negative || 0}
+                          </div>
+                          <p className="text-sm text-red-700">Negative Feedback</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* AI Insights Grid */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div className="bg-white rounded-xl shadow-lg p-6">
+                        <h3 className="text-lg font-semibold mb-4 flex items-center">
+                          <Target className="h-5 w-5 mr-2 text-purple-500" />
+                          AI Key Findings
+                        </h3>
+                        <div className="space-y-3">
+                          {(feedbackAIInsights.keyFindings || []).map((finding, index) => (
+                            <div key={index} className="flex items-start p-3 bg-purple-50 rounded-lg">
+                              <CheckCircle className="h-5 w-5 text-purple-500 mr-3 mt-0.5 flex-shrink-0" />
+                              <span className="text-gray-700">{finding}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-xl shadow-lg p-6">
+                        <h3 className="text-lg font-semibold mb-4 flex items-center">
+                          <TrendingUp className="h-5 w-5 mr-2 text-green-500" />
+                          AI Recommendations
+                        </h3>
+                        <div className="space-y-3">
+                          {(feedbackAIInsights.recommendations || []).map((recommendation, index) => (
+                            <div key={index} className="p-3 bg-green-50 rounded-lg">
+                              <div className="flex items-start">
+                                <AlertCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                                <span className="text-gray-700">{recommendation}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Department Performance */}
+                    <div className="bg-white rounded-xl shadow-lg p-6">
+                      <h3 className="text-lg font-semibold mb-4 flex items-center">
+                        <Building2 className="h-5 w-5 mr-2 text-blue-500" />
+                        Department Performance by Feedback
+                      </h3>
+                      <div className="space-y-4">
+                        {(feedbackAIInsights.departmentInsights || []).map((dept, index) => (
+                          <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-3 h-3 rounded-full ${
+                                dept.performance === 'Excellent' ? 'bg-green-500' :
+                                dept.performance === 'Good' ? 'bg-yellow-500' : 'bg-red-500'
+                              }`}></div>
+                              <div>
+                                <h4 className="font-medium text-gray-900">{dept.department}</h4>
+                                <p className="text-sm text-gray-600">{dept.totalFeedback} feedback responses</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-lg font-bold text-gray-900">{dept.averageRating}/5</div>
+                              <div className={`text-sm font-medium ${
+                                dept.performance === 'Excellent' ? 'text-green-600' :
+                                dept.performance === 'Good' ? 'text-yellow-600' : 'text-red-600'
+                              }`}>
+                                {dept.performance}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-xl shadow-lg p-12 text-center">
+                    <MessageSquare className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">AI Analysis Not Available</h3>
+                    <p className="text-gray-500 mb-4">Click the AI Analysis button above to generate insights</p>
+                    <button
+                      onClick={generateFeedbackAIInsights}
+                      className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg transition-all duration-200"
+                    >
+                      Generate AI Insights
+                    </button>
+                  </div>
+                )}
+
+                                 {/* Feedback List */}
+                 <div className="bg-white rounded-xl shadow-lg p-6">
+                   <h3 className="text-lg font-semibold mb-4 flex items-center">
+                     <MessageSquare className="h-5 w-5 mr-2 text-gray-600" />
+                     Recent Feedback ({filteredFeedbackData.length})
+                   </h3>
+                   <div className="space-y-4">
+                     {filteredFeedbackData.length === 0 ? (
+                       <div className="text-center py-8">
+                         <MessageSquare className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                         <h3 className="text-lg font-semibold text-gray-700 mb-2">No feedback found</h3>
+                                                   <p className="text-gray-500">
+                            {feedbackDepartmentFilter !== 'all' 
+                              ? 'Try adjusting your filter criteria' 
+                              : 'No feedback has been submitted yet'}
+                          </p>
+                       </div>
+                     ) : (
+                       filteredFeedbackData.map((item) => (
+                      <div key={item._id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-gray-900 mb-1">{item.title}</h4>
+                            <div className="flex items-center space-x-4 text-sm text-gray-600">
+                              <span className="flex items-center">
+                                <Building2 className="h-4 w-4 mr-1" />
+                                {item.department?.departmentName}
+                              </span>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                item.status === 'resolved' ? 'bg-green-100 text-green-800' :
+                                item.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-red-100 text-red-800'
+                              }`}>
+                                {item.status.replace('_', ' ')}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            {Array.from({ length: 5 }, (_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-4 w-4 ${
+                                  i < item.feedback.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                            <span className="ml-2 text-sm font-medium text-gray-900">
+                              {item.feedback.rating}/5
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-gray-700 text-sm mb-2">{item.feedback.description}</p>
+                                                 <div className="text-xs text-gray-500">
+                           Feedback submitted: {new Date(item.feedback.submittedAt).toLocaleDateString()}
+                         </div>
+                       </div>
+                     ))
+                   )}
+                 </div>
+               </div>
+              </>
             )}
           </div>
         )}

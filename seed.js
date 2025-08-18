@@ -86,9 +86,35 @@ const ThreadObjectSchema = new Schema(
   { _id: false }
 );
 
+// Feedback Schema
+const FeedbackSchema = new Schema(
+  {
+    rating: { 
+      type: Number, 
+      required: true, 
+      min: 1, 
+      max: 5 
+    },
+    description: { 
+      type: String, 
+      required: true,
+      maxlength: 500 
+    },
+    submittedAt: { 
+      type: Date, 
+      default: Date.now 
+    }
+  },
+  { _id: false }
+);
+
 const QuerySchema = new Schema(
   {
     title: { type: String, required: true },
+    description: { type: String },
+    address: { type: String },
+    latitude: { type: Number },
+    longitude: { type: Number },
     objects: [ThreadObjectSchema],
     author: { type: Schema.Types.ObjectId, ref: "User", required: true },
     department: {
@@ -101,6 +127,7 @@ const QuerySchema = new Schema(
       enum: ["open", "in_progress", "resolved"],
       default: "open",
     },
+    feedback: FeedbackSchema,
     urgencyScore: { type: Number, default: 0 },
     urgencyLabel: { type: String },
   },
@@ -555,6 +582,9 @@ const queriesData = [
     urgencyScore: 5,
     urgencyLabel: "High",
     createdAt: "2025-08-05T09:42:15.000Z",
+    address: "Vijay Nagar, Indore, Madhya Pradesh",
+    latitude: 22.7196,
+    longitude: 75.8577,
     threads: [
       {
         author: "rajesh_k",
@@ -589,6 +619,14 @@ const queriesData = [
     urgencyScore: 4,
     urgencyLabel: "High",
     createdAt: "2025-08-03T14:27:49.000Z",
+    address: "Palasia Square, Indore, Madhya Pradesh",
+    latitude: 22.7248,
+    longitude: 75.8839,
+    feedback: {
+      rating: 5,
+      description: "Excellent service! The drainage was cleared quickly and the area is now clean. Very satisfied with the response time and quality of work.",
+      submittedAt: "2025-08-04T10:30:00.000Z"
+    },
     threads: [
       {
         author: "priya_s",
@@ -614,6 +652,9 @@ const queriesData = [
     urgencyScore: 2,
     urgencyLabel: "Low",
     createdAt: "2025-07-29T11:18:37.000Z",
+    address: "New Palasia, Indore, Madhya Pradesh",
+    latitude: 22.7265,
+    longitude: 75.8832,
     threads: [
       {
         author: "amit_p",
@@ -633,6 +674,9 @@ const queriesData = [
     urgencyScore: 5,
     urgencyLabel: "High",
     createdAt: "2025-08-07T07:54:03.000Z",
+    address: "MG Road, Indore, Madhya Pradesh",
+    latitude: 22.7231,
+    longitude: 75.8836,
     threads: [
       {
         author: "sunita_g",
@@ -656,6 +700,14 @@ const queriesData = [
     urgencyScore: 3,
     urgencyLabel: "Medium",
     createdAt: "2025-08-01T16:43:21.000Z",
+    address: "AB Road, Indore, Madhya Pradesh",
+    latitude: 22.7176,
+    longitude: 75.8572,
+    feedback: {
+      rating: 4,
+      description: "Good response time. Water pressure is now normal. Would have given 5 stars if they had informed us about the maintenance schedule beforehand.",
+      submittedAt: "2025-08-02T14:20:00.000Z"
+    },
     threads: [
       {
         author: "vikash_s",
@@ -681,6 +733,9 @@ const queriesData = [
     urgencyScore: 5,
     urgencyLabel: "High",
     createdAt: "2025-08-06T22:11:57.000Z",
+    address: "Bhawarkua, Indore, Madhya Pradesh",
+    latitude: 22.7315,
+    longitude: 75.8867,
     threads: [
       {
         author: "kavita_j",
@@ -700,6 +755,9 @@ const queriesData = [
     urgencyScore: 4,
     urgencyLabel: "High",
     createdAt: "2025-07-28T10:05:11.000Z",
+    address: "Sapna Sangeeta, Indore, Madhya Pradesh",
+    latitude: 22.7358,
+    longitude: 75.8892,
     threads: [
       {
         author: "rohit_a",
@@ -719,6 +777,9 @@ const queriesData = [
     urgencyScore: 3,
     urgencyLabel: "Medium",
     createdAt: "2025-08-04T13:36:44.000Z",
+    address: "Tilak Nagar, Indore, Madhya Pradesh",
+    latitude: 22.7289,
+    longitude: 75.8801,
     threads: [
       {
         author: "meera_v",
@@ -744,6 +805,9 @@ const queriesData = [
     urgencyScore: 4,
     urgencyLabel: "High",
     createdAt: "2025-08-02T08:21:19.000Z",
+    address: "Scheme 54, Indore, Madhya Pradesh",
+    latitude: 22.7412,
+    longitude: 75.8934,
     threads: [
       {
         author: "deepak_m",
@@ -763,6 +827,9 @@ const queriesData = [
     urgencyScore: 2,
     urgencyLabel: "Low",
     createdAt: "2025-07-30T15:09:42.000Z",
+    address: "Scheme 78, Indore, Madhya Pradesh",
+    latitude: 22.7445,
+    longitude: 75.8967,
     threads: [
       {
         author: "ritu_j",
@@ -782,6 +849,14 @@ const queriesData = [
     urgencyScore: 2,
     urgencyLabel: "Low",
     createdAt: "2025-08-01T19:25:33.000Z",
+    address: "LIG Colony, Indore, Madhya Pradesh",
+    latitude: 22.7389,
+    longitude: 75.8901,
+    feedback: {
+      rating: 5,
+      description: "Outstanding work! The park looks beautiful now. All equipment is working perfectly and the grass is well-maintained. Children are very happy with the improvements.",
+      submittedAt: "2025-08-02T16:45:00.000Z"
+    },
     threads: [
       {
         author: "arjun_sol",
@@ -807,6 +882,9 @@ const queriesData = [
     urgencyScore: 3,
     urgencyLabel: "Medium",
     createdAt: "2025-08-05T06:57:09.000Z",
+    address: "Kanadiya, Indore, Madhya Pradesh",
+    latitude: 22.7321,
+    longitude: 75.8876,
     threads: [
       {
         author: "pooja_c",
@@ -826,6 +904,9 @@ const queriesData = [
     urgencyScore: 3,
     urgencyLabel: "Medium",
     createdAt: "2025-08-04T12:14:26.000Z",
+    address: "Dewas Naka, Indore, Madhya Pradesh",
+    latitude: 22.7215,
+    longitude: 75.8845,
     threads: [
       {
         author: "pooja_c",
@@ -845,6 +926,9 @@ const queriesData = [
     urgencyScore: 2,
     urgencyLabel: "Low",
     createdAt: "2025-08-06T09:48:51.000Z",
+    address: "Sukhliya, Indore, Madhya Pradesh",
+    latitude: 22.7298,
+    longitude: 75.8812,
     threads: [
       {
         author: "pooja_c",
@@ -870,6 +954,9 @@ const queriesData = [
     urgencyScore: 4,
     urgencyLabel: "High",
     createdAt: "2025-08-03T17:31:05.000Z",
+    address: "Rau, Indore, Madhya Pradesh",
+    latitude: 22.7156,
+    longitude: 75.8589,
     threads: [
       {
         author: "pooja_c",
@@ -889,6 +976,9 @@ const queriesData = [
     urgencyScore: 2,
     urgencyLabel: "Low",
     createdAt: "2025-07-31T21:16:58.000Z",
+    address: "Rajendra Nagar, Indore, Madhya Pradesh",
+    latitude: 22.7334,
+    longitude: 75.8889,
     threads: [
       {
         author: "pooja_c",
@@ -908,6 +998,9 @@ const queriesData = [
     urgencyScore: 1,
     urgencyLabel: "Low",
     createdAt: "2025-08-02T07:44:22.000Z",
+    address: "Vijay Nagar Extension, Indore, Madhya Pradesh",
+    latitude: 22.7201,
+    longitude: 75.8589,
     threads: [
       {
         author: "pooja_c",
@@ -927,12 +1020,116 @@ const queriesData = [
     urgencyScore: 3,
     urgencyLabel: "Medium",
     createdAt: "2025-08-06T18:02:40.000Z",
+    address: "Rajendra Nagar BRTS Stop, Indore, Madhya Pradesh",
+    latitude: 22.7345,
+    longitude: 75.8895,
     threads: [
       {
         author: "pooja_c",
         type: "User",
         message:
           "BRTS buses are not running on schedule. Many buses are delayed or cancelled.",
+      },
+    ],
+  },
+  
+  // Additional resolved queries with feedback
+  {
+    title: "Street light repair completed",
+    department: "Electricity",
+    author: "manish_t",
+    status: "resolved",
+    urgencyScore: 3,
+    urgencyLabel: "Medium",
+    createdAt: "2025-07-25T20:15:30.000Z",
+    address: "Sukhlia, Indore, Madhya Pradesh",
+    latitude: 22.7298,
+    longitude: 75.8812,
+    feedback: {
+      rating: 4,
+      description: "Good work! Street lights are working properly now. The area is much safer at night. Thank you for the quick response.",
+      submittedAt: "2025-07-26T18:30:00.000Z"
+    },
+    threads: [
+      {
+        author: "manish_t",
+        type: "User",
+        message: "Street lights in our area are not working for the past week. Please repair them.",
+      },
+      {
+        author: "amit_electrical",
+        type: "DepartmentMember",
+        message: "We have identified the issue and will repair the street lights by tomorrow evening.",
+      },
+      {
+        author: "manish_t",
+        type: "User",
+        message: "Thank you for the quick response!",
+      },
+    ],
+  },
+  
+  {
+    title: "Garbage collection improved",
+    department: "Miscellaneous Complaints",
+    author: "suresh_y",
+    status: "resolved",
+    urgencyScore: 2,
+    urgencyLabel: "Low",
+    createdAt: "2025-07-20T09:45:15.000Z",
+    address: "Rau, Indore, Madhya Pradesh",
+    latitude: 22.7156,
+    longitude: 75.8589,
+    feedback: {
+      rating: 5,
+      description: "Excellent improvement! Garbage collection is now regular and timely. The area is much cleaner. Very satisfied with the service.",
+      submittedAt: "2025-07-22T14:20:00.000Z"
+    },
+    threads: [
+      {
+        author: "suresh_y",
+        type: "User",
+        message: "Garbage collection in our area is irregular. Sometimes garbage remains for 3-4 days.",
+      },
+      {
+        author: "tiwari_general",
+        type: "DepartmentMember",
+        message: "We have increased the frequency of garbage collection in your area. It will be collected daily now.",
+      },
+    ],
+  },
+  
+  {
+    title: "Traffic signal installation",
+    department: "Engineering",
+    author: "anjali_d",
+    status: "resolved",
+    urgencyScore: 4,
+    urgencyLabel: "High",
+    createdAt: "2025-07-15T11:30:45.000Z",
+    address: "Dewas Naka, Indore, Madhya Pradesh",
+    latitude: 22.7215,
+    longitude: 75.8845,
+    feedback: {
+      rating: 5,
+      description: "Perfect! The traffic signal is working well and has significantly reduced traffic congestion. Great job by the engineering team!",
+      submittedAt: "2025-07-18T16:45:00.000Z"
+    },
+    threads: [
+      {
+        author: "anjali_d",
+        type: "User",
+        message: "We need a traffic signal at the main intersection in Dewas Naka. There's heavy traffic and accidents happen frequently.",
+      },
+      {
+        author: "kumar_chief",
+        type: "DepartmentMember",
+        message: "We have approved the traffic signal installation. Work will start next week and complete within 15 days.",
+      },
+      {
+        author: "anjali_d",
+        type: "User",
+        message: "That's great news! Thank you for considering our request.",
       },
     ],
   },
@@ -1040,10 +1237,14 @@ async function seedDatabase() {
       const query = await Query.create({
         title: queryData.title,
         description: queryData.threads && queryData.threads.length > 0 ? queryData.threads[0].message : "",
+        address: queryData.address || "",
+        latitude: queryData.latitude || null,
+        longitude: queryData.longitude || null,
         author: author._id,
         department: department._id,
         status: queryData.status || "open",
         objects: threadObjects,
+        feedback: queryData.feedback || null,
         urgencyScore: queryData.urgencyScore,
         urgencyLabel: queryData.urgencyLabel,
         createdAt: new Date(queryData.createdAt),
