@@ -6,9 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "type": "module",
     "lint": "next lint"
-    
   },
   "dependencies": {
     "@ai-sdk/groq": "^2.0.2",

@@ -41,6 +41,7 @@ import {
   LogOut,
   Home,
   Star,
+  AlertTriangle,
 } from "lucide-react";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -1379,7 +1380,7 @@ export default function Dashboard() {
                     {showNewQueryForm ? "Create New Complaint" : "Complaints Management"}
                   </h1>
                   {showNewQueryForm && (
-                    <p className="text-sm text-gray-600 mt-1">Describe your complaint and we'll route it to the right department</p>
+                    <p className="text-sm text-gray-600 mt-1">Describe your complaint and we&apos;ll route it to the right department</p>
                   )}
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3">
@@ -1612,7 +1613,7 @@ export default function Dashboard() {
                              <LoadingSpinner size="md" />
                              <div>
                                <p className="font-semibold text-blue-900">Analyzing your complaint...</p>
-                               <p className="text-sm text-blue-700 mt-1">We're determining the best department to handle your request</p>
+                               <p className="text-sm text-blue-700 mt-1">We&apos;re determining the best department to handle your request</p>
                              </div>
                            </div>
                          </div>

@@ -580,7 +580,7 @@ export default function DepartmentDashboard() {
                         </div>
                         {selectedQuery.urgencyReason && (
                           <span className="text-xs text-gray-500 italic">
-                            "{selectedQuery.urgencyReason}"
+                            &quot;{selectedQuery.urgencyReason}&quot;
                           </span>
                         )}
                       </div>

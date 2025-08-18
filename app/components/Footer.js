@@ -1,5 +1,6 @@
 "use client";
 import { MessageSquare } from "lucide-react";
+import Link from "next/link";
 import { useLanguage } from "../contexts/LanguageContext";
 
 export default function Footer() {
@@ -21,18 +22,18 @@ export default function Footer() {
           <div className="text-center">
             <h3 className="font-semibold mb-3 text-blue-100">Quick Links</h3>
             <div className="space-y-2">
-              <a href="/" className="block text-blue-200 hover:text-white transition-colors">
+              <Link href="/" className="block text-blue-200 hover:text-white transition-colors">
                 Home
-              </a>
-              <a href="/about" className="block text-blue-200 hover:text-white transition-colors">
+              </Link>
+              <Link href="/about" className="block text-blue-200 hover:text-white transition-colors">
                 About Us
-              </a>
-              <a href="/login" className="block text-blue-200 hover:text-white transition-colors">
+              </Link>
+              <Link href="/login" className="block text-blue-200 hover:text-white transition-colors">
                 Citizen Login
-              </a>
-              <a href="/department/login" className="block text-blue-200 hover:text-white transition-colors">
+              </Link>
+              <Link href="/department/login" className="block text-blue-200 hover:text-white transition-colors">
                 Department Login
-              </a>
+              </Link>
             </div>
           </div>
           

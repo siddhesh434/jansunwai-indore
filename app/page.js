@@ -205,7 +205,7 @@ export default function Home() {
                   <div className="text-center py-8">
                     <Clock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                     <p className="text-gray-500">No urgent queries at the moment</p>
-                    <p className="text-sm text-gray-400 mt-1">We're working on improving our system</p>
+                    <p className="text-sm text-gray-400 mt-1">We&apos;re working on improving our system</p>
                   </div>
                 )}
 

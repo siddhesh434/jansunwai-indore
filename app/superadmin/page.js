@@ -4,7 +4,12 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
 import { Users, FileText, Building2, UserCheck, TrendingUp, AlertCircle, CheckCircle, Clock, Calendar, Activity, Brain, Zap, Target, RefreshCw, Shield, LogOut, Search, Filter, SortAsc, SortDesc, Eye, MapPin, Star, MessageSquare, ThumbsUp, ThumbsDown } from 'lucide-react';
-import IndoreMap from '../components/Map';
+import dynamic from 'next/dynamic';
+
+const IndoreMap = dynamic(() => import('../components/Map'), {
+  ssr: false,
+  loading: () => <div className="bg-gray-100 rounded-lg p-8 text-center">Loading map...</div>
+});
 
 const Dashboard = () => {
   const [data, setData] = useState({
