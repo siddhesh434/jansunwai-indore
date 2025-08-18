@@ -6,13 +6,13 @@ export async function GET() {
   try {
     await dbConnect();
     
-    // Fetch top 5 queries with highest urgency scores, excluding resolved queries and those without urgency scores
+    // Fetch top 3 queries with highest urgency scores, excluding resolved queries and those without urgency scores
     const topQueries = await Query.find({ 
       urgencyScore: { $exists: true, $ne: null },
       status: { $ne: "resolved" }
     })
     .sort({ urgencyScore: -1 })
-    .limit(5)
+    .limit(3)
     .populate([
       { path: "author", select: "name username" },
       { path: "department", select: "departmentName" }

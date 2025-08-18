@@ -1,10 +1,15 @@
 // app/api/ai-assistant/route.js
 import { NextRequest, NextResponse } from 'next/server';
+import { detectLanguage, getLanguageInstruction } from "../../lib/ai/languageDetection";
 
 // You can switch between different LLM providers
 const LLM_PROVIDER = 'groq'; // 'openai', 'anthropic', 'groq', 'gemini', or 'deepinfra'
 
 async function callOpenAI(message, context) {
+  // Detect language from the user's message
+  const detectedLanguage = detectLanguage(message);
+  const languageInstruction = getLanguageInstruction(detectedLanguage);
+  
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -36,7 +41,9 @@ Available departments and their responsibilities:
 - Govardhan Project: Special development project, infrastructure development, project management, development initiatives, project coordination, development planning, project implementation, development oversight, project monitoring, development coordination
 - BRTS and BCL: Bus rapid transit system, public transportation, bus services, transit infrastructure, transportation planning, bus operations, transit management, transportation services, bus maintenance, transit coordination
 
-Your role is to help citizens understand which department their complaint should go to and provide helpful guidance. Always be polite, professional, and helpful.`
+Your role is to help citizens understand which department their complaint should go to and provide helpful guidance. Always be polite, professional, and helpful.
+
+${languageInstruction}`
         },
         {
           role: 'user',
@@ -165,6 +172,10 @@ User message: ${message}`
 }
 
 async function callGroq(message, context) {
+  // Detect language from the user's message
+  const detectedLanguage = detectLanguage(message);
+  const languageInstruction = getLanguageInstruction(detectedLanguage);
+  
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -196,7 +207,9 @@ Available departments and their responsibilities:
 - Govardhan Project: Special development project, infrastructure development, project management, development initiatives, project coordination, development planning, project implementation, development oversight, project monitoring, development coordination
 - BRTS and BCL: Bus rapid transit system, public transportation, bus services, transit infrastructure, transportation planning, bus operations, transit management, transportation services, bus maintenance, transit coordination
 
-Your role is to help citizens understand which department their complaint should go to and provide helpful guidance. Always be polite, professional, and helpful.`
+Your role is to help citizens understand which department their complaint should go to and provide helpful guidance. Always be polite, professional, and helpful.
+
+${languageInstruction}`
         },
         {
           role: 'user',
@@ -218,6 +231,10 @@ Your role is to help citizens understand which department their complaint should
 }
 
 async function callGemini(message, context) {
+  // Detect language from the user's message
+  const detectedLanguage = detectLanguage(message);
+  const languageInstruction = getLanguageInstruction(detectedLanguage);
+  
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
     method: 'POST',
     headers: {
@@ -247,6 +264,8 @@ Available departments and their responsibilities:
 - BRTS and BCL: Bus rapid transit system, public transportation, bus services, transit infrastructure, transportation planning, bus operations, transit management, transportation services, bus maintenance, transit coordination
 
 Your role is to help citizens understand which department their complaint should go to and provide helpful guidance. Always be polite, professional, and helpful.
+
+${languageInstruction}
           
 User message: ${message}`
         }]

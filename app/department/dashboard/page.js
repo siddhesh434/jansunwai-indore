@@ -305,8 +305,8 @@ export default function DepartmentDashboard() {
     if (attachmentInsights && userComplaint) {
       // Combine both sources intelligently
       const combinedText = `${userComplaint} ${attachmentInsights}`;
-      netConclusion = combinedText.length > 200 ? 
-        combinedText.substring(0, 200) + "..." : combinedText;
+      netConclusion = combinedText.length > 20000 ? 
+        combinedText.substring(0, 20000) + "..." : combinedText;
     } else if (attachmentInsights) {
       netConclusion = attachmentInsights;
     } else if (userComplaint) {
@@ -316,7 +316,7 @@ export default function DepartmentDashboard() {
     }
     
     // Ensure it's approximately 40 words (average word length is 5 characters)
-    const targetLength = 40 * 5; // 40 words * 5 chars per word
+    const targetLength = 4000 * 5; // 40 words * 5 chars per word
     if (netConclusion.length > targetLength) {
       netConclusion = netConclusion.substring(0, targetLength).trim();
       // Try to end at a complete word

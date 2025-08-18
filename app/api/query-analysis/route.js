@@ -2,11 +2,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from "../../../lib/dbConnect";
 import { Department } from "../../../models";
+import { detectLanguage, getLanguageInstruction } from "../../../lib/ai/languageDetection";
 
 // You can switch between different LLM providers
 const LLM_PROVIDER = 'groq'; // 'openai', 'anthropic', 'groq', 'gemini', or 'deepinfra'
 
 async function callOpenAI(message, address, departments) {
+  // Detect language from the user's complaint
+  const detectedLanguage = detectLanguage(message);
+  const languageInstruction = getLanguageInstruction(detectedLanguage);
+  
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -50,6 +55,8 @@ Rules:
 - ALWAYS check if details are sufficient for effective resolution
 - If details are insufficient, provide actionable suggestions for improvement
 
+${languageInstruction}
+
 Respond in JSON format only:
 {
   "title": "Brief descriptive title",
@@ -78,6 +85,10 @@ Respond in JSON format only:
 }
 
 async function callGroq(message, address, departments) {
+  // Detect language from the user's complaint
+  const detectedLanguage = detectLanguage(message);
+  const languageInstruction = getLanguageInstruction(detectedLanguage);
+  
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -121,6 +132,8 @@ Rules:
 - ALWAYS check if details are sufficient for effective resolution
 - If details are insufficient, provide actionable suggestions for improvement
 
+${languageInstruction}
+
 Respond in JSON format only:
 {
   "title": "Brief descriptive title",
@@ -151,6 +164,10 @@ Respond in JSON format only:
 }
 
 async function callAnthropic(message, address, departments) {
+  // Detect language from the user's complaint
+  const detectedLanguage = detectLanguage(message);
+  const languageInstruction = getLanguageInstruction(detectedLanguage);
+  
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -196,6 +213,8 @@ Rules:
 - ALWAYS check if details are sufficient for effective resolution
 - If details are insufficient, provide actionable suggestions for improvement
 
+${languageInstruction}
+
 Respond in JSON format only:
 {
   "title": "Brief descriptive title",
@@ -220,6 +239,10 @@ Analyze this complaint: ${message}${address ? `\nAddress: ${address}` : ''}`
 }
 
 async function callDeepInfra(message, address, departments) {
+  // Detect language from the user's complaint
+  const detectedLanguage = detectLanguage(message);
+  const languageInstruction = getLanguageInstruction(detectedLanguage);
+  
   const model = 'meta-llama/Meta-Llama-3.1-70B-Instruct';
   
   const response = await fetch(`https://api.deepinfra.com/v1/openai/chat/completions`, {
@@ -265,6 +288,8 @@ Rules:
 - ALWAYS check if details are sufficient for effective resolution
 - If details are insufficient, provide actionable suggestions for improvement
 
+${languageInstruction}
+
 Respond in JSON format only:
 {
   "title": "Brief descriptive title",
@@ -294,6 +319,10 @@ Respond in JSON format only:
 }
 
 async function callGemini(message, address, departments) {
+  // Detect language from the user's complaint
+  const detectedLanguage = detectLanguage(message);
+  const languageInstruction = getLanguageInstruction(detectedLanguage);
+  
   const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
     method: 'POST',
     headers: {
@@ -333,6 +362,8 @@ Rules:
 - Be precise and professional
 - ALWAYS check if details are sufficient for effective resolution
 - If details are insufficient, provide actionable suggestions for improvement
+
+${languageInstruction}
 
 Respond in JSON format only:
 {

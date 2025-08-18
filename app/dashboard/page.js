@@ -579,6 +579,8 @@ export default function Dashboard() {
   const [showNewQueryForm, setShowNewQueryForm] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [attachmentAnalyses, setAttachmentAnalyses] = useState([]);
+  const [attachmentAnalysisLoading, setAttachmentAnalysisLoading] = useState(false);
+  const [documentRelevanceChecks, setDocumentRelevanceChecks] = useState({});
 
   // Voice-to-text states
   const [isListening, setIsListening] = useState(false);
@@ -951,6 +953,21 @@ export default function Dashboard() {
       return;
     }
 
+    if (attachmentAnalysisLoading) {
+      alert("Please wait for document analysis to complete before submitting your complaint.");
+      return;
+    }
+
+    // Check for irrelevant documents
+    const irrelevantDocuments = Object.entries(documentRelevanceChecks)
+      .filter(([fileName, isRelevant]) => isRelevant === false)
+      .map(([fileName]) => fileName);
+
+    if (irrelevantDocuments.length > 0) {
+      alert(`Please remove the following irrelevant documents before submitting: ${irrelevantDocuments.join(", ")}`);
+      return;
+    }
+
     try {
       const deptId = queryAnalysis?.departmentId || departments[0]?._id;
       if (!deptId) {
@@ -973,11 +990,11 @@ export default function Dashboard() {
             lines.push(`📎 File ${idx + 1}: ${fileName}`);
             
             if (analysis.analysis.description) {
-              lines.push(`   Description: ${clampWords(analysis.analysis.description, 50, 60)}`);
+              lines.push(`   Description: ${(analysis.analysis.description, 50, 60)}`);
             }
             
             if (analysis.analysis.summary) {
-              lines.push(`   Municipal Summary: ${clampWords(analysis.analysis.summary, 50, 60)}`);
+              lines.push(`   Municipal Summary: ${(analysis.analysis.summary, 50, 60)}`);
             }
             
             return lines.join('\n');
@@ -1033,9 +1050,10 @@ export default function Dashboard() {
       setQueries([created, ...(queries || [])]);
       setNewQuery({ query: "", address: "" });
       setQueryAnalysis(null);
-      setSelectedFiles([]);
-      setAttachmentAnalyses([]);
-      setShowNewQueryForm(false);
+             setSelectedFiles([]);
+       setAttachmentAnalyses([]);
+       setDocumentRelevanceChecks({});
+       setShowNewQueryForm(false);
       setShowMap(false);
       setSelectedQuery(created);
       setThreads([]);
@@ -1379,22 +1397,70 @@ export default function Dashboard() {
                          <label className="block text-sm font-semibold text-gray-900 mb-3">
                            Attach Supporting Files
                          </label>
-                         <AttachmentAI
-                           onAnalyzed={(items) => {
-                             setAttachmentAnalyses(items);
-                             setSelectedFiles(items.map((i) => i.file).filter(Boolean));
-                           }}
-                         />
+                                                 <AttachmentAI
+                          onAnalyzed={(items) => {
+                            setAttachmentAnalyses(items);
+                            setSelectedFiles(items.map((i) => i.file).filter(Boolean));
+                          }}
+                          onLoadingChange={(loading) => {
+                            setAttachmentAnalysisLoading(loading);
+                          }}
+                          onRelevanceCheck={(relevanceChecks) => {
+                            setDocumentRelevanceChecks(relevanceChecks);
+                          }}
+                          query={newQuery.query}
+                        />
                          <p className="text-xs text-gray-500 mt-2">
                            Upload photos, videos, or documents that support your complaint
                          </p>
+                         
+                                                   {/* Document Analysis Loading Indicator */}
+                          {attachmentAnalysisLoading && (
+                            <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                              <div className="flex items-center gap-3">
+                                <LoadingSpinner size="sm" />
+                                <div>
+                                  <p className="text-sm font-medium text-amber-800">Analyzing uploaded documents...</p>
+                                  <p className="text-xs text-amber-700 mt-1">Please wait while we process your files</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Irrelevant Documents Warning */}
+                          {Object.values(documentRelevanceChecks).some(relevant => relevant === false) && (
+                            <div className="mt-4 bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                              <div className="flex items-start gap-3">
+                                <AlertTriangle className="w-6 h-6 text-red-600 mt-0.5 flex-shrink-0" />
+                                <div className="flex-1">
+                                  <p className="text-sm font-bold text-red-900 mb-2">⚠️ SUBMISSION BLOCKED - Irrelevant Documents</p>
+                                  <p className="text-sm text-red-800 mb-2">
+                                    The following documents are not related to municipal complaints and must be removed:
+                                  </p>
+                                  <ul className="text-xs text-red-700 space-y-1 mb-3">
+                                    {Object.entries(documentRelevanceChecks)
+                                      .filter(([fileName, isRelevant]) => isRelevant === false)
+                                      .map(([fileName]) => (
+                                        <li key={fileName} className="flex items-center gap-2">
+                                          <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
+                                          <span className="font-medium">{fileName}</span>
+                                        </li>
+                                      ))}
+                                  </ul>
+                                  <p className="text-xs text-red-700 font-medium">
+                                    Only upload documents that directly relate to your municipal complaint (infrastructure, services, etc.)
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                        </div>
 
                                                {/* Action Buttons - Desktop Only */}
                         <div className="hidden lg:flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6">
                           <button
                             onClick={handleCreateQuery}
-                            disabled={!queryAnalysis || !newQuery.query.trim() || queryAnalysis.detailsSufficient === false}
+                            disabled={!queryAnalysis || !newQuery.query.trim() || queryAnalysis.detailsSufficient === false || attachmentAnalysisLoading || Object.values(documentRelevanceChecks).some(relevant => relevant === false)}
                             className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-6 sm:px-8 py-3 rounded-lg font-medium transition-colors"
                           >
                             {analyzing ? (
@@ -1402,8 +1468,15 @@ export default function Dashboard() {
                                 <LoadingSpinner size="sm" />
                                 Analyzing...
                               </div>
+                            ) : attachmentAnalysisLoading ? (
+                              <div className="flex items-center justify-center gap-2">
+                                <LoadingSpinner size="sm" />
+                                Analyzing Documents...
+                              </div>
                             ) : queryAnalysis?.detailsSufficient === false ? (
                               "Cannot Submit - Details Insufficient"
+                            ) : Object.values(documentRelevanceChecks).some(relevant => relevant === false) ? (
+                              "Cannot Submit - Remove Irrelevant Documents"
                             ) : (
                               "Submit Complaint"
                             )}
@@ -1576,7 +1649,7 @@ export default function Dashboard() {
                         <div className="lg:hidden flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6">
                           <button
                             onClick={handleCreateQuery}
-                            disabled={!queryAnalysis || !newQuery.query.trim() || queryAnalysis.detailsSufficient === false}
+                            disabled={!queryAnalysis || !newQuery.query.trim() || queryAnalysis.detailsSufficient === false || attachmentAnalysisLoading || Object.values(documentRelevanceChecks).some(relevant => relevant === false)}
                             className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-6 sm:px-8 py-3 rounded-lg font-medium transition-colors"
                           >
                             {analyzing ? (
@@ -1584,8 +1657,15 @@ export default function Dashboard() {
                                 <LoadingSpinner size="sm" />
                                 Analyzing...
                               </div>
+                            ) : attachmentAnalysisLoading ? (
+                              <div className="flex items-center justify-center gap-2">
+                                <LoadingSpinner size="sm" />
+                                Analyzing Documents...
+                              </div>
                             ) : queryAnalysis?.detailsSufficient === false ? (
                               "Cannot Submit - Details Insufficient"
+                            ) : Object.values(documentRelevanceChecks).some(relevant => relevant === false) ? (
+                              "Cannot Submit - Remove Irrelevant Documents"
                             ) : (
                               "Submit Complaint"
                             )}

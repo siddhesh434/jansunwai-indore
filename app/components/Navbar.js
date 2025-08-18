@@ -59,9 +59,9 @@ export default function NavBar() {
                >
                  {language === "hi" ? "हमारे बारे में" : "About Us"}
                </button>
-               {user && (
+               {(user || departmentMember) && (
                  <button
-                   onClick={() => router.push("/dashboard")}
+                   onClick={() => router.push(user ? "/dashboard" : "/department/dashboard")}
                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200"
                  >
                    {language === "hi" ? "डैशबोर्ड" : "Dashboard"}
@@ -187,10 +187,10 @@ export default function NavBar() {
                  >
                    {language === "hi" ? "हमारे बारे में" : "About Us"}
                  </button>
-                 {user && (
+                 {(user || departmentMember) && (
                    <button
                      onClick={() => {
-                       router.push("/dashboard");
+                       router.push(user ? "/dashboard" : "/department/dashboard");
                        setIsMobileMenuOpen(false);
                      }}
                      className="block w-full text-left px-4 py-3 text-sm font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200"
