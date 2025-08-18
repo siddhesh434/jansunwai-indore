@@ -1,4 +1,4 @@
-// models/index.js - Fixed User Schema
+// models/index.js - Fixed with Query cache clearing
 import mongoose from "mongoose";
 
 const { Schema } = mongoose;
@@ -16,7 +16,7 @@ const SuperAdminSchema = new Schema(
   { timestamps: true }
 );
 
-// FIXED User Schema
+// User Schema
 const UserSchema = new Schema(
   {
     username: { 
@@ -66,7 +66,6 @@ const UserSchema = new Schema(
   },
   { 
     timestamps: true,
-    // These options help with debugging
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
   }
@@ -122,7 +121,29 @@ const ThreadObjectSchema = new Schema(
     ],
   },
   { _id: false }
- );
+);
+
+// Feedback Schema
+const FeedbackSchema = new Schema(
+  {
+    rating: { 
+      type: Number, 
+      required: true, 
+      min: 1, 
+      max: 5 
+    },
+    description: { 
+      type: String, 
+      required: true,
+      maxlength: 500 
+    },
+    submittedAt: { 
+      type: Date, 
+      default: Date.now 
+    }
+  },
+  { _id: false }
+);
 
 // Query Schema
 const QuerySchema = new Schema(
@@ -130,6 +151,8 @@ const QuerySchema = new Schema(
     title: { type: String, required: true },
     description: { type: String },
     address: { type: String },
+    latitude: { type: Number }, // Add latitude field
+    longitude: { type: Number }, // Add longitude field
     objects: [ThreadObjectSchema],
     author: { type: Schema.Types.ObjectId, ref: "User", required: true },
     department: {
@@ -142,6 +165,7 @@ const QuerySchema = new Schema(
       enum: ["open", "in_progress", "resolved"],
       default: "open",
     },
+    feedback: FeedbackSchema,  // This should be defined as a subdocument
     attachments: [
       new Schema(
         {
@@ -182,6 +206,11 @@ if (mongoose.models.User) {
   delete mongoose.models.User;
 }
 
+// ADD THIS: Clear Query model cache too
+if (mongoose.models.Query) {
+  delete mongoose.models.Query;
+}
+
 // Export models
 export const SuperAdmin =
   mongoose.models.SuperAdmin || mongoose.model("SuperAdmin", SuperAdminSchema);
@@ -191,5 +220,4 @@ export const Department =
 export const DepartmentMember =
   mongoose.models.DepartmentMember ||
   mongoose.model("DepartmentMember", DepartmentMemberSchema);
-export const Query =
-  mongoose.models.Query || mongoose.model("Query", QuerySchema);
+export const Query = mongoose.model("Query", QuerySchema);

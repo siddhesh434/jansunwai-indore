@@ -23,6 +23,22 @@ export async function POST(request) {
       );
     }
 
+    // Check if query is resolved - prevent new messages for resolved queries
+    const existingQuery = await Query.findById(queryId);
+    if (!existingQuery) {
+      return Response.json(
+        { error: "Query not found" },
+        { status: 404 }
+      );
+    }
+
+    if (existingQuery.status === "resolved") {
+      return Response.json(
+        { error: "Cannot add messages to resolved queries. Please provide feedback instead." },
+        { status: 400 }
+      );
+    }
+
     // Create new thread object
     const newThread = {
       message,

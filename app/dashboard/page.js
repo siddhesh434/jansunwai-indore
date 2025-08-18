@@ -40,11 +40,14 @@ import {
   HelpCircle,
   LogOut,
   Home,
+  Star,
 } from "lucide-react";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useAuth } from "../contexts/AuthContext";
 import MapAddressSelector from "./MapAddressSelector";
 import AttachmentAI from "./components/AttachmentAI";
+import FeedbackForm from "../components/FeedbackForm";
+import FeedbackDisplay from "../components/FeedbackDisplay";
 import { clampWords } from "../../lib/ai/wordClamp";
 
 // Status configuration
@@ -309,9 +312,15 @@ const QuerySidebar = ({
   setNewThread, 
   handleAddThread, 
   threadsContainerRef,
-  isMobile 
+  isMobile,
+  onFeedbackSubmitted
 }) => {
     const [sidebarHeaderCollapsed, setSidebarHeaderCollapsed] = useState(false);
+    
+    // Debug logging
+    console.log("QuerySidebar received query:", query);
+    console.log("Query feedback data:", query?.feedback);
+    
   if (!query) return null;
   return (
    <div className={`fixed right-0 top-0 h-full bg-white border-l border-gray-200 shadow-xl z-50 flex flex-col ${
@@ -381,6 +390,11 @@ const QuerySidebar = ({
               Location
             </h3>
             <p className="text-xs text-gray-700 line-clamp-2">{query.address}</p>
+            {query.latitude && query.longitude && (
+              <div className="mt-1 text-xs text-blue-600 font-mono">
+                {query.latitude.toFixed(6)}, {query.longitude.toFixed(6)}
+              </div>
+            )}
           </div>
         )}
 
@@ -443,8 +457,15 @@ const QuerySidebar = ({
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
                 <MessageSquare className="w-6 h-6 text-gray-400" />
               </div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-1">No messages yet</h3>
-              <p className="text-xs text-gray-600 mb-4">Start a conversation about this query</p>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">
+                {query.status === "resolved" ? "No messages in this conversation" : "No messages yet"}
+              </h3>
+              <p className="text-xs text-gray-600 mb-4">
+                {query.status === "resolved" 
+                  ? "This conversation has ended as the complaint was resolved" 
+                  : "Start a conversation about this query"
+                }
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -533,32 +554,60 @@ const QuerySidebar = ({
           )}
         </div>
 
-        {/* Message Input */}
-        <div className="bg-white border-t border-gray-200 p-3 flex-shrink-0">
-          <div className="flex gap-2">
-            <textarea
-              placeholder="Type your message..."
-              value={newThread}
-              onChange={(e) => setNewThread(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleAddThread(e);
-                }
-              }}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none text-xs"
-              rows="2"
-            />
-            <button
-              onClick={handleAddThread}
-              disabled={!newThread.trim()}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white p-2 rounded-lg transition-colors shrink-0 flex items-center justify-center"
-            >
-              <Send className="w-4 h-4" />
-            </button>
+        {/* Conditional Content Based on Query Status */}
+        {query.status === "resolved" ? (
+          /* Feedback Section for Resolved Queries */
+          <div className="bg-white border-t border-gray-200 p-3 flex-shrink-0">
+            {console.log("Query status:", query.status, "Query feedback:", query.feedback)}
+            {query.feedback ? (
+              <FeedbackDisplay feedback={query.feedback} />
+            ) : (
+              <div className="space-y-3">
+                <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                  <h3 className="text-sm font-semibold text-green-800 mb-1">
+                    Complaint Resolved!
+                  </h3>
+                  <p className="text-xs text-green-700 mb-3">
+                    Your complaint has been successfully resolved. Please share your feedback to help us improve our services.
+                  </p>
+                </div>
+                <FeedbackForm 
+                  key={`feedback-${query._id}-${query.feedback ? 'submitted' : 'not-submitted'}`}
+                  queryId={query._id} 
+                  onFeedbackSubmitted={onFeedbackSubmitted}
+                />
+              </div>
+            )}
           </div>
-          <p className="text-xs text-gray-500 mt-1">Press Enter to send</p>
-        </div>
+        ) : (
+          /* Chat Input for Open/In Progress Queries */
+          <div className="bg-white border-t border-gray-200 p-3 flex-shrink-0">
+            <div className="flex gap-2">
+              <textarea
+                placeholder="Type your message..."
+                value={newThread}
+                onChange={(e) => setNewThread(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleAddThread(e);
+                  }
+                }}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none text-xs"
+                rows="2"
+              />
+              <button
+                onClick={handleAddThread}
+                disabled={!newThread.trim()}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white p-2 rounded-lg transition-colors shrink-0 flex items-center justify-center"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Press Enter to send</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -568,8 +617,8 @@ export default function Dashboard() {
   const [queries, setQueries] = useState([]);
   const [selectedQuery, setSelectedQuery] = useState(null);
   const [threads, setThreads] = useState([]);
-  const [newQuery, setNewQuery] = useState({ query: "", address: "" });
-  const newQueryRef = useRef({ query: "", address: "" });
+  const [newQuery, setNewQuery] = useState({ query: "", address: "", latitude: null, longitude: null });
+  const newQueryRef = useRef({ query: "", address: "", latitude: null, longitude: null });
   const threadsContainerRef = useRef(null);
   const [queryAnalysis, setQueryAnalysis] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -803,6 +852,47 @@ export default function Dashboard() {
     }
   };
 
+  const handleFeedbackSubmitted = async (updatedQuery) => {
+    console.log("handleFeedbackSubmitted called with:", updatedQuery);
+    
+    // Update the selected query with feedback data
+    setSelectedQuery(updatedQuery);
+    
+    // Update the local queries array with the updated query
+    setQueries(prevQueries => {
+      return prevQueries.map(query => 
+        query._id === updatedQuery._id ? updatedQuery : query
+      );
+    });
+    
+    // Also refresh the queries list from the server to ensure consistency
+    if (user?._id) {
+      try {
+        console.log("Refreshing queries for user:", user._id);
+        const res = await fetch(`/api/users/${user._id}`);
+        if (res.ok) {
+          const userData = await res.json();
+          console.log("User data received:", userData);
+          const userQueries = Array.isArray(userData.queries) ? userData.queries : [];
+          userQueries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          console.log("Updated queries list:", userQueries);
+          setQueries(userQueries);
+        }
+      } catch (error) {
+        console.error("Error refreshing queries after feedback:", error);
+      }
+    }
+  };
+
+  const handleLocationSelect = (locationData) => {
+    setNewQuery(prev => ({
+      ...prev,
+      address: locationData.address,
+      latitude: locationData.latitude,
+      longitude: locationData.longitude
+    }));
+  };
+
 
 
   const fetchUserData = async (userId) => {
@@ -920,17 +1010,28 @@ export default function Dashboard() {
 
   const fetchQueryThreads = async (queryId) => {
     try {
-      const query = (queries || []).find(q => q._id === queryId);
-      if (query) {
-        setSelectedQuery(query);
-        
-        // Fetch conversations from the API with author details
-        const res = await fetch(`/api/conversations/${queryId}?includeAuthorDetails=true`);
-        if (res.ok) {
-          const data = await res.json();
-          setThreads(data.conversations || []);
-        } else {
-          // Fallback to query objects if API fails
+      // First, try to get the latest query data from the API
+      const queryRes = await fetch(`/api/queries/${queryId}`);
+      if (queryRes.ok) {
+        const queryData = await queryRes.json();
+        setSelectedQuery(queryData);
+      } else {
+        // Fallback to local queries array
+        const query = (queries || []).find(q => q._id === queryId);
+        if (query) {
+          setSelectedQuery(query);
+        }
+      }
+      
+      // Fetch conversations from the API with author details
+      const res = await fetch(`/api/conversations/${queryId}?includeAuthorDetails=true`);
+      if (res.ok) {
+        const data = await res.json();
+        setThreads(data.conversations || []);
+      } else {
+        // Fallback to query objects if API fails
+        const query = (queries || []).find(q => q._id === queryId);
+        if (query) {
           setThreads(query.objects || []);
         }
       }
@@ -939,6 +1040,7 @@ export default function Dashboard() {
       // Fallback to query objects if API fails
       const query = (queries || []).find(q => q._id === queryId);
       if (query) {
+        setSelectedQuery(query);
         setThreads(query.objects || []);
       }
     }
@@ -1027,6 +1129,8 @@ export default function Dashboard() {
       
       formData.append("description", baseDesc);
       formData.append("address", newQuery.address || "");
+      formData.append("latitude", newQuery.latitude || "");
+      formData.append("longitude", newQuery.longitude || "");
       formData.append("author", user?._id || "");
       formData.append("department", deptId);
       
@@ -1048,7 +1152,7 @@ export default function Dashboard() {
 
       stopVoiceInput();
       setQueries([created, ...(queries || [])]);
-      setNewQuery({ query: "", address: "" });
+      setNewQuery({ query: "", address: "", latitude: null, longitude: null });
       setQueryAnalysis(null);
              setSelectedFiles([]);
        setAttachmentAnalyses([]);
@@ -1164,7 +1268,7 @@ export default function Dashboard() {
                   onClick={() => {
                     stopVoiceInput();
                     setShowNewQueryForm(false);
-                    setNewQuery({ query: "", address: "" });
+                    setNewQuery({ query: "", address: "", latitude: null, longitude: null });
                     setQueryAnalysis(null);
                     setSelectedFiles([]);
                     setAttachmentAnalyses([]);
@@ -1210,7 +1314,7 @@ export default function Dashboard() {
                     if (item.label === "Dashboard" && showNewQueryForm) {
                       stopVoiceInput();
                       setShowNewQueryForm(false);
-                      setNewQuery({ query: "", address: "" });
+                      setNewQuery({ query: "", address: "", latitude: null, longitude: null });
                       setQueryAnalysis(null);
                       setSelectedFiles([]);
                       setAttachmentAnalyses([]);
@@ -1300,7 +1404,7 @@ export default function Dashboard() {
                       onClick={() => {
                         stopVoiceInput();
                         setShowNewQueryForm(false);
-                        setNewQuery({ query: "", address: "" });
+                        setNewQuery({ query: "", address: "", latitude: null, longitude: null });
                         setQueryAnalysis(null);
                         setSelectedFiles([]);
                         setAttachmentAnalyses([]);
@@ -1383,6 +1487,7 @@ export default function Dashboard() {
                          <MapAddressSelector
                            value={newQuery.address}
                            onChange={(value) => setNewQuery({ ...newQuery, address: value })}
+                           onLocationSelect={handleLocationSelect}
                            placeholder="Search or click on map to select address..."
                            showMap={showMap}
                            onToggleMap={() => setShowMap(!showMap)}
@@ -1485,7 +1590,7 @@ export default function Dashboard() {
                             onClick={() => {
                               stopVoiceInput();
                               setShowNewQueryForm(false);
-                              setNewQuery({ query: "", address: "" });
+                              setNewQuery({ query: "", address: "", latitude: null, longitude: null });
                               setQueryAnalysis(null);
                               setSelectedFiles([]);
                               setAttachmentAnalyses([]);
@@ -1559,7 +1664,14 @@ export default function Dashboard() {
                                  <h4 className="text-sm font-semibold text-gray-900 mb-1">Location</h4>
                                  <div className="flex items-start gap-2 bg-white/70 rounded-lg p-3 border">
                                    <MapPin className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                                   <span className="text-sm text-gray-700 break-words">{newQuery.address}</span>
+                                   <div className="flex-1">
+                                     <span className="text-sm text-gray-700 break-words">{newQuery.address}</span>
+                                     {newQuery.latitude && newQuery.longitude && (
+                                       <div className="mt-1 text-xs text-gray-500 font-mono">
+                                         {newQuery.latitude.toFixed(6)}, {newQuery.longitude.toFixed(6)}
+                                       </div>
+                                     )}
+                                   </div>
                                  </div>
                                </div>
                              )}
@@ -1674,7 +1786,7 @@ export default function Dashboard() {
                             onClick={() => {
                               stopVoiceInput();
                               setShowNewQueryForm(false);
-                              setNewQuery({ query: "", address: "" });
+                              setNewQuery({ query: "", address: "", latitude: null, longitude: null });
                               setQueryAnalysis(null);
                               setSelectedFiles([]);
                               setAttachmentAnalyses([]);
@@ -1853,6 +1965,7 @@ export default function Dashboard() {
             handleAddThread={handleAddThread}
             threadsContainerRef={threadsContainerRef}
             isMobile={isMobile}
+            onFeedbackSubmitted={handleFeedbackSubmitted}
           />
         )}
       </div>

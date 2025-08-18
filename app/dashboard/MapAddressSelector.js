@@ -5,6 +5,7 @@ import { MapPin, Map, X, Search } from "lucide-react";
 const MapAddressSelector = ({ 
   value, 
   onChange, 
+  onLocationSelect, // Add new prop for location coordinates
   placeholder = "Search or click on map to select address...",
   showMap,
   onToggleMap,
@@ -17,6 +18,7 @@ const MapAddressSelector = ({
   const [loading, setLoading] = useState(false);
   const [inputValue, setInputValue] = useState(value || "");
   const [currentTileLayer, setCurrentTileLayer] = useState('carto'); // 'carto' or 'jawg'
+  const [coordinates, setCoordinates] = useState(null); // Track coordinates
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markerRef = useRef(null);
@@ -92,6 +94,17 @@ const MapAddressSelector = ({
             // Update input and call onChange
             setInputValue(address);
             onChange?.(address);
+            
+            // Update coordinates state
+            setCoordinates({ latitude: lat, longitude: lng });
+            
+            // Pass coordinates to parent component
+            onLocationSelect?.({
+              address,
+              latitude: lat,
+              longitude: lng
+            });
+            
             setSuggestions([]);
           } catch (error) {
             console.error("Error in reverse geocoding:", error);
@@ -241,6 +254,16 @@ const MapAddressSelector = ({
           markerRef.current = L.marker([latNum, lonNum]).addTo(map).bindPopup(address).openPopup();
           map.setView([latNum, lonNum], 15);
         }
+        
+        // Update coordinates state
+        setCoordinates({ latitude: latNum, longitude: lonNum });
+        
+        // Pass coordinates to parent component
+        onLocationSelect?.({
+          address,
+          latitude: latNum,
+          longitude: lonNum
+        });
       }
     } catch (error) {
       console.error("Error geocoding address:", error);
@@ -349,6 +372,32 @@ const MapAddressSelector = ({
           .bindPopup(suggestion.display)
           .openPopup();
         mapInstanceRef.current.setView([latNum, lonNum], 15);
+        
+        // Update coordinates state
+        setCoordinates({ latitude: latNum, longitude: lonNum });
+        
+        // Pass coordinates to parent component
+        onLocationSelect?.({
+          address: suggestion.display,
+          latitude: latNum,
+          longitude: lonNum
+        });
+      }
+    } else {
+      // Even if map is not shown, pass coordinates if available
+      if (suggestion.type === 'address' && suggestion.data) {
+        const { lat, lon } = suggestion.data;
+        const latNum = parseFloat(lat);
+        const lonNum = parseFloat(lon);
+        
+        // Update coordinates state
+        setCoordinates({ latitude: latNum, longitude: lonNum });
+        
+        onLocationSelect?.({
+          address: suggestion.display,
+          latitude: latNum,
+          longitude: lonNum
+        });
       }
     }
   };
@@ -468,6 +517,14 @@ const MapAddressSelector = ({
             <div className="flex-1 min-w-0">
               <p className="text-sm text-blue-800 font-medium">Selected Address:</p>
               <p className="text-sm text-blue-700 break-words">{inputValue}</p>
+              {coordinates && (
+                <div className="mt-2 pt-2 border-t border-blue-200">
+                  <p className="text-xs text-blue-600 font-medium">Coordinates:</p>
+                  <p className="text-xs text-blue-600 font-mono">
+                    {coordinates.latitude.toFixed(6)}, {coordinates.longitude.toFixed(6)}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>

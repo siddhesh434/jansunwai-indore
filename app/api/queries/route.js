@@ -62,6 +62,14 @@ export async function POST(request) {
         title: formData.get("title") || "",
         description: formData.get("description") || "",
         address: formData.get("address") || "",
+        latitude: (() => {
+          const lat = formData.get("latitude");
+          return lat ? parseFloat(lat) : undefined;
+        })(),
+        longitude: (() => {
+          const lng = formData.get("longitude");
+          return lng ? parseFloat(lng) : undefined;
+        })(),
         author: formData.get("author"),
         department: formData.get("department"),
         status: formData.get("status") || undefined,
@@ -112,6 +120,8 @@ export async function POST(request) {
       title: payload.title,
       description: payload.description || "",
       address: payload.address || "",
+      latitude: payload.latitude,
+      longitude: payload.longitude,
       author: authorId,
       department: departmentId,
       status: payload.status || undefined,

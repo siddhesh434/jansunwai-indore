@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { useAuth } from "../../contexts/AuthContext";
+import FeedbackDisplay from "../../components/FeedbackDisplay";
 
 export default function DepartmentDashboard() {
   const [departmentQueries, setDepartmentQueries] = useState([]);
@@ -134,6 +135,12 @@ export default function DepartmentDashboard() {
   const handleAddThread = async (e) => {
     e?.preventDefault?.();
     if (!selectedQuery || !newThread.trim()) return;
+
+    // Prevent adding messages to resolved queries
+    if (selectedQuery.status === "resolved") {
+      alert("Cannot add messages to resolved queries. The conversation has ended.");
+      return;
+    }
 
     try {
       const res = await fetch(`/api/conversations/${selectedQuery._id}`, {
@@ -721,29 +728,48 @@ export default function DepartmentDashboard() {
                     ))}
                   </div>
 
-                  {/* Add Thread */}
-                  <div className="space-y-3 border-t border-gray-200 pt-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Add Response
-                      </label>
-                      <textarea
-                        placeholder="Type your response..."
-                        value={newThread}
-                        onChange={(e) => setNewThread(e.target.value)}
-                        className="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                        rows="4"
-                      />
+                  {/* Conditional Content Based on Query Status */}
+                  {selectedQuery.status === "resolved" ? (
+                    /* Feedback Display for Resolved Queries */
+                    <div className="space-y-3 border-t border-gray-200 pt-4">
+                      <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                        <h3 className="text-sm font-semibold text-green-800 mb-1">
+                          Query Resolved
+                        </h3>
+                        <p className="text-xs text-green-700">
+                          This query has been marked as resolved. No further responses can be added.
+                        </p>
+                      </div>
+                      {selectedQuery.feedback && (
+                        <FeedbackDisplay feedback={selectedQuery.feedback} />
+                      )}
                     </div>
-                    <button
-                      onClick={handleAddThread}
-                      disabled={!newThread.trim()}
-                      className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-6 py-3 rounded-lg transition-colors flex items-center justify-center space-x-2 font-medium"
-                    >
-                      <Send className="w-4 h-4" />
-                      <span>Send Response</span>
-                    </button>
-                  </div>
+                  ) : (
+                    /* Add Thread for Open/In Progress Queries */
+                    <div className="space-y-3 border-t border-gray-200 pt-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Add Response
+                        </label>
+                        <textarea
+                          placeholder="Type your response..."
+                          value={newThread}
+                          onChange={(e) => setNewThread(e.target.value)}
+                          className="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                          rows="4"
+                        />
+                      </div>
+                      <button
+                        onClick={handleAddThread}
+                        disabled={!newThread.trim()}
+                        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-6 py-3 rounded-lg transition-colors flex items-center justify-center space-x-2 font-medium"
+                      >
+                        <Send className="w-4 h-4" />
+                        <span>Send Response</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
