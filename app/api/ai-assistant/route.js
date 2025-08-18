@@ -1,26 +1,29 @@
 // app/api/ai-assistant/route.js
-import { NextRequest, NextResponse } from 'next/server';
-import { detectLanguage, getLanguageInstruction } from "../../lib/ai/languageDetection";
+import { NextRequest, NextResponse } from "next/server";
+import {
+  detectLanguage,
+  getLanguageInstruction,
+} from "../../../lib/ai/languageDetection";
 
 // You can switch between different LLM providers
-const LLM_PROVIDER = 'groq'; // 'openai', 'anthropic', 'groq', 'gemini', or 'deepinfra'
+const LLM_PROVIDER = "groq"; // 'openai', 'anthropic', 'groq', 'gemini', or 'deepinfra'
 
 async function callOpenAI(message, context) {
   // Detect language from the user's message
   const detectedLanguage = detectLanguage(message);
   const languageInstruction = getLanguageInstruction(detectedLanguage);
-  
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
+
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
     headers: {
-      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini', // Cost-effective choice
+      model: "gpt-4o-mini", // Cost-effective choice
       messages: [
         {
-          role: 'system',
+          role: "system",
           content: `You are an AI assistant for JanSunwai, a municipal complaint management system for Indore city. Your role is to help citizens with municipal services and complaints.
 
 Available departments and their responsibilities:
@@ -43,12 +46,12 @@ Available departments and their responsibilities:
 
 Your role is to help citizens understand which department their complaint should go to and provide helpful guidance. Always be polite, professional, and helpful.
 
-${languageInstruction}`
+${languageInstruction}`,
         },
         {
-          role: 'user',
-          content: message
-        }
+          role: "user",
+          content: message,
+        },
       ],
       max_tokens: 1000,
       temperature: 0.7,
@@ -56,7 +59,9 @@ ${languageInstruction}`
   });
 
   if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `OpenAI API error: ${response.status} ${response.statusText}`
+    );
   }
 
   return response.json();
@@ -68,21 +73,23 @@ async function callDeepInfra(message, context) {
   // - meta-llama/Meta-Llama-3.1-8B-Instruct (faster, cheaper)
   // - microsoft/WizardLM-2-8x22B (great for complex tasks)
   // - mistralai/Mixtral-8x7B-Instruct-v0.1 (balanced performance)
-  
-  const model = 'meta-llama/Meta-Llama-3.1-70B-Instruct'; // Change model here if needed
-  
-  const response = await fetch(`https://api.deepinfra.com/v1/openai/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.DEEPINFRA_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: model,
-      messages: [
-        {
-          role: 'system',
-          content: `You are an AI assistant for JanSunwai, a municipal complaint management system for Indore city. Your role is to help citizens with municipal services and complaints.
+
+  const model = "meta-llama/Meta-Llama-3.1-70B-Instruct"; // Change model here if needed
+
+  const response = await fetch(
+    `https://api.deepinfra.com/v1/openai/chat/completions`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.DEEPINFRA_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [
+          {
+            role: "system",
+            content: `You are an AI assistant for JanSunwai, a municipal complaint management system for Indore city. Your role is to help citizens with municipal services and complaints.
 
 Available departments and their responsibilities:
 - Sewage: Sewage system maintenance, drainage issues, sewer line repairs, sewage treatment, clogged drains, sewage overflow, manhole maintenance, sewage infrastructure, waste water management, sewage complaints
@@ -102,40 +109,43 @@ Available departments and their responsibilities:
 - Govardhan Project: Special development project, infrastructure development, project management, development initiatives, project coordination, development planning, project implementation, development oversight, project monitoring, development coordination
 - BRTS and BCL: Bus rapid transit system, public transportation, bus services, transit infrastructure, transportation planning, bus operations, transit management, transportation services, bus maintenance, transit coordination
 
-Your role is to help citizens understand which department their complaint should go to and provide helpful guidance. Always be polite, professional, and helpful.`
-        },
-        {
-          role: 'user',
-          content: message
-        }
-      ],
-      max_tokens: 800,
-      temperature: 0.7,
-      stream: false
-    }),
-  });
+Your role is to help citizens understand which department their complaint should go to and provide helpful guidance. Always be polite, professional, and helpful.`,
+          },
+          {
+            role: "user",
+            content: message,
+          },
+        ],
+        max_tokens: 800,
+        temperature: 0.7,
+        stream: false,
+      }),
+    }
+  );
 
   if (!response.ok) {
-    throw new Error(`DeepInfra API error: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `DeepInfra API error: ${response.status} ${response.statusText}`
+    );
   }
 
   return response.json();
 }
 
 async function callAnthropic(message, context) {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
     headers: {
-      'x-api-key': process.env.ANTHROPIC_API_KEY,
-      'Content-Type': 'application/json',
-      'anthropic-version': '2023-06-01'
+      "x-api-key": process.env.ANTHROPIC_API_KEY,
+      "Content-Type": "application/json",
+      "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: 'claude-3-5-sonnet-20241022',
+      model: "claude-3-5-sonnet-20241022",
       max_tokens: 1000,
       messages: [
         {
-          role: 'user',
+          role: "user",
           content: `You are an AI assistant for JanSunwai, a municipal complaint management system for Indore city. Your role is to help citizens with municipal services and complaints.
 
 Available departments and their responsibilities:
@@ -158,14 +168,16 @@ Available departments and their responsibilities:
 
 Your role is to help citizens understand which department their complaint should go to and provide helpful guidance. Always be polite, professional, and helpful.
           
-User message: ${message}`
-        }
-      ]
+User message: ${message}`,
+        },
+      ],
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`Anthropic API error: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Anthropic API error: ${response.status} ${response.statusText}`
+    );
   }
 
   return response.json();
@@ -175,19 +187,21 @@ async function callGroq(message, context) {
   // Detect language from the user's message
   const detectedLanguage = detectLanguage(message);
   const languageInstruction = getLanguageInstruction(detectedLanguage);
-  
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        {
-          role: 'system',
-          content: `You are an AI assistant for JanSunwai, a municipal complaint management system for Indore city. Your role is to help citizens with municipal services and complaints.
+
+  const response = await fetch(
+    "https://api.groq.com/openai/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          {
+            role: "system",
+            content: `You are an AI assistant for JanSunwai, a municipal complaint management system for Indore city. Your role is to help citizens with municipal services and complaints.
 
 Available departments and their responsibilities:
 - Sewage: Sewage system maintenance, drainage issues, sewer line repairs, sewage treatment, clogged drains, sewage overflow, manhole maintenance, sewage infrastructure, waste water management, sewage complaints
@@ -209,22 +223,25 @@ Available departments and their responsibilities:
 
 Your role is to help citizens understand which department their complaint should go to and provide helpful guidance. Always be polite, professional, and helpful.
 
-${languageInstruction}`
-        },
-        {
-          role: 'user',
-          content: message
-        }
-      ],
-      max_tokens: 1000,
-      temperature: 0.7,
-    }),
-  });
+${languageInstruction}`,
+          },
+          {
+            role: "user",
+            content: message,
+          },
+        ],
+        max_tokens: 1000,
+        temperature: 0.7,
+      }),
+    }
+  );
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('Groq API Error Response:', errorText);
-    throw new Error(`Groq API error: ${response.status} ${response.statusText} - ${errorText}`);
+    console.error("Groq API Error Response:", errorText);
+    throw new Error(
+      `Groq API error: ${response.status} ${response.statusText} - ${errorText}`
+    );
   }
 
   return response.json();
@@ -234,16 +251,20 @@ async function callGemini(message, context) {
   // Detect language from the user's message
   const detectedLanguage = detectLanguage(message);
   const languageInstruction = getLanguageInstruction(detectedLanguage);
-  
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{
-          text: `You are an AI assistant for JanSunwai, a municipal complaint management system for Indore city. Your role is to help citizens with municipal services and complaints.
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: `You are an AI assistant for JanSunwai, a municipal complaint management system for Indore city. Your role is to help citizens with municipal services and complaints.
 
 Available departments and their responsibilities:
 - Sewage: Sewage system maintenance, drainage issues, sewer line repairs, sewage treatment, clogged drains, sewage overflow, manhole maintenance, sewage infrastructure, waste water management, sewage complaints
@@ -267,18 +288,23 @@ Your role is to help citizens understand which department their complaint should
 
 ${languageInstruction}
           
-User message: ${message}`
-        }]
-      }],
-      generationConfig: {
-        maxOutputTokens: 1000,
-        temperature: 0.7,
-      },
-    }),
-  });
+User message: ${message}`,
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          maxOutputTokens: 1000,
+          temperature: 0.7,
+        },
+      }),
+    }
+  );
 
   if (!response.ok) {
-    throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Gemini API error: ${response.status} ${response.statusText}`
+    );
   }
 
   return response.json();
@@ -290,74 +316,85 @@ export async function POST(request) {
 
     if (!message?.trim()) {
       return NextResponse.json(
-        { success: false, error: 'Message is required' },
+        { success: false, error: "Message is required" },
         { status: 400 }
       );
     }
 
     let aiResponse;
-    let responseText = '';
+    let responseText = "";
 
     // Call the selected LLM provider
     switch (LLM_PROVIDER) {
-      case 'openai':
+      case "openai":
         if (!process.env.OPENAI_API_KEY) {
-          throw new Error('OpenAI API key not configured');
+          throw new Error("OpenAI API key not configured");
         }
         aiResponse = await callOpenAI(message, context);
-        responseText = aiResponse.choices?.[0]?.message?.content || 'Sorry, I could not generate a response.';
+        responseText =
+          aiResponse.choices?.[0]?.message?.content ||
+          "Sorry, I could not generate a response.";
         break;
 
-      case 'deepinfra':
+      case "deepinfra":
         if (!process.env.DEEPINFRA_API_KEY) {
-          throw new Error('DeepInfra API key not configured');
+          throw new Error("DeepInfra API key not configured");
         }
         aiResponse = await callDeepInfra(message, context);
-        responseText = aiResponse.choices?.[0]?.message?.content || 'Sorry, I could not generate a response.';
+        responseText =
+          aiResponse.choices?.[0]?.message?.content ||
+          "Sorry, I could not generate a response.";
         break;
 
-      case 'anthropic':
+      case "anthropic":
         if (!process.env.ANTHROPIC_API_KEY) {
-          throw new Error('Anthropic API key not configured');
+          throw new Error("Anthropic API key not configured");
         }
         aiResponse = await callAnthropic(message, context);
-        responseText = aiResponse.content?.[0]?.text || 'Sorry, I could not generate a response.';
+        responseText =
+          aiResponse.content?.[0]?.text ||
+          "Sorry, I could not generate a response.";
         break;
 
-      case 'groq':
+      case "groq":
         if (!process.env.GROQ_API_KEY) {
-          throw new Error('Groq API key not configured. Please add GROQ_API_KEY to your environment variables.');
+          throw new Error(
+            "Groq API key not configured. Please add GROQ_API_KEY to your environment variables."
+          );
         }
         aiResponse = await callGroq(message, context);
-        responseText = aiResponse.choices?.[0]?.message?.content || 'Sorry, I could not generate a response.';
+        responseText =
+          aiResponse.choices?.[0]?.message?.content ||
+          "Sorry, I could not generate a response.";
         break;
 
-      case 'gemini':
+      case "gemini":
         if (!process.env.GEMINI_API_KEY) {
-          throw new Error('Gemini API key not configured');
+          throw new Error("Gemini API key not configured");
         }
         aiResponse = await callGemini(message, context);
-        responseText = aiResponse.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
+        responseText =
+          aiResponse.candidates?.[0]?.content?.parts?.[0]?.text ||
+          "Sorry, I could not generate a response.";
         break;
 
       default:
-        throw new Error('Invalid LLM provider configured');
+        throw new Error("Invalid LLM provider configured");
     }
 
     return NextResponse.json({
       success: true,
-      response: responseText
+      response: responseText,
     });
-
   } catch (error) {
-    console.error('AI Assistant API Error:', error);
-    
+    console.error("AI Assistant API Error:", error);
+
     // Fallback response
     const fallbackResponse = getFallbackResponse();
-    
+
     return NextResponse.json({
       success: true,
-      response: fallbackResponse
+      response: fallbackResponse,
     });
   }
 }
@@ -379,10 +416,10 @@ Please feel free to ask me anything about municipal services, and I'll do my bes
 
 // Health check endpoint
 export async function GET() {
-  return NextResponse.json({ 
-    status: 'healthy', 
+  return NextResponse.json({
+    status: "healthy",
     provider: LLM_PROVIDER,
     timestamp: new Date().toISOString(),
-    type: 'general-ai-assistant'
+    type: "general-ai-assistant",
   });
 }
