@@ -5,7 +5,7 @@ import { Department } from "../../../models";
 import { detectLanguage, getLanguageInstruction } from "../lib/ai/languageDetection";
 
 // You can switch between different LLM providers
-const LLM_PROVIDER = 'groq'; // 'openai', 'anthropic', 'groq', 'gemini', or 'deepinfra'
+const LLM_PROVIDER = 'gemini'; // 'openai', 'anthropic', 'groq', 'gemini', or 'deepinfra'
 
 async function callOpenAI(message, address, departments) {
   // Detect language from the user's complaint
