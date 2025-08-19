@@ -165,7 +165,7 @@ const EmptyState = ({ icon: Icon, title, description, action }) => (
 );
 
 // Query card component for list view
-const QueryCard = ({ query, isSelected, onClick, viewMode }) => {
+const QueryCard = ({ query, isSelected, onClick, viewMode, isReadOnly = false }) => {
   const config = STATUS_CONFIG[query.status?.toLowerCase()] || STATUS_CONFIG.open;
   
   if (viewMode === 'grid') {
@@ -187,25 +187,41 @@ const QueryCard = ({ query, isSelected, onClick, viewMode }) => {
           </div>
         </div>
         
-        <div className="flex items-center justify-between mb-2">
-          <StatusBadge status={query.status} />
-          <span className="text-xs text-gray-500">
-            {new Date(query.createdAt).toLocaleDateString()}
-          </span>
-        </div>
+                 <div className="flex items-center justify-between mb-2">
+           <div className="flex items-center gap-2">
+             <StatusBadge status={query.status} />
+             {isReadOnly && (
+               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
+                 <Eye className="w-3 h-3" />
+                 Read Only
+               </span>
+             )}
+           </div>
+           <span className="text-xs text-gray-500">
+             {new Date(query.createdAt).toLocaleDateString()}
+           </span>
+         </div>
 
-        <div className="flex items-center justify-between text-xs text-gray-500">
-          <span className="flex items-center gap-1">
-            <MessageSquare className="w-3 h-3" />
-            {query.objects?.length || 0} messages
-          </span>
-          {query.attachments?.length > 0 && (
-            <span className="flex items-center gap-1 text-blue-600">
-              <Paperclip className="w-3 h-3" />
-              {query.attachments.length}
-            </span>
-          )}
-        </div>
+                 <div className="flex items-center justify-between text-xs text-gray-500">
+           <span className="flex items-center gap-1">
+             <MessageSquare className="w-3 h-3" />
+             {query.objects?.length || 0} messages
+           </span>
+           <div className="flex items-center gap-2">
+             {query.impressions > 1 && (
+               <span className="flex items-center gap-1 text-gray-500">
+                 <Eye className="w-3 h-3" />
+                 {query.impressions} views
+               </span>
+             )}
+             {query.attachments?.length > 0 && (
+               <span className="flex items-center gap-1 text-blue-600">
+                 <Paperclip className="w-3 h-3" />
+                 {query.attachments.length}
+               </span>
+             )}
+           </div>
+         </div>
       </div>
     );
   }
@@ -228,28 +244,43 @@ const QueryCard = ({ query, isSelected, onClick, viewMode }) => {
           </p>
         </div>
         
-        <div className="flex items-center gap-2 sm:gap-6 text-xs text-gray-500">
-          <StatusBadge status={query.status} />
-          
-          <span className="flex items-center gap-1">
-            <MessageSquare className="w-3 h-3" />
-            <span className="hidden sm:inline">{query.objects?.length || 0}</span>
-          </span>
-          
-          <span className="flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            <span className="hidden sm:inline">{new Date(query.createdAt).toLocaleDateString()}</span>
-          </span>
-          
-          {query.attachments?.length > 0 && (
-            <span className="flex items-center gap-1 text-blue-600">
-              <Paperclip className="w-3 h-3" />
-              <span className="hidden sm:inline">{query.attachments.length}</span>
-            </span>
-          )}
-          
-          <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
-        </div>
+                 <div className="flex items-center gap-2 sm:gap-6 text-xs text-gray-500">
+           <div className="flex items-center gap-2">
+             <StatusBadge status={query.status} />
+             {isReadOnly && (
+               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
+                 <Eye className="w-3 h-3" />
+                 Read Only
+               </span>
+             )}
+           </div>
+           
+           <span className="flex items-center gap-1">
+             <MessageSquare className="w-3 h-3" />
+             <span className="hidden sm:inline">{query.objects?.length || 0}</span>
+           </span>
+           
+           <span className="flex items-center gap-1">
+             <Clock className="w-3 h-3" />
+             <span className="hidden sm:inline">{new Date(query.createdAt).toLocaleDateString()}</span>
+           </span>
+           
+           {query.impressions > 1 && (
+             <span className="flex items-center gap-1 text-gray-500">
+               <Eye className="w-3 h-3" />
+               <span className="hidden sm:inline">{query.impressions} views</span>
+             </span>
+           )}
+           
+           {query.attachments?.length > 0 && (
+             <span className="flex items-center gap-1 text-blue-600">
+               <Paperclip className="w-3 h-3" />
+               <span className="hidden sm:inline">{query.attachments.length}</span>
+             </span>
+           )}
+           
+           <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
+         </div>
       </div>
     </div>
   );
@@ -314,7 +345,8 @@ const QuerySidebar = ({
   handleAddThread, 
   threadsContainerRef,
   isMobile,
-  onFeedbackSubmitted
+  onFeedbackSubmitted,
+  isReadOnly = false
 }) => {
     const [sidebarHeaderCollapsed, setSidebarHeaderCollapsed] = useState(false);
     
@@ -352,13 +384,19 @@ const QuerySidebar = ({
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-2 sm:gap-3 mb-3">
-              <StatusBadge status={query.status} />
-              <span className="text-xs text-gray-500 flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                {new Date(query.updatedAt || query.createdAt).toLocaleDateString()}
-              </span>
-            </div>
+                         <div className="flex items-center gap-2 sm:gap-3 mb-3">
+               <StatusBadge status={query.status} />
+               {isReadOnly && (
+                 <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
+                   <Eye className="w-3 h-3" />
+                   Read Only
+                 </span>
+               )}
+               <span className="text-xs text-gray-500 flex items-center gap-1">
+                 <Clock className="w-3 h-3" />
+                 {new Date(query.updatedAt || query.createdAt).toLocaleDateString()}
+               </span>
+             </div>
           </div>
         </div>
 
@@ -581,34 +619,49 @@ const QuerySidebar = ({
               </div>
             )}
           </div>
-        ) : (
-          /* Chat Input for Open/In Progress Queries */
-          <div className="bg-white border-t border-gray-200 p-3 flex-shrink-0">
-            <div className="flex gap-2">
-              <textarea
-                placeholder="Type your message..."
-                value={newThread}
-                onChange={(e) => setNewThread(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleAddThread(e);
-                  }
-                }}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none text-xs"
-                rows="2"
-              />
-              <button
-                onClick={handleAddThread}
-                disabled={!newThread.trim()}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white p-2 rounded-lg transition-colors shrink-0 flex items-center justify-center"
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            </div>
-            <p className="text-xs text-gray-500 mt-1">Press Enter to send</p>
-          </div>
-        )}
+                 ) : (
+           /* Chat Input for Open/In Progress Queries */
+           !isReadOnly ? (
+             <div className="bg-white border-t border-gray-200 p-3 flex-shrink-0">
+               <div className="flex gap-2">
+                 <textarea
+                   placeholder="Type your message..."
+                   value={newThread}
+                   onChange={(e) => setNewThread(e.target.value)}
+                   onKeyDown={(e) => {
+                     if (e.key === "Enter" && !e.shiftKey) {
+                       e.preventDefault();
+                       handleAddThread(e);
+                     }
+                   }}
+                   className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none text-xs"
+                   rows="2"
+                 />
+                 <button
+                   onClick={handleAddThread}
+                   disabled={!newThread.trim()}
+                   className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white p-2 rounded-lg transition-colors shrink-0 flex items-center justify-center"
+                 >
+                   <Send className="w-4 h-4" />
+                 </button>
+               </div>
+               <p className="text-xs text-gray-500 mt-1">Press Enter to send</p>
+             </div>
+           ) : (
+             /* Read-only message for can_see queries */
+             <div className="bg-gray-50 border-t border-gray-200 p-3 flex-shrink-0">
+               <div className="text-center">
+                 <div className="flex items-center justify-center gap-2 mb-2">
+                   <Eye className="w-4 h-4 text-gray-500" />
+                   <span className="text-sm font-medium text-gray-700">Read Only</span>
+                 </div>
+                 <p className="text-xs text-gray-600">
+                   You can view this complaint and track its progress, but cannot participate in the conversation.
+                 </p>
+               </div>
+             </div>
+           )
+         )}
       </div>
     </div>
   );
@@ -631,6 +684,11 @@ export default function Dashboard() {
   const [attachmentAnalyses, setAttachmentAnalyses] = useState([]);
   const [attachmentAnalysisLoading, setAttachmentAnalysisLoading] = useState(false);
   const [documentRelevanceChecks, setDocumentRelevanceChecks] = useState({});
+
+  // Similar queries states
+  const [similarQueries, setSimilarQueries] = useState([]);
+  const [showSimilarQueries, setShowSimilarQueries] = useState(false);
+  const [addingToDashboard, setAddingToDashboard] = useState(false);
 
   // Voice-to-text states
   const [isListening, setIsListening] = useState(false);
@@ -748,6 +806,14 @@ export default function Dashboard() {
       analyzeQuery(newQuery.query, newQuery.address);
     }
   }, [newQuery.address]);
+
+  // Check for similar queries only after AI analysis is complete
+  useEffect(() => {
+    if (queryAnalysis && queryAnalysis.departmentId && newQuery.address && !analyzing) {
+      // Only check for similar queries after we have a proper department from AI analysis
+      checkSimilarQueries(queryAnalysis.departmentId, newQuery.address);
+    }
+  }, [queryAnalysis, newQuery.address, analyzing]);
 
   // Scroll to bottom when threads change
   useEffect(() => {
@@ -912,9 +978,20 @@ export default function Dashboard() {
         loginUserFromGoogle(userData);
       }
       
-      const userQueries = Array.isArray(userData.queries) ? userData.queries : [];
-      userQueries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      setQueries(userQueries);
+      // Combine user's own queries and queries from can_see array
+      const ownQueries = Array.isArray(userData.queries) ? userData.queries : [];
+      const canSeeQueries = Array.isArray(userData.can_see) ? userData.can_see : [];
+      
+      // Debug logging
+      console.log("User data:", userData);
+      console.log("Own queries:", ownQueries);
+      console.log("Can see queries:", canSeeQueries);
+      
+      // Combine and sort by creation date
+      const allQueries = [...ownQueries, ...canSeeQueries];
+      allQueries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
+      setQueries(allQueries);
     } catch (error) {
       console.error("Error fetching user data:", error);
     } finally {
@@ -966,6 +1043,9 @@ export default function Dashboard() {
     if (!query.trim()) return;
     
     setAnalyzing(true);
+    // Clear similar queries when starting new analysis
+    setSimilarQueries([]);
+    setShowSimilarQueries(false);
     try {
       const res = await fetch("/api/query-analysis", {
         method: "POST",
@@ -977,6 +1057,8 @@ export default function Dashboard() {
       
       if (data.success) {
         setQueryAnalysis(data.analysis);
+        // Check for similar queries after analysis
+        await checkSimilarQueries(data.analysis.departmentId, address);
       } else {
         console.error("Query analysis failed:", data.error);
         setQueryAnalysis({
@@ -990,6 +1072,8 @@ export default function Dashboard() {
           missingDetails: [],
           suggestions: ""
         });
+        // Check for similar queries even with fallback analysis
+        await checkSimilarQueries(departments[0]?._id, address);
       }
     } catch (error) {
       console.error("Error analyzing query:", error);
@@ -1004,8 +1088,103 @@ export default function Dashboard() {
         missingDetails: [],
         suggestions: ""
       });
+      // Check for similar queries even with error fallback
+      await checkSimilarQueries(departments[0]?._id, address);
     } finally {
       setAnalyzing(false);
+    }
+  };
+
+  const checkSimilarQueries = async (departmentId, address) => {
+    if (!departmentId || !address) return;
+    
+    try {
+      const params = new URLSearchParams({
+        departmentId,
+        address: address,
+        excludeUserId: user?._id || ""
+      });
+      
+      const res = await fetch(`/api/similar-queries?${params}`);
+      const data = await res.json();
+      
+      if (data.success && data.similarQueries && data.similarQueries.length > 0) {
+        setSimilarQueries(data.similarQueries);
+        setShowSimilarQueries(true);
+      } else {
+        setSimilarQueries([]);
+        setShowSimilarQueries(false);
+      }
+    } catch (error) {
+      console.error("Error checking similar queries:", error);
+      setSimilarQueries([]);
+      setShowSimilarQueries(false);
+    }
+  };
+
+  const addQueryToDashboard = async (queryId) => {
+    if (!user?._id || !queryId) return;
+    
+    setAddingToDashboard(true);
+    try {
+      const res = await fetch("/api/users/add-can-see-query", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user._id, queryId }),
+      });
+
+      const data = await res.json();
+      
+      if (data.success) {
+        // Update local queries array to include the new query
+        const newQuery = similarQueries.find(q => q._id === queryId);
+        if (newQuery) {
+          // Update the impression count in the local query object
+          const updatedQuery = {
+            ...newQuery,
+            impressions: (newQuery.impressions || 1) + 1
+          };
+          setQueries(prev => [updatedQuery, ...prev]);
+        }
+        
+        // Update the user's can_see array in local state
+        if (user && !user.can_see.includes(queryId)) {
+          // Update the user object in AuthContext
+          const updatedUser = {
+            ...user,
+            can_see: [...user.can_see, queryId]
+          };
+          loginUserFromGoogle(updatedUser);
+        }
+        
+        // Remove from similar queries
+        setSimilarQueries(prev => prev.filter(q => q._id !== queryId));
+        
+        // Close the new query form and go to dashboard
+        setShowNewQueryForm(false);
+        setNewQuery({ query: "", address: "", latitude: null, longitude: null });
+        setQueryAnalysis(null);
+        setSelectedFiles([]);
+        setAttachmentAnalyses([]);
+        setShowMap(false);
+        setSimilarQueries([]);
+        setShowSimilarQueries(false);
+        
+        // Show success message
+       
+             } else {
+         // Handle specific error cases
+         if (data.error === "Query already in user's dashboard") {
+           alert("This query is already in your dashboard!");
+         } else {
+           alert("Failed to add query to dashboard: " + data.error);
+         }
+       }
+    } catch (error) {
+      console.error("Error adding query to dashboard:", error);
+      alert("Failed to add query to dashboard. Please try again.");
+    } finally {
+      setAddingToDashboard(false);
     }
   };
 
@@ -1162,6 +1341,8 @@ export default function Dashboard() {
       setShowMap(false);
       setSelectedQuery(created);
       setThreads([]);
+      setSimilarQueries([]);
+      setShowSimilarQueries(false);
     } catch (err) {
       console.error("Error creating query:", err);
       alert(`Unable to submit query: ${err.message}. Please try again.`);
@@ -1410,6 +1591,8 @@ export default function Dashboard() {
                         setSelectedFiles([]);
                         setAttachmentAnalyses([]);
                         setShowMap(false);
+                        setSimilarQueries([]);
+                        setShowSimilarQueries(false);
                       }}
                       className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
                     >
@@ -1596,6 +1779,8 @@ export default function Dashboard() {
                               setSelectedFiles([]);
                               setAttachmentAnalyses([]);
                               setShowMap(false);
+                              setSimilarQueries([]);
+                              setShowSimilarQueries(false);
                             }}
                             className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 sm:px-8 py-3 rounded-lg font-medium transition-colors border border-gray-300"
                           >
@@ -1619,144 +1804,199 @@ export default function Dashboard() {
                          </div>
                        )}
 
-                       {/* Analysis Results */}
-                       {queryAnalysis && !analyzing && (
-                         <div className={`rounded-xl border p-6 shadow-sm sticky top-6 ${
-                           queryAnalysis.detailsSufficient ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'
-                         }`}>
-                           <div className="flex items-center gap-3 mb-4">
-                             {queryAnalysis.detailsSufficient ? (
-                               <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                                 <CheckCircle className="w-5 h-5 text-white" />
+                                                                        {/* Similar Queries Section - Above Analysis */}
+                         {showSimilarQueries && similarQueries.length > 0 && (
+                           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 sticky top-6 mb-6">
+                             <div className="flex items-start gap-2 mb-3">
+                               <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                               <div>
+                                 <h4 className="text-sm font-semibold text-blue-900">Similar Complaints Found</h4>
+                                 <p className="text-xs text-blue-800 mt-1">
+                                   We found {similarQueries.length} similar complaint(s) in the same area and department.
+                                 </p>
                                </div>
-                             ) : (
-                               <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center">
-                                 <AlertCircle className="w-5 h-5 text-white" />
-                               </div>
-                             )}
-                             <div>
-                               <h3 className={`font-semibold ${queryAnalysis.detailsSufficient ? 'text-green-900' : 'text-amber-900'}`}>
-                                 {queryAnalysis.detailsSufficient ? 'Analysis Complete - Ready to Submit' : 'More Details Needed'}
-                               </h3>
-                               <p className={`text-sm ${queryAnalysis.detailsSufficient ? 'text-green-700' : 'text-amber-700'}`}>
-                                 {queryAnalysis.detailsSufficient ? 'Your complaint has been analyzed successfully' : 'Please provide additional information'}
+                             </div>
+                             
+                             <div className="space-y-2">
+                               {similarQueries.map((similarQuery) => (
+                                 <div key={similarQuery._id} className="bg-white rounded border border-blue-200 p-2">
+                                   <div className="flex items-start justify-between gap-2">
+                                     <div className="flex-1 min-w-0">
+                                       <h5 className="font-medium text-gray-900 text-xs mb-1">
+                                         {similarQuery.title}
+                                       </h5>
+                                       <p className="text-xs text-gray-600 mb-1 line-clamp-1">
+                                         {similarQuery.description}
+                                       </p>
+                                       <div className="flex items-center gap-2 text-xs text-gray-500">
+                                         <span className="flex items-center gap-1">
+                                           <MapPin className="w-2 h-2" />
+                                           {similarQuery.address || "No address"}
+                                         </span>
+                                         <span className="flex items-center gap-1">
+                                           <Eye className="w-2 h-2" />
+                                           {similarQuery.impressions || 1} views
+                                         </span>
+                                         <StatusBadge status={similarQuery.status} />
+                                       </div>
+                                     </div>
+                                     <button
+                                       onClick={() => addQueryToDashboard(similarQuery._id)}
+                                       disabled={addingToDashboard}
+                                       className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-2 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1 shrink-0"
+                                     >
+                                       {addingToDashboard ? (
+                                         <>
+                                           <LoadingSpinner size="sm" />
+                                           Adding...
+                                         </>
+                                       ) : (
+                                         <>
+                                           <Plus className="w-2 h-2" />
+                                           Add
+                                         </>
+                                       )}
+                                     </button>
+                                   </div>
+                                 </div>
+                               ))}
+                             </div>
+                             
+                             <div className="mt-2 pt-2 border-t border-blue-200">
+                               <p className="text-xs text-blue-700">
+                                 <strong>Note:</strong> Adding a query to your dashboard allows you to track its progress and receive updates, 
+                                 but you won't be able to participate in the conversation.
                                </p>
                              </div>
                            </div>
+                         )}
 
-                           <div className="space-y-4">
-                             <div>
-                               <h4 className="text-sm font-semibold text-gray-900 mb-1">Suggested Title</h4>
-                               <p className="text-sm text-gray-700 bg-white/70 rounded-lg p-3 border">
-                                 {queryAnalysis.title}
-                               </p>
-                             </div>
-                             
-                             <div>
-                               <h4 className="text-sm font-semibold text-gray-900 mb-1">Assigned Department</h4>
-                               <div className="flex items-center gap-2 bg-white/70 rounded-lg p-3 border">
-                                 <Building2 className="w-4 h-4 text-blue-600" />
-                                 <span className="text-sm font-medium text-gray-900">{queryAnalysis.departmentName}</span>
-                               </div>
-                             </div>
-
-                             {newQuery.address && (
-                               <div>
-                                 <h4 className="text-sm font-semibold text-gray-900 mb-1">Location</h4>
-                                 <div className="flex items-start gap-2 bg-white/70 rounded-lg p-3 border">
-                                   <MapPin className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                                   <div className="flex-1">
-                                     <span className="text-sm text-gray-700 break-words">{newQuery.address}</span>
-                                     {newQuery.latitude && newQuery.longitude && (
-                                       <div className="mt-1 text-xs text-gray-500 font-mono">
-                                         {newQuery.latitude.toFixed(6)}, {newQuery.longitude.toFixed(6)}
-                                       </div>
-                                     )}
-                                   </div>
+                                                 {/* Analysis Results */}
+                         {queryAnalysis && !analyzing && (
+                           <div className={`rounded-xl border p-4 shadow-sm sticky top-6 ${
+                             queryAnalysis.detailsSufficient ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'
+                           }`}>
+                             <div className="flex items-center gap-2 mb-3">
+                               {queryAnalysis.detailsSufficient ? (
+                                 <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                                   <CheckCircle className="w-4 h-4 text-white" />
                                  </div>
+                               ) : (
+                                 <div className="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center">
+                                   <AlertCircle className="w-4 h-4 text-white" />
+                                 </div>
+                               )}
+                               <div>
+                                 <h3 className={`text-sm font-semibold ${queryAnalysis.detailsSufficient ? 'text-green-900' : 'text-amber-900'}`}>
+                                   {queryAnalysis.detailsSufficient ? 'Analysis Complete' : 'More Details Needed'}
+                                 </h3>
+                                 <p className={`text-xs ${queryAnalysis.detailsSufficient ? 'text-green-700' : 'text-amber-700'}`}>
+                                   {queryAnalysis.detailsSufficient ? 'Ready to submit' : 'Please provide additional information'}
+                                 </p>
                                </div>
-                             )}
-
-                             <div>
-                               <h4 className="text-sm font-semibold text-gray-900 mb-1">Analysis Reasoning</h4>
-                               <p className="text-sm text-gray-600 bg-white/70 rounded-lg p-3 border leading-relaxed">
-                                 {queryAnalysis.reasoning}
-                               </p>
                              </div>
 
-                             {/* Detail Validation */}
-                             {!queryAnalysis.detailsSufficient && (
-                               <div className="bg-white/70 rounded-lg p-4 border border-amber-200">
-                                 {queryAnalysis.missingDetails && queryAnalysis.missingDetails.length > 0 && (
-                                   <div className="mb-3">
-                                     <h5 className="text-sm font-semibold text-amber-900 mb-2">Missing Information:</h5>
-                                     <ul className="space-y-1">
-                                       {queryAnalysis.missingDetails.map((detail, index) => (
-                                         <li key={index} className="flex items-start gap-2 text-sm text-amber-800">
-                                           <span className="text-amber-600 mt-1">•</span>
-                                           <span>{detail}</span>
-                                         </li>
-                                       ))}
-                                     </ul>
-                                   </div>
-                                 )}
-                                 
-                                 {queryAnalysis.suggestions && (
-                                   <div className="bg-amber-100 rounded-lg p-3 border border-amber-200">
-                                     <h5 className="text-sm font-semibold text-amber-900 mb-1">Suggestions:</h5>
-                                     <p className="text-sm text-amber-800">{queryAnalysis.suggestions}</p>
-                                   </div>
-                                 )}
-                               </div>
-                             )}
+                                                           <div className="space-y-3">
+                                <div className="bg-white/70 rounded p-3 border">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Building2 className="w-3 h-3 text-blue-600" />
+                                    <span className="text-xs font-semibold text-gray-900">{queryAnalysis.departmentName}</span>
+                                  </div>
+                                  <h4 className="text-xs font-semibold text-gray-900 mb-1">{queryAnalysis.title}</h4>
+                                  <p className="text-xs text-gray-600 leading-relaxed">
+                                    {queryAnalysis.reasoning}
+                                  </p>
+                                </div>
 
-                             {/* Attachment Summaries */}
-                             {attachmentAnalyses.length > 0 && (
-                               <div>
-                                 <h4 className="text-sm font-semibold text-gray-900 mb-2">
-                                   Attachment Analysis ({attachmentAnalyses.length} files)
-                                 </h4>
-                                 <div className="space-y-2">
-                                   {attachmentAnalyses.map((analysis, idx) => (
-                                     <div key={idx} className="bg-white/70 rounded-lg p-3 border text-sm">
-                                       <div className="font-medium text-gray-900 mb-1 flex items-center gap-2">
-                                         <FileUp className="w-4 h-4 text-blue-500" />
-                                         {analysis.file?.name || analysis.filename || `File ${idx + 1}`}
-                                       </div>
-                                       {analysis.analysis?.description && (
-                                         <p className="text-gray-600 mb-1">
-                                           <strong>Content:</strong> {clampWords(analysis.analysis.description, 50, 75)}
-                                         </p>
-                                       )}
-                                       {analysis.analysis?.summary && (
-                                         <p className="text-gray-600">
-                                           <strong>Summary:</strong> {clampWords(analysis.analysis.summary, 50, 75)}
-                                         </p>
-                                       )}
+                                {newQuery.address && (
+                                  <div className="bg-white/70 rounded p-3 border">
+                                    <div className="flex items-start gap-2">
+                                      <MapPin className="w-3 h-3 text-green-600 mt-0.5 flex-shrink-0" />
+                                      <div className="flex-1">
+                                        <h4 className="text-xs font-semibold text-gray-900 mb-1">Location</h4>
+                                        <span className="text-xs text-gray-700 break-words">{newQuery.address}</span>
+                                        {newQuery.latitude && newQuery.longitude && (
+                                          <div className="mt-1 text-xs text-gray-500 font-mono">
+                                            {newQuery.latitude.toFixed(6)}, {newQuery.longitude.toFixed(6)}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+
+                               {/* Detail Validation */}
+                               {!queryAnalysis.detailsSufficient && (
+                                 <div className="bg-white/70 rounded p-3 border border-amber-200">
+                                   {queryAnalysis.missingDetails && queryAnalysis.missingDetails.length > 0 && (
+                                     <div className="mb-2">
+                                       <h5 className="text-xs font-semibold text-amber-900 mb-1">Missing:</h5>
+                                       <ul className="space-y-0.5">
+                                         {queryAnalysis.missingDetails.map((detail, index) => (
+                                           <li key={index} className="flex items-start gap-1 text-xs text-amber-800">
+                                             <span className="text-amber-600 mt-0.5">•</span>
+                                             <span>{detail}</span>
+                                           </li>
+                                         ))}
+                                       </ul>
                                      </div>
-                                   ))}
+                                   )}
+                                   
+                                   {queryAnalysis.suggestions && (
+                                     <div className="bg-amber-100 rounded p-2 border border-amber-200">
+                                       <h5 className="text-xs font-semibold text-amber-900 mb-1">Suggestions:</h5>
+                                       <p className="text-xs text-amber-800">{queryAnalysis.suggestions}</p>
+                                     </div>
+                                   )}
                                  </div>
-                               </div>
-                             )}
+                               )}
 
-                             {/* Submission Warning */}
-                             {queryAnalysis.detailsSufficient === false && (
-                               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                                 <div className="flex items-start gap-3">
-                                   <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
-                                   <div>
-                                     <h4 className="font-semibold text-red-900">Submission Blocked</h4>
-                                     <p className="text-sm text-red-800 mt-1">
-                                       Your complaint cannot be submitted because it lacks essential details or may be inappropriate. 
-                                       Please provide specific location information and describe the issue clearly so departments can take effective action.
-                                     </p>
+                               {/* Attachment Summaries */}
+                               {attachmentAnalyses.length > 0 && (
+                                 <div>
+                                   <h4 className="text-xs font-semibold text-gray-900 mb-1">
+                                     Attachments ({attachmentAnalyses.length})
+                                   </h4>
+                                   <div className="space-y-1">
+                                     {attachmentAnalyses.map((analysis, idx) => (
+                                       <div key={idx} className="bg-white/70 rounded p-2 border text-xs">
+                                         <div className="font-medium text-gray-900 mb-1 flex items-center gap-1">
+                                           <FileUp className="w-3 h-3 text-blue-500" />
+                                           {analysis.file?.name || analysis.filename || `File ${idx + 1}`}
+                                         </div>
+                                         {analysis.analysis?.description && (
+                                           <p className="text-gray-600 mb-1">
+                                             <strong>Content:</strong> {clampWords(analysis.analysis.description, 30, 40)}
+                                           </p>
+                                         )}
+                                         {analysis.analysis?.summary && (
+                                           <p className="text-gray-600">
+                                             <strong>Summary:</strong> {clampWords(analysis.analysis.summary, 30, 40)}
+                                           </p>
+                                         )}
+                                       </div>
+                                     ))}
                                    </div>
                                  </div>
-                               </div>
-                                                           )}
-                            </div>
-                          </div>
-                        )}
+                               )}
+
+                               {/* Submission Warning */}
+                               {queryAnalysis.detailsSufficient === false && (
+                                 <div className="bg-red-50 border border-red-200 rounded p-3">
+                                   <div className="flex items-start gap-2">
+                                     <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+                                     <div>
+                                       <h4 className="text-xs font-semibold text-red-900">Submission Blocked</h4>
+                                       <p className="text-xs text-red-800 mt-1">
+                                         Your complaint cannot be submitted because it lacks essential details or may be inappropriate.
+                                       </p>
+                                     </div>
+                                   </div>
+                                 </div>
+                               )}
+                             </div>
+                           </div>
+                         )}
 
                         {/* Action Buttons - Mobile/Tablet Only */}
                         <div className="lg:hidden flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6">
@@ -1933,15 +2173,23 @@ export default function Dashboard() {
                             ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4' 
                             : 'space-y-3'
                         }`}>
-                          {filteredQueries.map((query) => (
-                            <QueryCard
-                              key={query._id || `query-${Math.random()}`}
-                              query={query}
-                              isSelected={selectedQuery?._id === query._id}
-                              onClick={handleQuerySelect}
-                              viewMode={viewMode}
-                            />
-                          ))}
+                                                     {filteredQueries.map((query) => {
+                             // Check if this query is in user's can_see array (read-only)
+                             const isReadOnly = user?.can_see?.some(canSeeQuery => 
+                               canSeeQuery._id === query._id || canSeeQuery === query._id
+                             );
+                             
+                             return (
+                               <QueryCard
+                                 key={query._id || `query-${Math.random()}`}
+                                 query={query}
+                                 isSelected={selectedQuery?._id === query._id}
+                                 onClick={handleQuerySelect}
+                                 viewMode={viewMode}
+                                 isReadOnly={isReadOnly}
+                               />
+                             );
+                           })}
                         </div>
                       </div>
                     )}
@@ -1967,6 +2215,17 @@ export default function Dashboard() {
             threadsContainerRef={threadsContainerRef}
             isMobile={isMobile}
             onFeedbackSubmitted={handleFeedbackSubmitted}
+            isReadOnly={(() => {
+              const isReadOnly = user?.can_see?.some(canSeeQuery => 
+                canSeeQuery._id === selectedQuery._id || canSeeQuery === selectedQuery._id
+              );
+              console.log("Sidebar isReadOnly check:", {
+                selectedQueryId: selectedQuery._id,
+                userCanSee: user?.can_see,
+                isReadOnly: isReadOnly
+              });
+              return isReadOnly;
+            })()}
           />
         )}
       </div>
