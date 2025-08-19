@@ -416,7 +416,7 @@ const QuerySidebar = ({
       {/* Description */}
         <div className="bg-gray-50 rounded-lg p-3 mb-3">
           <h3 className="text-xs font-semibold text-gray-900 mb-1">Description</h3>
-          <p className="text-xs text-gray-700 leading-relaxed line-clamp-4">
+          <p className="text-xs text-gray-700 leading-relaxed line-clamp-4 max-h-48 overflow-y-auto">
             {query.description || "No description available"}
           </p>
         </div>
@@ -490,7 +490,7 @@ const QuerySidebar = ({
       {/* Conversation Thread */}
      
 <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-  <div ref={threadsContainerRef} className="flex-1 overflow-y-auto bg-gray-50 p-3" style={{ minHeight: 0 }}>
+  <div ref={threadsContainerRef} className="flex-1 overflow-y-auto bg-gray-50 p-3" style={{ minHeight: 0, maxHeight: query.status === "resolved" ? "calc(100vh - 400px)" : "calc(100vh - 200px)" }}>
           {threads.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-6 text-center">
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
@@ -596,18 +596,18 @@ const QuerySidebar = ({
         {/* Conditional Content Based on Query Status */}
         {query.status === "resolved" ? (
           /* Feedback Section for Resolved Queries */
-          <div className="bg-white border-t border-gray-200 p-3 flex-shrink-0">
+          <div className="bg-white border-t border-gray-200 p-3 flex-shrink-0 max-h-80 overflow-y-auto">
             {console.log("Query status:", query.status, "Query feedback:", query.feedback)}
             {query.feedback ? (
               <FeedbackDisplay feedback={query.feedback} />
             ) : (
               <div className="space-y-3">
-                <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                <div className="text-center p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <CheckCircle className="w-6 h-6 text-green-500 mx-auto mb-1" />
                   <h3 className="text-sm font-semibold text-green-800 mb-1">
                     Complaint Resolved!
                   </h3>
-                  <p className="text-xs text-green-700 mb-3">
+                  <p className="text-xs text-green-700 mb-2">
                     Your complaint has been successfully resolved. Please share your feedback to help us improve our services.
                   </p>
                 </div>
@@ -689,6 +689,7 @@ export default function Dashboard() {
   const [similarQueries, setSimilarQueries] = useState([]);
   const [showSimilarQueries, setShowSimilarQueries] = useState(false);
   const [addingToDashboard, setAddingToDashboard] = useState(false);
+  const [checkingSimilarQueries, setCheckingSimilarQueries] = useState(false);
 
   // Voice-to-text states
   const [isListening, setIsListening] = useState(false);
@@ -800,20 +801,26 @@ export default function Dashboard() {
     newQueryRef.current = newQuery;
   }, [newQuery]);
 
-  // Re-analyze query when address changes
+  // Auto-analyze when both description and address are present
+  const [lastAnalyzedQuery, setLastAnalyzedQuery] = useState("");
+  const [lastAnalyzedAddress, setLastAnalyzedAddress] = useState("");
+  
   useEffect(() => {
-    if (newQuery.query.trim() && newQuery.address && queryAnalysis) {
-      analyzeQuery(newQuery.query, newQuery.address);
+    const currentQuery = newQuery.query.trim();
+    const currentAddress = newQuery.address && newQuery.address.trim();
+    
+    // Only analyze if we have both query and address, not currently analyzing, and the content has changed
+    if (currentQuery && currentAddress && !analyzing && 
+        (currentQuery !== lastAnalyzedQuery || currentAddress !== lastAnalyzedAddress)) {
+      setLastAnalyzedQuery(currentQuery);
+      setLastAnalyzedAddress(currentAddress);
+      analyzeQuery(currentQuery, currentAddress);
     }
-  }, [newQuery.address]);
+  }, [newQuery.query, newQuery.address, analyzing, lastAnalyzedQuery, lastAnalyzedAddress]);
 
-  // Check for similar queries only after AI analysis is complete
-  useEffect(() => {
-    if (queryAnalysis && queryAnalysis.departmentId && newQuery.address && !analyzing) {
-      // Only check for similar queries after we have a proper department from AI analysis
-      checkSimilarQueries(queryAnalysis.departmentId, newQuery.address);
-    }
-  }, [queryAnalysis, newQuery.address, analyzing]);
+
+
+
 
   // Scroll to bottom when threads change
   useEffect(() => {
@@ -824,26 +831,7 @@ export default function Dashboard() {
     }
   }, [threads]);
 
-  // Poll for new conversations when a query is selected
-  useEffect(() => {
-    if (!selectedQuery?._id) return;
 
-    const pollInterval = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/conversations/${selectedQuery._id}?includeAuthorDetails=true`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.conversations.length !== threads.length) {
-            setThreads(data.conversations);
-          }
-        }
-      } catch (error) {
-        console.error("Error polling conversations:", error);
-      }
-    }, 5000); // Poll every 5 seconds
-
-    return () => clearInterval(pollInterval);
-  }, [selectedQuery?._id, threads.length]);
 
   // Initialize voice-to-text
   useEffect(() => {
@@ -861,34 +849,30 @@ export default function Dashboard() {
         setIsListening(true);
       };
 
-      recognitionRef.current.onend = () => {
-        setIsListening(false);
-        const { query, address } = newQueryRef.current || {};
-        if (query && query.trim()) {
-          analyzeQuery(query, address);
-        }
-      };
+             recognitionRef.current.onend = () => {
+         setIsListening(false);
+       };
 
-      recognitionRef.current.onresult = (event) => {
-        let finalTranscript = "";
-        let interimTranscript = "";
+             recognitionRef.current.onresult = (event) => {
+         let finalTranscript = "";
+         let interimTranscript = "";
 
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript;
-          } else {
-            interimTranscript += transcript;
-          }
-        }
+         for (let i = event.resultIndex; i < event.results.length; i++) {
+           const transcript = event.results[i][0].transcript;
+           if (event.results[i].isFinal) {
+             finalTranscript += transcript;
+           } else {
+             interimTranscript += transcript;
+           }
+         }
 
-        if (finalTranscript) {
-          setNewQuery((prev) => ({
-            ...prev,
-            query: prev.query + (prev.query ? " " : "") + finalTranscript,
-          }));
-        }
-      };
+         if (finalTranscript) {
+           setNewQuery((prev) => ({
+             ...prev,
+             query: finalTranscript,
+           }));
+         }
+       };
 
       recognitionRef.current.onerror = (event) => {
         console.error("Speech recognition error:", event.error);
@@ -1043,53 +1027,43 @@ export default function Dashboard() {
     if (!query.trim()) return;
     
     setAnalyzing(true);
-    // Clear similar queries when starting new analysis
-    setSimilarQueries([]);
-    setShowSimilarQueries(false);
+    
     try {
       const res = await fetch("/api/query-analysis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, address }),
+        body: JSON.stringify({ query: query, address }),
       });
 
       const data = await res.json();
       
       if (data.success) {
         setQueryAnalysis(data.analysis);
-        // Check for similar queries after analysis
-        await checkSimilarQueries(data.analysis.departmentId, address);
       } else {
         console.error("Query analysis failed:", data.error);
         setQueryAnalysis({
-          title: query.substring(0, 60) + (query.length > 60 ? "..." : ""),
+          title: "Analysis Failed",
           departmentId: departments[0]?._id || "",
           departmentName: departments[0]?.departmentName || "Sewage",
           reasoning: "Auto-generated due to analysis failure",
-          originalQuery: query,
           address: address || "",
           detailsSufficient: true,
           missingDetails: [],
           suggestions: ""
         });
-        // Check for similar queries even with fallback analysis
-        await checkSimilarQueries(departments[0]?._id, address);
       }
     } catch (error) {
       console.error("Error analyzing query:", error);
       setQueryAnalysis({
-        title: query.substring(0, 60) + (query.length > 60 ? "..." : ""),
+        title: "Analysis Error",
         departmentId: departments[0]?._id || "",
         departmentName: departments[0]?.departmentName || "Sewage",
         reasoning: "Auto-generated due to analysis error",
-        originalQuery: query,
         address: address || "",
         detailsSufficient: true,
         missingDetails: [],
         suggestions: ""
       });
-      // Check for similar queries even with error fallback
-      await checkSimilarQueries(departments[0]?._id, address);
     } finally {
       setAnalyzing(false);
     }
@@ -1097,6 +1071,9 @@ export default function Dashboard() {
 
   const checkSimilarQueries = async (departmentId, address) => {
     if (!departmentId || !address) return;
+    
+    setCheckingSimilarQueries(true);
+    setShowSimilarQueries(false);
     
     try {
       const params = new URLSearchParams({
@@ -1113,12 +1090,14 @@ export default function Dashboard() {
         setShowSimilarQueries(true);
       } else {
         setSimilarQueries([]);
-        setShowSimilarQueries(false);
+        setShowSimilarQueries(true); // Show the "no results" message
       }
     } catch (error) {
       console.error("Error checking similar queries:", error);
       setSimilarQueries([]);
       setShowSimilarQueries(false);
+    } finally {
+      setCheckingSimilarQueries(false);
     }
   };
 
@@ -1169,6 +1148,8 @@ export default function Dashboard() {
         setShowMap(false);
         setSimilarQueries([]);
         setShowSimilarQueries(false);
+        setLastAnalyzedQuery("");
+        setLastAnalyzedAddress("");
         
         // Show success message
        
@@ -1269,14 +1250,14 @@ export default function Dashboard() {
             
             const lines = [];
             const fileName = analysis.file?.name || analysis.filename || `attachment-${idx + 1}`;
-            lines.push(`📎 File ${idx + 1}: ${fileName}`);
+           
             
                          if (analysis.analysis.description) {
-               lines.push(`   Description: ${clampWords(analysis.analysis.description, 50, 60)}`);
+               lines.push(`   ${analysis.analysis.description}`);
              }
              
              if (analysis.analysis.summary) {
-               lines.push(`   Municipal Summary: ${clampWords(analysis.analysis.summary, 50, 60)}`);
+               lines.push(`    ${analysis.analysis.summary}`);
              }
             
             return lines.join('\n');
@@ -1285,7 +1266,7 @@ export default function Dashboard() {
         
         if (attachmentSections.length > 0) {
           const attachmentSection = attachmentSections.join('\n\n');
-          baseDesc += `\n\n=== Attachment AI Summaries ===\n\n${attachmentSection}`;
+          baseDesc += `\n\n - \n-\n${attachmentSection}`;
         }
         
         const structuredAnalyses = attachmentAnalyses
@@ -1295,8 +1276,8 @@ export default function Dashboard() {
               filename: analysis.filename || analysis.file?.name,
               originalName: analysis.file?.name || analysis.filename,
               mimetype: analysis.file?.type,
-                              description: analysis.analysis.description ? clampWords(analysis.analysis.description, 100, 150) : null,
-                summary: analysis.analysis.summary ? clampWords(analysis.analysis.summary, 100, 150) : null,
+                              description: analysis.analysis.description ? (analysis.analysis.description) : null,
+                summary: analysis.analysis.summary ? (analysis.analysis.summary) : null,
               metadata: analysis.analysis.metadata || null,
             };
           })
@@ -1343,6 +1324,8 @@ export default function Dashboard() {
       setThreads([]);
       setSimilarQueries([]);
       setShowSimilarQueries(false);
+      setLastAnalyzedQuery("");
+      setLastAnalyzedAddress("");
     } catch (err) {
       console.error("Error creating query:", err);
       alert(`Unable to submit query: ${err.message}. Please try again.`);
@@ -1593,6 +1576,8 @@ export default function Dashboard() {
                         setShowMap(false);
                         setSimilarQueries([]);
                         setShowSimilarQueries(false);
+                        setLastAnalyzedQuery("");
+                        setLastAnalyzedAddress("");
                       }}
                       className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
                     >
@@ -1619,25 +1604,12 @@ export default function Dashboard() {
                            Describe Your Complaint
                          </label>
                          <div className="relative">
-                           <textarea
-                             placeholder="Please describe your issue in detail. Be specific about what happened, when it occurred, and where it took place..."
-                             value={newQuery.query}
-                             onChange={(e) => setNewQuery({ ...newQuery, query: e.target.value })}
-                             onKeyDown={(e) => {
-                               if (e.key === "Enter" && !e.shiftKey) {
-                                 e.preventDefault();
-                                 if (newQuery.query.trim()) {
-                                   analyzeQuery(newQuery.query, newQuery.address);
-                                 }
-                               }
-                             }}
-                             onBlur={() => {
-                               if (newQuery.query.trim()) {
-                                 analyzeQuery(newQuery.query, newQuery.address);
-                               }
-                             }}
-                             className="w-full px-4 py-4 pr-12 border border-gray-300 rounded-lg h-40 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none text-sm placeholder-gray-500"
-                           />
+                                                       <textarea
+                              placeholder="Please describe your issue in detail. Be specific about what happened, when it occurred, and where it took place..."
+                              value={newQuery.query}
+                              onChange={(e) => setNewQuery({ ...newQuery, query: e.target.value })}
+                              className="w-full px-4 py-4 pr-12 border border-gray-300 rounded-lg h-40 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none text-sm placeholder-gray-500"
+                            />
                            <button
                              type="button"
                              onClick={toggleVoiceInput}
@@ -1652,15 +1624,23 @@ export default function Dashboard() {
                              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                            </button>
                          </div>
-                         <div className="flex items-center justify-between mt-3">
-                           <p className="text-xs text-gray-500">Be as detailed and specific as possible for faster resolution</p>
-                           {isListening && (
-                             <div className="flex items-center gap-2 text-xs text-red-600 font-medium">
-                               <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                               <span>Listening...</span>
-                             </div>
-                           )}
-                         </div>
+                                                   <div className="flex items-center justify-between mt-3">
+                            <p className="text-xs text-gray-500">Be as detailed and specific as possible for faster resolution</p>
+                            <div className="flex items-center gap-2">
+                              {isListening && (
+                                <div className="flex items-center gap-2 text-xs text-red-600 font-medium">
+                                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                                  <span>Listening...</span>
+                                </div>
+                              )}
+                              {analyzing && (
+                                <div className="flex items-center gap-2 text-xs text-blue-600 font-medium">
+                                  <LoadingSpinner size="sm" />
+                                  <span>Analyzing...</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                        </div>
 
                        {/* Address Input */}
@@ -1781,6 +1761,8 @@ export default function Dashboard() {
                               setShowMap(false);
                               setSimilarQueries([]);
                               setShowSimilarQueries(false);
+                              setLastAnalyzedQuery("");
+                              setLastAnalyzedAddress("");
                             }}
                             className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 sm:px-8 py-3 rounded-lg font-medium transition-colors border border-gray-300"
                           >
@@ -1804,18 +1786,54 @@ export default function Dashboard() {
                          </div>
                        )}
 
-                                                                        {/* Similar Queries Section - Above Analysis */}
-                         {showSimilarQueries && similarQueries.length > 0 && (
-                           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 sticky top-6 mb-6">
-                             <div className="flex items-start gap-2 mb-3">
-                               <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                               <div>
-                                 <h4 className="text-sm font-semibold text-blue-900">Similar Complaints Found</h4>
-                                 <p className="text-xs text-blue-800 mt-1">
-                                   We found {similarQueries.length} similar complaint(s) in the same area and department.
-                                 </p>
-                               </div>
-                             </div>
+                                                                                                  {/* Similar Queries Section - Above Analysis */}
+                          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 sticky top-6 mb-6">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex items-start gap-2">
+                                <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                <div>
+                                  <h4 className="text-sm font-semibold text-blue-900">Check for Similar Complaints</h4>
+                                  <p className="text-xs text-blue-800 mt-1">
+                                    Find existing complaints in the same area and department to avoid duplicates.
+                                  </p>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  if (queryAnalysis?.departmentId && newQuery.address) {
+                                    checkSimilarQueries(queryAnalysis.departmentId, newQuery.address);
+                                  } else {
+                                    alert("Please complete the complaint description and location first.");
+                                  }
+                                }}
+                                disabled={!queryAnalysis?.departmentId || !newQuery.address || analyzing || checkingSimilarQueries}
+                                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors flex items-center gap-1"
+                              >
+                                {checkingSimilarQueries ? (
+                                  <>
+                                    <LoadingSpinner size="sm" />
+                                    Checking...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Search className="w-3 h-3" />
+                                    Check Similar
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                            
+                            {showSimilarQueries && similarQueries.length > 0 && (
+                              <div>
+                                <div className="flex items-start gap-2 mb-3">
+                                  <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                  <div>
+                                    <h4 className="text-sm font-semibold text-blue-900">Similar Complaints Found</h4>
+                                    <p className="text-xs text-blue-800 mt-1">
+                                      We found {similarQueries.length} similar complaint(s) in the same area and department.
+                                    </p>
+                                  </div>
+                                </div>
                              
                              <div className="space-y-2">
                                {similarQueries.map((similarQuery) => (
@@ -1870,43 +1888,61 @@ export default function Dashboard() {
                              </div>
                            </div>
                          )}
+                         
+                         {showSimilarQueries && similarQueries.length === 0 && (
+                           <div className="text-center py-4">
+                             <p className="text-xs text-blue-700">
+                               No similar complaints found in this area and department.
+                             </p>
+                           </div>
+                         )}
+                       </div>
 
                                                  {/* Analysis Results */}
-                         {queryAnalysis && !analyzing && (
-                           <div className={`rounded-xl border p-4 shadow-sm sticky top-6 ${
-                             queryAnalysis.detailsSufficient ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'
-                           }`}>
-                             <div className="flex items-center gap-2 mb-3">
-                               {queryAnalysis.detailsSufficient ? (
-                                 <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                                   <CheckCircle className="w-4 h-4 text-white" />
-                                 </div>
-                               ) : (
-                                 <div className="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center">
-                                   <AlertCircle className="w-4 h-4 text-white" />
-                                 </div>
-                               )}
-                               <div>
-                                 <h3 className={`text-sm font-semibold ${queryAnalysis.detailsSufficient ? 'text-green-900' : 'text-amber-900'}`}>
-                                   {queryAnalysis.detailsSufficient ? 'Analysis Complete' : 'More Details Needed'}
-                                 </h3>
-                                 <p className={`text-xs ${queryAnalysis.detailsSufficient ? 'text-green-700' : 'text-amber-700'}`}>
-                                   {queryAnalysis.detailsSufficient ? 'Ready to submit' : 'Please provide additional information'}
-                                 </p>
-                               </div>
-                             </div>
-
-                                                           <div className="space-y-3">
-                                <div className="bg-white/70 rounded p-3 border">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <Building2 className="w-3 h-3 text-blue-600" />
-                                    <span className="text-xs font-semibold text-gray-900">{queryAnalysis.departmentName}</span>
+                                                   {queryAnalysis && !analyzing && (
+                            <div className={`rounded-xl border p-4 shadow-sm sticky top-6 ${
+                              queryAnalysis.detailsSufficient ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'
+                            }`}>
+                                                            
+                              <div className="flex items-center gap-2 mb-3">
+                                {queryAnalysis.detailsSufficient ? (
+                                  <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                                    <CheckCircle className="w-4 h-4 text-white" />
                                   </div>
-                                  <h4 className="text-xs font-semibold text-gray-900 mb-1">{queryAnalysis.title}</h4>
-                                  <p className="text-xs text-gray-600 leading-relaxed">
-                                    {queryAnalysis.reasoning}
+                                ) : (
+                                  <div className="w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center">
+                                    <AlertCircle className="w-4 h-4 text-white" />
+                                  </div>
+                                )}
+                                <div>
+                                  <h3 className={`text-sm font-semibold ${queryAnalysis.detailsSufficient ? 'text-green-900' : 'text-amber-900'}`}>
+                                    {queryAnalysis.detailsSufficient ? 'Analysis Complete' : 'More Details Needed'}
+                                  </h3>
+                                  <p className={`text-xs ${queryAnalysis.detailsSufficient ? 'text-green-700' : 'text-amber-700'}`}>
+                                    {queryAnalysis.detailsSufficient ? 'Ready to submit' : 'Please provide additional information'}
                                   </p>
                                 </div>
+                              </div>
+
+                                                           <div className="space-y-3">
+                                                                                                   <div className="bg-white/70 rounded p-3 border">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <Building2 className="w-3 h-3 text-blue-600" />
+                                      <span className="text-xs font-semibold text-gray-900">{queryAnalysis.departmentName}</span>
+                                    </div>
+                                    <div className="mb-2">
+                                      <h4 className="text-xs font-semibold text-gray-900 mb-1">AI Generated Title (for categorization only):</h4>
+                                      <p className="text-xs text-gray-700 bg-gray-100 p-2 rounded border">
+                                        {queryAnalysis.title}
+                                      </p>
+                                      
+                                    </div>
+                                    <p className="text-xs text-gray-600 leading-relaxed">
+                                      {queryAnalysis.reasoning}
+                                    </p>
+                                  </div>
+
+                                
 
                                 {newQuery.address && (
                                   <div className="bg-white/70 rounded p-3 border">
@@ -1966,12 +2002,12 @@ export default function Dashboard() {
                                          </div>
                                          {analysis.analysis?.description && (
                                            <p className="text-gray-600 mb-1">
-                                             <strong>Content:</strong> {clampWords(analysis.analysis.description, 30, 40)}
+                                             <strong>Content:</strong> {analysis.analysis.description}
                                            </p>
                                          )}
                                          {analysis.analysis?.summary && (
                                            <p className="text-gray-600">
-                                             <strong>Summary:</strong> {clampWords(analysis.analysis.summary, 30, 40)}
+                                             <strong>Summary:</strong> {analysis.analysis.summary}
                                            </p>
                                          )}
                                        </div>

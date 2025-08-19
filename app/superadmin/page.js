@@ -1322,34 +1322,29 @@ const Dashboard = () => {
             )}
 
             {/* Summary Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-white rounded-lg shadow p-4 text-center">
                 <div className="text-2xl font-bold text-blue-600">
-                  {filteredQueries.filter(q => q.status === 'open').length}
+                  {data.queries.filter(q => q.status === 'open').length}
                 </div>
                 <div className="text-sm text-gray-600">Open Queries</div>
               </div>
               <div className="bg-white rounded-lg shadow p-4 text-center">
                 <div className="text-2xl font-bold text-yellow-600">
-                  {filteredQueries.filter(q => q.status === 'in_progress').length}
+                  {data.queries.filter(q => q.status === 'in_progress').length}
                 </div>
                 <div className="text-sm text-gray-600">In Progress</div>
               </div>
               <div className="bg-white rounded-lg shadow p-4 text-center">
                 <div className="text-2xl font-bold text-green-600">
-                  {filteredQueries.filter(q => q.status === 'resolved').length}
+                  {data.queries.filter(q => q.status === 'resolved').length}
                 </div>
                 <div className="text-sm text-gray-600">Resolved</div>
               </div>
-              <div className="bg-white rounded-lg shadow p-4 text-center">
-                <div className="text-2xl font-bold text-red-600">
-                  {filteredQueries.filter(q => (q.urgencyScore || 5) >= 8).length}
-                </div>
-                <div className="text-sm text-gray-600">Critical Priority</div>
-              </div>
+              
               <div className="bg-white rounded-lg shadow p-4 text-center">
                 <div className="text-2xl font-bold text-gray-600">
-                  {filteredQueries.length}
+                  {data.queries.length}
                 </div>
                 <div className="text-sm text-gray-600">Total Shown</div>
               </div>

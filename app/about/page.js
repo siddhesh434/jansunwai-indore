@@ -189,16 +189,14 @@ export default function AboutPage() {
   ];
 
   const aiTechnologies = [
-    "OpenAI GPT-4",
-    "Anthropic Claude",
+    
+    
     "Groq LLama",
-    "Google Gemini",
-    "DeepInfra Models",
-    "Natural Language Processing",
+    "Google Gemini",   
     "Computer Vision",
     "Speech Recognition",
     "Predictive Analytics",
-    "Machine Learning"
+
   ];
 
   return (
@@ -424,10 +422,7 @@ export default function AboutPage() {
                         <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
                         {language === "hi" ? "रिपोर्ट जनरेशन" : "Report generation"}
                       </li>
-                      <li className="flex items-center">
-                        <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
-                        {language === "hi" ? "स्वचालित नोटिफिकेशन" : "Automated notifications"}
-                      </li>
+                      
                     </ul>
                   </div>
                 </div>

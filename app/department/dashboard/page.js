@@ -312,8 +312,7 @@ export default function DepartmentDashboard() {
     if (attachmentInsights && userComplaint) {
       // Combine both sources intelligently
       const combinedText = `${userComplaint} ${attachmentInsights}`;
-      netConclusion = combinedText.length > 20000 ? 
-        combinedText.substring(0, 20000) + "..." : combinedText;
+      netConclusion = combinedText;
     } else if (attachmentInsights) {
       netConclusion = attachmentInsights;
     } else if (userComplaint) {
@@ -682,6 +681,55 @@ export default function DepartmentDashboard() {
                       </div>
                     </div>
                   ) :(<div></div> )}
+
+                  {/* Attachment AI Analyses Section */}
+                  {selectedQuery.attachmentAnalyses && selectedQuery.attachmentAnalyses.length > 0 && (
+                    <div className="space-y-3">
+                      <h5 className="font-semibold text-gray-900 mb-3 flex items-center">
+                        <Brain className="w-4 h-4 mr-2" />
+                        AI Analysis of Attachments ({selectedQuery.attachmentAnalyses.length})
+                      </h5>
+                      <div className="space-y-3">
+                        {selectedQuery.attachmentAnalyses.map((analysis, idx) => (
+                          <div key={idx} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                              <FileText className="w-4 h-4 text-blue-600" />
+                              <h6 className="font-medium text-blue-900 text-sm">
+                                {analysis.filename || analysis.originalName || `File ${idx + 1}`}
+                              </h6>
+                            </div>
+                            
+                            {analysis.description && (
+                              <div className="mb-3">
+                                <h6 className="text-xs font-semibold text-blue-800 mb-1">Content Analysis:</h6>
+                                <p className="text-sm text-blue-700 leading-relaxed">
+                                  {analysis.description}
+                                </p>
+                              </div>
+                            )}
+                            
+                            {analysis.summary && (
+                              <div>
+                                <h6 className="text-xs font-semibold text-blue-800 mb-1">Municipal Summary:</h6>
+                                <p className="text-sm text-blue-700 leading-relaxed">
+                                  {analysis.summary}
+                                </p>
+                              </div>
+                            )}
+                            
+                            {analysis.metadata && (
+                              <div className="mt-2 pt-2 border-t border-blue-200">
+                                <h6 className="text-xs font-semibold text-blue-800 mb-1">Technical Details:</h6>
+                                <p className="text-xs text-blue-600 font-mono">
+                                  {JSON.stringify(analysis.metadata, null, 2)}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2 text-sm text-gray-500">
