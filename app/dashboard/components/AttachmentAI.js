@@ -35,11 +35,11 @@ export default function AttachmentAI({ onAnalyzed, onLoadingChange, onRelevanceC
         });
         const json = await res.json();
         if (json?.success) {
-                     const analysis = {
-             ...json.analysis,
-             description: (json.analysis?.description || "", 50, 60),
-             summary:(json.analysis?.summary || "", 50, 60),
-           };
+          const analysis = {
+            ...json.analysis,
+            description: clampWords(json.analysis?.description || "", 50, 60),
+            summary: clampWords(json.analysis?.summary || "", 50, 60),
+          };
           
           results.push({
             file,

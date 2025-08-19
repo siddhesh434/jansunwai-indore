@@ -5,16 +5,19 @@ export async function POST(request) {
   try {
     const { query, fileAnalysis, fileName } = await request.json();
 
-    if (!query || !fileAnalysis) {
+    if (!fileAnalysis) {
       return NextResponse.json(
-        { error: "Query and file analysis are required" },
+        { error: "File analysis is required" },
         { status: 400 }
       );
     }
 
+    const safeQuery = typeof query === "string" ? query : "";
+    const safeFileName = typeof fileName === "string" ? fileName : "attachment";
+
     // Simple relevance check logic
     // In a real implementation, you might use AI to analyze relevance
-    const queryLower = query.toLowerCase();
+    const queryLower = safeQuery.toLowerCase();
     const fileContent = `${fileAnalysis.description || ""} ${fileAnalysis.summary || ""}`.toLowerCase();
     
     // Check for common municipal complaint keywords (including Indian context)
@@ -76,7 +79,7 @@ export async function POST(request) {
     );
 
     // Check for image/video relevance indicators
-    const isImageOrVideo = fileName.match(/\.(jpg|jpeg|png|gif|bmp|mp4|avi|mov|wmv)$/i);
+    const isImageOrVideo = safeFileName.match(/\.(jpg|jpeg|png|gif|bmp|mp4|avi|mov|wmv)$/i);
     const hasVisualContent = isImageOrVideo && (fileAnalysis.description || "").length > 5;
 
     // Determine relevance
@@ -108,7 +111,7 @@ export async function POST(request) {
       reason = "Document content doesn't relate to municipal issues";
     }
 
-    console.log(`Relevance check for ${fileName}:`, {
+    console.log(`Relevance check for ${safeFileName}:`, {
       query: queryLower,
       fileContent: fileContent.substring(0, 100),
       isImageOrVideo,
