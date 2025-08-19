@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { FileText, Image as ImageIcon, Video as VideoIcon, X, AlertTriangle, CheckCircle } from "lucide-react";
-import { clampWords } from "@/lib/ai/wordClamp";
+import { clampWords } from "@/app/api/lib/ai/wordClamp";
 
 export default function AttachmentAI({ onAnalyzed, onLoadingChange, onRelevanceCheck, query }) {
   const [selectedFiles, setSelectedFiles] = useState([]);

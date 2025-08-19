@@ -1,5 +1,5 @@
 // app/api/department-members/[id]/route.js
-import dbConnect from "../../../../lib/dbConnect";
+import dbConnect from "../../lib/dbConnect";
 import { DepartmentMember } from "../../../../models";
 
 export async function GET(request, context) {

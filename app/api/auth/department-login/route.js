@@ -1,5 +1,5 @@
 // app/api/auth/department-login/route.js
-import dbConnect from "../../../../lib/dbConnect";
+import dbConnect from "../../lib/dbConnect";
 import { DepartmentMember } from "../../../../models";
 
 export async function POST(request) {

@@ -1,5 +1,5 @@
 // app/api/queries/top-urgent/route.js
-import dbConnect from "../../../../lib/dbConnect";
+import dbConnect from "../../lib/dbConnect";
 import { Query, User, Department } from "../../../../models";
 
 export async function GET() {

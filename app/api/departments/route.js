@@ -1,5 +1,5 @@
 // app/api/departments/route.js
-import dbConnect from "../../../lib/dbConnect";
+import dbConnect from "../lib/dbConnect";
 import { Department } from "../../../models";
 
 export async function GET() {

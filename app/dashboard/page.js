@@ -49,7 +49,7 @@ import MapAddressSelector from "./MapAddressSelector";
 import AttachmentAI from "./components/AttachmentAI";
 import FeedbackForm from "../components/FeedbackForm";
 import FeedbackDisplay from "../components/FeedbackDisplay";
-import { clampWords } from "../../lib/ai/wordClamp";
+import { clampWords } from "../api/lib/ai/wordClamp";
 
 // Status configuration
 const STATUS_CONFIG = {

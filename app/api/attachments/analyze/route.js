@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { analyzeAttachmentBuffer } from "@/lib/ai/attachmentAnalysis";
+import { analyzeAttachmentBuffer } from "@/app/api/lib/ai/attachmentAnalysis";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

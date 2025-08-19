@@ -1,4 +1,4 @@
-import dbConnect from "../../../lib/dbConnect";
+import dbConnect from "../lib/dbConnect";
 import { DepartmentMember } from "../../../models";
 
 export async function GET() {

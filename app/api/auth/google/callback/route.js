@@ -1,9 +1,9 @@
 // app/api/auth/google/callback/route.js
 import { NextResponse } from "next/server";
 import jwt from 'jsonwebtoken';
-import dbConnect from "../../../../../lib/dbConnect";
+import dbConnect from "../../../lib/dbConnect";
 import { User } from "../../../../../models";
-import { exchangeCodeForTokens, getUserInfo } from "../../../../../lib/googleAuth";
+import { exchangeCodeForTokens, getUserInfo } from "../../../lib/googleAuth";
 
 export async function GET(request) {
   try {

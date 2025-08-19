@@ -1,6 +1,6 @@
 // app/api/dashboard-analysis/route.js
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from "../../../lib/dbConnect";
+import dbConnect from "../lib/dbConnect";
 
 // You can switch between different LLM providers (matches your existing setup)
 const LLM_PROVIDER = 'groq'; // 'openai', 'anthropic', 'groq', 'gemini', or 'deepinfra'
