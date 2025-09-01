@@ -1,5 +1,5 @@
 // app/api/auth/login/route.js
-import dbConnect from "../../../../lib/dbConnect";
+import dbConnect from "../../lib/dbConnect";
 import { User } from "../../../../models";
 
 export async function POST(request) {

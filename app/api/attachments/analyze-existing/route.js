@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import path from "path";
 import fs from "fs/promises";
 import mime from "mime-types";
-import { analyzeAttachmentBuffer } from "@/lib/ai/attachmentAnalysis";
+import { analyzeAttachmentBuffer } from "@/app/api/lib/ai/attachmentAnalysis";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

@@ -1,5 +1,5 @@
 // app/api/conversations/[queryId]/route.js
-import dbConnect from "../../../../lib/dbConnect";
+import dbConnect from "../../lib/dbConnect";
 import { Query, User, DepartmentMember } from "../../../../models";
 
 export async function GET(request, context) {

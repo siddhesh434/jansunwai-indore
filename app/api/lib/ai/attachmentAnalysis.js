@@ -224,4 +224,3 @@ export async function analyzeAttachmentBuffer({ buffer, filename, filetype }) {
   return { mimeType, metadata, description, summary };
 }
 
-

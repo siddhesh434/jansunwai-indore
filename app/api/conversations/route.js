@@ -1,5 +1,5 @@
 // app/api/conversations/route.js
-import dbConnect from "../../../lib/dbConnect";
+import dbConnect from "../lib/dbConnect";
 import { Query } from "../../../models";
 
 export async function POST(request) {

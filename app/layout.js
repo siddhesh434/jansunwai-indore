@@ -21,26 +21,9 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+ 
   return (
     <html lang="en">
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              function googleTranslateElementInit() {
-                if (typeof google !== 'undefined' && google.translate) {
-                  new google.translate.TranslateElement({
-                    pageLanguage: 'en',
-                    includedLanguages: 'en,hi',
-                    layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
-                    autoDisplay: false,
-                  }, 'google_translate_element');
-                }
-              }
-            `,
-          }}
-        />
-      </head>
       <body
         suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
@@ -52,11 +35,6 @@ export default function RootLayout({ children }) {
             <Footer />
           </AuthProvider>
         </LanguageProvider>
-        <script 
-          type="text/javascript" 
-          src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
-          async
-        />
       </body>
     </html>
   );

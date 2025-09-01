@@ -1,10 +1,10 @@
 // app/api/queries/route.js
-import dbConnect from "../../../lib/dbConnect";
+import dbConnect from "../lib/dbConnect";
 import { Query, User, Department } from "../../../models";
 import mongoose from "mongoose";
 import { promises as fs } from "fs";
 import path from "path";
-import { scoreUrgency } from "../../../lib/ai/queryUrgency";
+import { scoreUrgency } from "../lib/ai/queryUrgency";
 
 // Ensure Node.js runtime for fs access
 export const runtime = "nodejs";

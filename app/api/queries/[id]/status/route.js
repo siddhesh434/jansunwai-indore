@@ -1,5 +1,5 @@
 // app/api/queries/[id]/status/route.js
-import dbConnect from "../../../../../lib/dbConnect";
+import dbConnect from "../../../lib/dbConnect";
 import { Query } from "../../../../../models";
 
 export async function PUT(request, context) {
