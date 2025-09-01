@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
-import { Users, FileText, Building2, UserCheck, TrendingUp, AlertCircle, CheckCircle, Clock, Calendar, Activity, Brain, Zap, Target, RefreshCw, Shield, LogOut, Search, Filter, SortAsc, SortDesc, Eye, MapPin, Star, MessageSquare, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Users, FileText, Building2, UserCheck, TrendingUp, AlertCircle, CheckCircle, Clock, Calendar, Activity, Brain, Zap, Target, RefreshCw, Shield, LogOut, Search, Filter, SortAsc, SortDesc, Eye, MapPin, Star, MessageSquare, ThumbsUp, ThumbsDown, X, Download, Paperclip, Send, AlertTriangle } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 const IndoreMap = dynamic(() => import('../components/Map'), {
@@ -32,6 +32,11 @@ const Dashboard = () => {
   const [feedbackAIInsights, setFeedbackAIInsights] = useState(null);
   const [feedbackAILoading, setFeedbackAILoading] = useState(false);
   const [feedbackDepartmentFilter, setFeedbackDepartmentFilter] = useState('all');
+  
+  // New state variables for urgency sorting and modal
+  const [urgencySortOrder, setUrgencySortOrder] = useState('high');
+  const [selectedQuery, setSelectedQuery] = useState(null);
+  const [showQueryModal, setShowQueryModal] = useState(false);
 
   const router = useRouter();
   const { superadmin, isSuperadminAuthenticated, logout } = useAuth();
@@ -79,9 +84,65 @@ const Dashboard = () => {
              return {
                _id: `query_${i}`,
                title: `Query ${i + 1}`,
+               description: `This is a detailed description for query ${i + 1}. It contains important information about the issue that needs to be addressed by the concerned department.`,
                status: ['open', 'in_progress', 'resolved'][Math.floor(Math.random() * 3)],
+               urgencyScore: Math.floor(Math.random() * 10) + 1, // 1-10 urgency score
                createdAt: createdAt.toISOString(),
-               department: { departmentName: ['Sewage', 'Compost with dried leaves', 'Water Supply', 'Electricity', 'Engineering', 'Revenue', 'Fire Brigade', 'Finance', 'Garden', 'Miscellaneous Complaints', 'Parking', 'Building Allowance', 'Lake Protection', 'Social Security', 'Govardhan Project', 'BRTS and BCL'][Math.floor(Math.random() * 16)] }
+               updatedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+               author: {
+                 _id: `user_${i}`,
+                 name: `Citizen ${i + 1}`,
+                 email: `citizen${i + 1}@example.com`
+               },
+               department: { departmentName: ['Sewage', 'Compost with dried leaves', 'Water Supply', 'Electricity', 'Engineering', 'Revenue', 'Fire Brigade', 'Finance', 'Garden', 'Miscellaneous Complaints', 'Parking', 'Building Allowance', 'Lake Protection', 'Social Security', 'Govardhan Project', 'BRTS and BCL'][Math.floor(Math.random() * 16)] },
+               // Mock chat messages using objects field
+               objects: [
+                 {
+                   message: `Initial complaint: ${['Water supply has been cut off for 3 days', 'Street light is not working', 'Garbage is not being collected', 'Road has potholes', 'Electricity bill is too high', 'Sewage is overflowing'][Math.floor(Math.random() * 6)]}`,
+                   authorType: 'User',
+                   authorId: `user_${i}`,
+                   timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+                   attachments: []
+                 },
+                 {
+                   message: `Thank you for your complaint. We have received your query and assigned it to our team. Reference ID: ${i + 1000}`,
+                   authorType: 'DepartmentMember',
+                   authorId: `dept_member_${Math.floor(Math.random() * 10)}`,
+                   timestamp: new Date(Date.now() - Math.random() * 6 * 24 * 60 * 60 * 1000).toISOString(),
+                   attachments: []
+                 },
+                 {
+                   message: `Follow up: When can I expect this to be resolved? It's been affecting our daily routine.`,
+                   authorType: 'User',
+                   authorId: `user_${i}`,
+                   timestamp: new Date(Date.now() - Math.random() * 5 * 24 * 60 * 60 * 1000).toISOString(),
+                   attachments: []
+                 },
+                 {
+                   message: `We understand your concern. Our team is working on this issue and we expect to resolve it within ${Math.floor(Math.random() * 5) + 1} days. We will keep you updated on the progress.`,
+                   authorType: 'DepartmentMember',
+                   authorId: `dept_member_${Math.floor(Math.random() * 10)}`,
+                   timestamp: new Date(Date.now() - Math.random() * 4 * 24 * 60 * 60 * 1000).toISOString(),
+                   attachments: []
+                 }
+               ],
+               // Mock documents
+               documents: [
+                 {
+                   _id: `doc_${i}_1`,
+                   name: 'photo_evidence.jpg',
+                   type: 'image',
+                   url: '#',
+                   uploadedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString()
+                 },
+                 {
+                   _id: `doc_${i}_2`,
+                   name: 'location_details.pdf',
+                   type: 'pdf',
+                   url: '#',
+                   uploadedAt: new Date(Date.now() - Math.random() * 6 * 24 * 60 * 60 * 1000).toISOString()
+                 }
+               ]
              };
            }),
           departments: [
@@ -130,7 +191,9 @@ const Dashboard = () => {
         const mockQueries = Array(50).fill().map((_, i) => ({
           _id: `query_${i}`,
           title: `Sample Query ${i + 1}: ${['Water shortage in area', 'Road repair needed', 'Electricity outage', 'Garbage collection issue', 'Street light maintenance', 'Sewage overflow', 'Parking violation', 'Building permit issue', 'Lake pollution', 'Composting facility needed', 'Fire safety concern', 'Revenue collection issue', 'Garden maintenance', 'BRTS service complaint', 'Social security application', 'Govardhan project update'][Math.floor(Math.random() * 16)]}`,
+          description: `This is a detailed description for query ${i + 1}. It contains important information about the issue that needs to be addressed by the concerned department. The citizen has provided specific details about the location, severity, and impact of the problem.`,
           status: ['open', 'in_progress', 'resolved'][Math.floor(Math.random() * 3)],
+          urgencyScore: Math.floor(Math.random() * 10) + 1, // 1-10 urgency score
           createdAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
           updatedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
           author: {
@@ -141,9 +204,58 @@ const Dashboard = () => {
           department: {
             _id: `dept_${Math.floor(Math.random() * 16)}`,
             departmentName: ['Sewage', 'Compost with dried leaves', 'Water Supply', 'Electricity', 'Engineering', 'Revenue', 'Fire Brigade', 'Finance', 'Garden', 'Miscellaneous Complaints', 'Parking', 'Building Allowance', 'Lake Protection', 'Social Security', 'Govardhan Project', 'BRTS and BCL'][Math.floor(Math.random() * 16)]
-          }
-        }));
-        setAllQueries(sortOrder === 'oldest' ? mockQueries.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)) : mockQueries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+          },
+          // Mock chat messages using objects field
+          objects: [
+            {
+              message: `Initial complaint: ${['Water supply has been cut off for 3 days', 'Street light is not working', 'Garbage is not being collected', 'Road has potholes', 'Electricity bill is too high', 'Sewage is overflowing'][Math.floor(Math.random() * 6)]}`,
+              authorType: 'User',
+              authorId: `user_${i}`,
+              timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+              attachments: []
+            },
+            {
+              message: `Thank you for your complaint. We have received your query and assigned it to our team. Reference ID: ${i + 1000}`,
+              authorType: 'DepartmentMember',
+              authorId: `dept_member_${Math.floor(Math.random() * 10)}`,
+              timestamp: new Date(Date.now() - Math.random() * 6 * 24 * 60 * 60 * 1000).toISOString(),
+              attachments: []
+            },
+            {
+              message: `Follow up: When can I expect this to be resolved? It's been affecting our daily routine.`,
+              authorType: 'User',
+              authorId: `user_${i}`,
+              timestamp: new Date(Date.now() - Math.random() * 5 * 24 * 60 * 60 * 1000).toISOString(),
+              attachments: []
+            },
+            {
+              message: `We understand your concern. Our team is working on this issue and we expect to resolve it within ${Math.floor(Math.random() * 5) + 1} days. We will keep you updated on the progress.`,
+              authorType: 'DepartmentMember',
+              authorId: `dept_member_${Math.floor(Math.random() * 10)}`,
+              timestamp: new Date(Date.now() - Math.random() * 4 * 24 * 60 * 60 * 1000).toISOString(),
+              attachments: []
+            }
+          ],
+          // Mock documents
+          documents: [
+            {
+              _id: `doc_${i}_1`,
+              name: 'photo_evidence.jpg',
+              type: 'image',
+              url: '#',
+              uploadedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            {
+              _id: `doc_${i}_2`,
+              name: 'location_details.pdf',
+              type: 'pdf',
+              url: '#',
+              uploadedAt: new Date(Date.now() - Math.random() * 6 * 24 * 60 * 60 * 1000).toISOString()
+            }
+                  ]
+      }));
+      
+      setAllQueries(mockQueries);
       }
     } catch (error) {
       console.error('Error fetching queries:', error);
@@ -151,7 +263,9 @@ const Dashboard = () => {
       const mockQueries = Array(50).fill().map((_, i) => ({
         _id: `query_${i}`,
         title: `Sample Query ${i + 1}: ${['Water shortage in area', 'Road repair needed', 'Electricity outage', 'Garbage collection issue', 'Street light maintenance', 'Sewage overflow', 'Parking violation', 'Building permit issue', 'Lake pollution', 'Composting facility needed', 'Fire safety concern', 'Revenue collection issue', 'Garden maintenance', 'BRTS service complaint', 'Social security application', 'Govardhan project update'][Math.floor(Math.random() * 16)]}`,
+        description: `This is a detailed description for query ${i + 1}. It contains important information about the issue that needs to be addressed by the concerned department. The citizen has provided specific details about the location, severity, and impact of the problem.`,
         status: ['open', 'in_progress', 'resolved'][Math.floor(Math.random() * 3)],
+        urgencyScore: Math.floor(Math.random() * 10) + 1, // 1-10 urgency score
         createdAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
         updatedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
         author: {
@@ -162,9 +276,58 @@ const Dashboard = () => {
         department: {
           _id: `dept_${Math.floor(Math.random() * 16)}`,
           departmentName: ['Sewage', 'Compost with dried leaves', 'Water Supply', 'Electricity', 'Engineering', 'Revenue', 'Fire Brigade', 'Finance', 'Garden', 'Miscellaneous Complaints', 'Parking', 'Building Allowance', 'Lake Protection', 'Social Security', 'Govardhan Project', 'BRTS and BCL'][Math.floor(Math.random() * 16)]
-        }
+        },
+        // Mock chat messages using objects field
+        objects: [
+          {
+            message: `Initial complaint: ${['Water supply has been cut off for 3 days', 'Street light is not working', 'Garbage is not being collected', 'Road has potholes', 'Electricity bill is too high', 'Sewage is overflowing'][Math.floor(Math.random() * 6)]}`,
+            authorType: 'User',
+            authorId: `user_${i}`,
+            timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+            attachments: []
+          },
+          {
+            message: `Thank you for your complaint. We have received your query and assigned it to our team. Reference ID: ${i + 1000}`,
+            authorType: 'DepartmentMember',
+            authorId: `dept_member_${Math.floor(Math.random() * 10)}`,
+            timestamp: new Date(Date.now() - Math.random() * 6 * 24 * 60 * 60 * 1000).toISOString(),
+            attachments: []
+          },
+          {
+            message: `Follow up: When can I expect this to be resolved? It's been affecting our daily routine.`,
+            authorType: 'User',
+            authorId: `user_${i}`,
+            timestamp: new Date(Date.now() - Math.random() * 5 * 24 * 60 * 60 * 1000).toISOString(),
+            attachments: []
+          },
+          {
+            message: `We understand your concern. Our team is working on this issue and we expect to resolve it within ${Math.floor(Math.random() * 5) + 1} days. We will keep you updated on the progress.`,
+            authorType: 'DepartmentMember',
+            authorId: `dept_member_${Math.floor(Math.random() * 10)}`,
+            timestamp: new Date(Date.now() - Math.random() * 4 * 24 * 60 * 60 * 1000).toISOString(),
+            attachments: []
+          }
+        ],
+        // Mock documents
+        documents: [
+          {
+            _id: `doc_${i}_1`,
+            name: 'photo_evidence.jpg',
+            type: 'image',
+            url: '#',
+            uploadedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString()
+          },
+          {
+            _id: `doc_${i}_2`,
+            name: 'location_details.pdf',
+            type: 'pdf',
+            url: '#',
+            uploadedAt: new Date(Date.now() - Math.random() * 6 * 24 * 60 * 60 * 1000).toISOString()
+          }
+        ]
       }));
-      setAllQueries(sortOrder === 'oldest' ? mockQueries.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)) : mockQueries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+      
+      setAllQueries(mockQueries);
     } finally {
       setQueriesLoading(false);
     }
@@ -503,6 +666,18 @@ const Dashboard = () => {
                          query.department?.departmentName.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || query.status === statusFilter;
     return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+    // Apply sorting based on current sort order
+    if (sortOrder === 'oldest') {
+      return new Date(a.createdAt) - new Date(b.createdAt);
+    } else if (sortOrder === 'newest') {
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    } else if (sortOrder === 'urgency_high') {
+      return (b.urgencyScore || 5) - (a.urgencyScore || 5);
+    } else if (sortOrder === 'urgency_low') {
+      return (a.urgencyScore || 5) - (b.urgencyScore || 5);
+    }
+    return 0;
   });
 
   // Filter feedback data based on department
@@ -656,6 +831,34 @@ const Dashboard = () => {
       case 'resolved': return 'bg-green-100 text-green-800 border-green-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
+  };
+
+  const getUrgencyColor = (score) => {
+    if (score >= 8) return 'bg-red-100 text-red-800 border-red-200';
+    if (score >= 6) return 'bg-orange-100 text-orange-800 border-orange-200';
+    if (score >= 4) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    return 'bg-green-100 text-green-800 border-green-200';
+  };
+
+  const getUrgencyLabel = (score) => {
+    if (score >= 8) return 'CRITICAL';
+    if (score >= 6) return 'HIGH';
+    if (score >= 4) return 'MEDIUM';
+    return 'LOW';
+  };
+
+  const handleViewQuery = (query) => {
+    setSelectedQuery(query);
+    setShowQueryModal(true);
+  };
+
+  const closeQueryModal = () => {
+    setShowQueryModal(false);
+    setSelectedQuery(null);
+  };
+
+  const handleSortChange = (newSortOrder) => {
+    setSortOrder(newSortOrder);
   };
 
   // Don't render if not authenticated
@@ -977,22 +1180,16 @@ const Dashboard = () => {
                   </select>
                   
                   {/* Sort Order */}
-                  <button
-                    onClick={() => setSortOrder(sortOrder === 'newest' ? 'oldest' : 'newest')}
-                    className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  <select
+                    value={sortOrder}
+                    onChange={(e) => handleSortChange(e.target.value)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    {sortOrder === 'newest' ? (
-                      <>
-                        <SortDesc className="h-4 w-4 mr-2" />
-                        Newest First
-                      </>
-                    ) : (
-                      <>
-                        <SortAsc className="h-4 w-4 mr-2" />
-                        Oldest First
-                      </>
-                    )}
-                  </button>
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="urgency_high">Urgency: High to Low</option>
+                    <option value="urgency_low">Urgency: Low to High</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -1031,6 +1228,9 @@ const Dashboard = () => {
                           </th>
                           <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Status
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Urgency
                           </th>
                           <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Created
@@ -1082,6 +1282,16 @@ const Dashboard = () => {
                               </span>
                             </td>
                             <td className="px-6 py-4">
+                              <div className="flex items-center space-x-2">
+                                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${getUrgencyColor(query.urgencyScore || 5)}`}>
+                                  {getUrgencyLabel(query.urgencyScore || 5)}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  ({query.urgencyScore || 5}/10)
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
                               <div>
                                 <p className="text-sm text-gray-900">
                                   {formatDate(query.createdAt)}
@@ -1094,7 +1304,10 @@ const Dashboard = () => {
                               </div>
                             </td>
                             <td className="px-6 py-4">
-                              <button className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">
+                              <button 
+                                onClick={() => handleViewQuery(query)}
+                                className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
+                              >
                                 <Eye className="h-4 w-4 mr-1" />
                                 View
                               </button>
@@ -1112,25 +1325,26 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-white rounded-lg shadow p-4 text-center">
                 <div className="text-2xl font-bold text-blue-600">
-                  {filteredQueries.filter(q => q.status === 'open').length}
+                  {data.queries.filter(q => q.status === 'open').length}
                 </div>
                 <div className="text-sm text-gray-600">Open Queries</div>
               </div>
               <div className="bg-white rounded-lg shadow p-4 text-center">
                 <div className="text-2xl font-bold text-yellow-600">
-                  {filteredQueries.filter(q => q.status === 'in_progress').length}
+                  {data.queries.filter(q => q.status === 'in_progress').length}
                 </div>
                 <div className="text-sm text-gray-600">In Progress</div>
               </div>
               <div className="bg-white rounded-lg shadow p-4 text-center">
                 <div className="text-2xl font-bold text-green-600">
-                  {filteredQueries.filter(q => q.status === 'resolved').length}
+                  {data.queries.filter(q => q.status === 'resolved').length}
                 </div>
                 <div className="text-sm text-gray-600">Resolved</div>
               </div>
+              
               <div className="bg-white rounded-lg shadow p-4 text-center">
                 <div className="text-2xl font-bold text-gray-600">
-                  {filteredQueries.length}
+                  {data.queries.length}
                 </div>
                 <div className="text-sm text-gray-600">Total Shown</div>
               </div>
@@ -1612,6 +1826,207 @@ const Dashboard = () => {
                </div>
               </>
             )}
+          </div>
+        )}
+
+        {/* Detailed Query Modal */}
+        {showQueryModal && selectedQuery && (
+          <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <div className="flex items-center space-x-3">
+                  <FileText className="h-6 w-6 text-blue-500" />
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">Query Details</h2>
+                    <p className="text-sm text-gray-600">ID: {selectedQuery._id}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={closeQueryModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
+                <div className="p-6 space-y-6">
+                  {/* Query Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Query Information</h3>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="text-sm font-medium text-gray-700">Title</label>
+                            <p className="text-gray-900 mt-1">{selectedQuery.title}</p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-gray-700">Description</label>
+                            <p className="text-gray-900 mt-1">{selectedQuery.description}</p>
+                          </div>
+                          <div className="flex items-center space-x-4">
+                            <div>
+                              <label className="text-sm font-medium text-gray-700">Status</label>
+                              <div className="mt-1">
+                                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(selectedQuery.status)}`}>
+                                  {selectedQuery.status.replace('_', ' ').toUpperCase()}
+                                </span>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-gray-700">Urgency</label>
+                              <div className="mt-1">
+                                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${getUrgencyColor(selectedQuery.urgencyScore || 5)}`}>
+                                  {getUrgencyLabel(selectedQuery.urgencyScore || 5)} ({selectedQuery.urgencyScore || 5}/10)
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Author Information</h3>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="text-sm font-medium text-gray-700">Name</label>
+                            <p className="text-gray-900 mt-1">{selectedQuery.author?.name || 'Unknown'}</p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-gray-700">Email</label>
+                            <p className="text-gray-900 mt-1">{selectedQuery.author?.email || 'No email'}</p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-gray-700">Department</label>
+                            <div className="flex items-center mt-1">
+                              <Building2 className="h-4 w-4 text-gray-400 mr-2" />
+                              <span className="text-gray-900">{selectedQuery.department?.departmentName || 'Unassigned'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Timeline</h3>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Created:</span>
+                            <span className="text-gray-900">{formatDate(selectedQuery.createdAt)}</span>
+                          </div>
+                          {selectedQuery.updatedAt !== selectedQuery.createdAt && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Last Updated:</span>
+                              <span className="text-gray-900">{formatDate(selectedQuery.updatedAt)}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Chat Messages */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                      <MessageSquare className="h-5 w-5 mr-2 text-blue-500" />
+                      Conversation History ({selectedQuery.objects ? selectedQuery.objects.length : 0} messages)
+                    </h3>
+                    <div className="space-y-4 max-h-96 overflow-y-auto border border-gray-200 rounded-lg p-4">
+                      {selectedQuery.objects && selectedQuery.objects.length > 0 ? (
+                        selectedQuery.objects.map((message, index) => (
+                          <div
+                            key={index}
+                            className={`flex ${message.authorType === 'User' ? 'justify-start' : 'justify-end'}`}
+                          >
+                            <div
+                              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                                message.authorType === 'User'
+                                  ? 'bg-gray-100 text-gray-900'
+                                  : 'bg-blue-500 text-white'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs font-medium capitalize">
+                                  {message.authorType === 'User' ? 'Citizen' : 'Department'}
+                                </span>
+                              </div>
+                              <p className="text-sm">{message.message}</p>
+                              <p className={`text-xs mt-1 ${
+                                message.authorType === 'User' ? 'text-gray-500' : 'text-blue-100'
+                              }`}>
+                                {formatDate(message.timestamp)}
+                              </p>
+                              {message.attachments && message.attachments.length > 0 && (
+                                <div className="mt-2 pt-2 border-t border-gray-200">
+                                  <p className="text-xs text-gray-500 mb-1">Attachments:</p>
+                                  {message.attachments.map((attachment, attIndex) => (
+                                    <div key={attIndex} className="flex items-center space-x-2 text-xs">
+                                      <Paperclip className="h-3 w-3" />
+                                      <span className="truncate">{attachment.originalName}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center text-gray-500 py-4">
+                          <MessageSquare className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                          <p>No messages yet</p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Messages will appear here when the conversation starts
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Documents */}
+                  {selectedQuery.documents && selectedQuery.documents.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <Paperclip className="h-5 w-5 mr-2 text-green-500" />
+                        Attached Documents
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {selectedQuery.documents.map((doc) => (
+                          <div
+                            key={doc._id}
+                            className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                          >
+                            <div className="flex items-center space-x-3">
+                              <Paperclip className="h-5 w-5 text-gray-400" />
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">{doc.name}</p>
+                                <p className="text-xs text-gray-500">
+                                  Uploaded: {formatDate(doc.uploadedAt)}
+                                </p>
+                              </div>
+                            </div>
+                            <button className="text-blue-600 hover:text-blue-800">
+                              <Download className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Priority Indicator */}
+                  <div className="flex items-center justify-center pt-4 border-t border-gray-200">
+                    <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium ${getUrgencyColor(selectedQuery.urgencyScore || 5)}`}>
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      {getUrgencyLabel(selectedQuery.urgencyScore || 5)} Priority
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

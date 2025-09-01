@@ -49,6 +49,10 @@ const UserSchema = new Schema(
       type: Schema.Types.ObjectId, 
       ref: "Query" 
     }],
+    can_see: [{ 
+      type: Schema.Types.ObjectId, 
+      ref: "Query" 
+    }],
     // Google OAuth fields
     googleId: { 
       type: String, 
@@ -197,6 +201,10 @@ const QuerySchema = new Schema(
       enum: ["Low", "Medium", "High", "Critical"],
     },
     urgencyReason: { type: String },
+    impressions: { 
+      type: Number, 
+      default: 1 
+    },
   },
   { timestamps: true }
 );

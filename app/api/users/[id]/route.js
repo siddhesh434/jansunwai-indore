@@ -9,13 +9,22 @@ export async function GET(request, context) {
     const params = await context.params; // ✅ Await params directly
     const userId = params.id;
 
-    const user = await User.findById(userId).populate({
-      path: "queries",
-      populate: [
-        { path: "department" },
-        { path: "author" }
-      ]
-    });
+    const user = await User.findById(userId).populate([
+      {
+        path: "queries",
+        populate: [
+          { path: "department" },
+          { path: "author" }
+        ]
+      },
+      {
+        path: "can_see",
+        populate: [
+          { path: "department" },
+          { path: "author" }
+        ]
+      }
+    ]);
     if (!user)
       return Response.json({ error: "User not found" }, { status: 404 });
 

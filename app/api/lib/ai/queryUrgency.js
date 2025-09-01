@@ -1,18 +1,28 @@
 import Groq from "groq-sdk";
 
-// Initialize Groq client only if API key is available
+// Initialize Groq client dynamically when needed
 let groq = null;
 
-try {
-  if (process.env.GROQ_API_KEY) {
-    groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+function initializeGroq() {
+  console.log("Initializing Groq client (queryUrgency)...");
+  console.log("GROQ_API_KEY present:", !!process.env.GROQ_API_KEY);
+  
+  if (!groq && process.env.GROQ_API_KEY) {
+    try {
+      groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+      console.log("Groq client initialized successfully");
+    } catch (error) {
+      console.error("Failed to initialize Groq client:", error.message);
+    }
+  } else if (!process.env.GROQ_API_KEY) {
+    console.log("GROQ_API_KEY environment variable is not set");
   }
-} catch (error) {
-  console.warn("Groq client initialization failed:", error.message);
+  return groq;
 }
 
 export async function scoreUrgency({ title, description, attachmentAnalyses }) {
-  if (!groq) {
+  const groqClient = initializeGroq();
+  if (!groqClient) {
     // Fallback to basic urgency scoring when Groq is not available
     const text = `${title} ${description}`.toLowerCase();
     let score = 3; // Default medium
@@ -53,7 +63,7 @@ Return a strict JSON with: { "score": 1-5 integer (1 lowest, 5 highest), "label"
 Rules: Consider public safety, health risk, essential services disruption (water/electricity), environmental hazards, vulnerable groups impact, scale, and immediacy.
 `;
 
-    const completion = await groq.chat.completions.create({
+    const completion = await groqClient.chat.completions.create({
       model: "llama3-70b-8192",
       messages: [{ role: "user", content: prompt }],
       temperature: 0,

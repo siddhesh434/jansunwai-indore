@@ -7,7 +7,7 @@ export default function Footer() {
   const { t } = useLanguage();
 
   return (
-    <footer className="bg-blue-900 text-white py-12">
+         <footer className="bg-blue-900 text-white py-12 relative z-10">
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Brand Section */}
@@ -22,17 +22,20 @@ export default function Footer() {
           <div className="text-center">
             <h3 className="font-semibold mb-3 text-blue-100">Quick Links</h3>
             <div className="space-y-2">
-              <Link href="/" className="block text-blue-200 hover:text-white transition-colors">
+              <Link href="/" className="block text-blue-200 hover:text-white transition-colors cursor-pointer">
                 Home
               </Link>
-              <Link href="/about" className="block text-blue-200 hover:text-white transition-colors">
+              <Link href="/about" className="block text-blue-200 hover:text-white transition-colors cursor-pointer">
                 About Us
               </Link>
-              <Link href="/login" className="block text-blue-200 hover:text-white transition-colors">
+              <Link href="/login" className="block text-blue-200 hover:text-white transition-colors cursor-pointer">
                 Citizen Login
               </Link>
-              <Link href="/department/login" className="block text-blue-200 hover:text-white transition-colors">
+              <Link href="/department/login" className="block text-blue-200 hover:text-white transition-colors cursor-pointer">
                 Department Login
+              </Link>
+              <Link href="/superadmin/login" className="block text-blue-200 hover:text-white transition-colors cursor-pointer">
+                Admin Login
               </Link>
             </div>
           </div>
