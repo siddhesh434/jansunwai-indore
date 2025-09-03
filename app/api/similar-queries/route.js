@@ -1,5 +1,5 @@
 // app/api/similar-queries/route.js
-import dbConnect from "../../../lib/dbConnect";
+import dbConnect from "../../api/lib/dbConnect";
 import { Query } from "../../../models";
 
 export async function GET(request) {

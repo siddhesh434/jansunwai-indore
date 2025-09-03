@@ -1,5 +1,5 @@
 // app/api/users/add-can-see-query/route.js
-import dbConnect from "../../../../lib/dbConnect";
+import dbConnect from "../../../api/lib/dbConnect";
 import { User, Query } from "../../../../models";
 
 export async function POST(request) {
