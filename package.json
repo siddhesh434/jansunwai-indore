@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
-   "start": "next start -p $PORT || next start -p %PORT%",
-    "lint": "next lint"
+    "dev": "next dev",
+  "build": "next build",
+  "start": "npx next start -p $PORT",
+  "postinstall": "next build"
   },
   "dependencies": {
     "@ai-sdk/groq": "^2.0.2",
