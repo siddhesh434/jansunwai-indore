@@ -8,7 +8,7 @@ import {
   AlertTriangle,
   CheckCircle,
 } from "lucide-react";
-import { clampWords } from "@/app/api/lib/ai/wordClamp";
+import { clampWords } from "../../api/lib/ai/wordClamp";
 
 export default function AttachmentAI({
   onAnalyzed,
