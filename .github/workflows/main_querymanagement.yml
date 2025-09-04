@@ -33,10 +33,10 @@ jobs:
           path: |
             package.json
             package-lock.json
-            node_modules
-            .next
             public
             next.config.js
+            app
+            models
 
   deploy:
     runs-on: ubuntu-latest
