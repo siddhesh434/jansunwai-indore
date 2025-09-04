@@ -23,10 +23,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Next.js app
-        run: npm run build
+      # Optional: run lint/tests, but no "npm run build" here
+      - name: Run tests
+        run: npm run test --if-present
 
-      # ✅ Upload only what Azure needs
+      # ✅ Upload only source files needed for Azure build
       - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
         with:
@@ -38,7 +39,6 @@ jobs:
             next.config.js
             app
             models
-            .next
 
   deploy:
     runs-on: ubuntu-latest
