@@ -5,8 +5,7 @@
   "scripts": {
   "dev": "next dev",
   "build": "next build",
-  "start": "next start",
-  "test": "jest --passWithNoTests"
+  "start": "next start"
   },
   "dependencies": {
     "@ai-sdk/groq": "^2.0.2",
