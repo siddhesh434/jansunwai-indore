@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
   "build": "next build",
-  "start": "npx next start -p $PORT",
+  "start": "/home/site/wwwroot/node_modules/next/dist/bin/next",
   "postinstall": "next build"
   },
   "dependencies": {
