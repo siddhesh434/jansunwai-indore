@@ -12,19 +12,24 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    
+
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Login to Azure
-        uses: azure/login@v2
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_5ECCCDE96C15445B98B35090024FFE5A }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_F4F9EEA1A1A641AE98B15C4DC09E394F }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_A973B3F037844D3A8C2B9EC68DAF2D37 }}
-      
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build app
+        run: npm run build
+
       - name: Deploy to Azure Web App
-        id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'querymanagement'
