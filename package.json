@@ -5,7 +5,8 @@
   "scripts": {
   "dev": "next dev",
   "build": "next build",
-  "start": "node node_modules/next/dist/bin/next start -p $PORT"
+  "start": "next start",
+  "test": "jest --passWithNoTests"
   },
   "dependencies": {
     "@ai-sdk/groq": "^2.0.2",
