@@ -37,6 +37,8 @@ jobs:
             next.config.js
             app
             models
+            .next          
+            node_modules   
 
   deploy:
     runs-on: ubuntu-latest
