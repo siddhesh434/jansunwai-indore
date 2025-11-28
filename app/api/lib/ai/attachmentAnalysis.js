@@ -118,11 +118,11 @@ export async function describeWithGemini({ buffer, mimeType, metadata }) {
     // Try different models in order of preference
     let model;
     try {
-      model = geminiClient.getGenerativeModel({ model: "gemini-1.5-flash" });
-      console.log("Using gemini-1.5-flash model");
+      model = geminiClient.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+      console.log("Using gemini-1.5-flash-latest model");
     } catch (modelError) {
-      console.log("Falling back to gemini-1.5-pro model");
-      model = geminiClient.getGenerativeModel({ model: "gemini-1.5-pro" });
+      console.log("Falling back to gemini-1.5-pro-latest model");
+      model = geminiClient.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
     }
 
     const metadataContext = buildMetadataContext(metadata);

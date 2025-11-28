@@ -1,63 +1,25 @@
-// Alternative public instances to try
-const ALTERNATIVE_INSTANCES = [
-  "https://translate.astian.org/translate",
-  "https://translate.terraprint.co/translate", 
-  "https://libretranslate.com/translate"
-];
+// testing.js
 
-import fetch from "node-fetch";
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const tryTranslation = async (instance, text, sourceLang = "en", targetLang = "hi") => {
+// ✅ Replace with your valid Gemini API key
+const API_KEY = "AIzaSyD9oiwXglGne0aA6sUb1xK-ZhHeBKFT1w"; // (your key here)
+
+const genAI = new GoogleGenerativeAI(API_KEY);
+
+async function testGemini() {
   try {
-    console.log(`\n🔄 Trying instance: ${instance}`);
-    
-    const res = await fetch(instance, {
-      method: "POST",
-      body: JSON.stringify({
-        q: text,
-        source: sourceLang,
-        target: targetLang,
-        format: "text"
-      }),
-      headers: { 
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-      }
-    });
+    // ✅ Use v1 model (available after updating SDK)
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const responseText = await res.text();
-    
-    if (res.status === 200) {
-      try {
-        const data = JSON.parse(responseText);
-        if (data.translatedText) {
-          console.log(`✅ Success with ${instance}`);
-          console.log(`Translation: "${data.translatedText}"`);
-          return data.translatedText;
-        }
-      } catch (e) {
-        console.log(`❌ Invalid JSON from ${instance}`);
-      }
-    } else {
-      console.log(`❌ Failed with status ${res.status}: ${responseText.substring(0, 100)}`);
-    }
+    const prompt = "Explain LangChain in one sentence.";
+
+    const result = await model.generateContent(prompt);
+    console.log("✅ Gemini API Test Successful!\n");
+    console.log("Response:\n", result.response.text());
   } catch (err) {
-    console.log(`❌ Network error with ${instance}: ${err.message}`);
+    console.error("❌ Error testing Gemini API:\n", err);
   }
-  return null;
-};
+}
 
-const runAlternatives = async () => {
-  const text = "Hello World";
-  console.log(`🌍 Translating: "${text}" from English to Hindi`);
-  
-  for (const instance of ALTERNATIVE_INSTANCES) {
-    const result = await tryTranslation(instance, text);
-    if (result) {
-      console.log(`\n🎉 Found working instance: ${instance}`);
-      break;
-    }
-  }
-};
-
-runAlternatives();
+testGemini();

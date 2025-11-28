@@ -42,6 +42,7 @@ import {
   Home,
   Star,
   AlertTriangle,
+  Sparkles,
 } from "lucide-react";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -685,12 +686,6 @@ export default function Dashboard() {
   const [attachmentAnalysisLoading, setAttachmentAnalysisLoading] = useState(false);
   const [documentRelevanceChecks, setDocumentRelevanceChecks] = useState({});
 
-  // Similar queries states
-  const [similarQueries, setSimilarQueries] = useState([]);
-  const [showSimilarQueries, setShowSimilarQueries] = useState(false);
-  const [addingToDashboard, setAddingToDashboard] = useState(false);
-  const [checkingSimilarQueries, setCheckingSimilarQueries] = useState(false);
-
   // Voice-to-text states
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
@@ -801,22 +796,29 @@ export default function Dashboard() {
     newQueryRef.current = newQuery;
   }, [newQuery]);
 
-  // Auto-analyze when both description and address are present
   const [lastAnalyzedQuery, setLastAnalyzedQuery] = useState("");
   const [lastAnalyzedAddress, setLastAnalyzedAddress] = useState("");
-  
-  useEffect(() => {
+
+  const handleAnalyzeQuery = () => {
     const currentQuery = newQuery.query.trim();
-    const currentAddress = newQuery.address && newQuery.address.trim();
-    
-    // Only analyze if we have both query and address, not currently analyzing, and the content has changed
-    if (currentQuery && currentAddress && !analyzing && 
-        (currentQuery !== lastAnalyzedQuery || currentAddress !== lastAnalyzedAddress)) {
-      setLastAnalyzedQuery(currentQuery);
-      setLastAnalyzedAddress(currentAddress);
-      analyzeQuery(currentQuery, currentAddress);
+    const currentAddress = (newQuery.address || "").trim();
+
+    if (!currentQuery || !currentAddress) {
+      alert("Please add both the complaint description and location before running the AI analysis.");
+      return;
     }
-  }, [newQuery.query, newQuery.address, analyzing, lastAnalyzedQuery, lastAnalyzedAddress]);
+
+    if (analyzing) return;
+
+    // Avoid duplicate calls if content hasn't changed
+    if (currentQuery === lastAnalyzedQuery && currentAddress === lastAnalyzedAddress && queryAnalysis) {
+      return;
+    }
+
+    setLastAnalyzedQuery(currentQuery);
+    setLastAnalyzedAddress(currentAddress);
+    analyzeQuery(currentQuery, currentAddress);
+  };
 
 
 
@@ -1069,106 +1071,6 @@ export default function Dashboard() {
     }
   };
 
-  const checkSimilarQueries = async (departmentId, address) => {
-    if (!departmentId || !address) return;
-    
-    setCheckingSimilarQueries(true);
-    setShowSimilarQueries(false);
-    
-    try {
-      const params = new URLSearchParams({
-        departmentId,
-        address: address,
-        excludeUserId: user?._id || ""
-      });
-      
-      const res = await fetch(`/api/similar-queries?${params}`);
-      const data = await res.json();
-      
-      if (data.success && data.similarQueries && data.similarQueries.length > 0) {
-        setSimilarQueries(data.similarQueries);
-        setShowSimilarQueries(true);
-      } else {
-        setSimilarQueries([]);
-        setShowSimilarQueries(true); // Show the "no results" message
-      }
-    } catch (error) {
-      console.error("Error checking similar queries:", error);
-      setSimilarQueries([]);
-      setShowSimilarQueries(false);
-    } finally {
-      setCheckingSimilarQueries(false);
-    }
-  };
-
-  const addQueryToDashboard = async (queryId) => {
-    if (!user?._id || !queryId) return;
-    
-    setAddingToDashboard(true);
-    try {
-      const res = await fetch("/api/users/add-can-see-query", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user._id, queryId }),
-      });
-
-      const data = await res.json();
-      
-      if (data.success) {
-        // Update local queries array to include the new query
-        const newQuery = similarQueries.find(q => q._id === queryId);
-        if (newQuery) {
-          // Update the impression count in the local query object
-          const updatedQuery = {
-            ...newQuery,
-            impressions: (newQuery.impressions || 1) + 1
-          };
-          setQueries(prev => [updatedQuery, ...prev]);
-        }
-        
-        // Update the user's can_see array in local state
-        if (user && !user.can_see.includes(queryId)) {
-          // Update the user object in AuthContext
-          const updatedUser = {
-            ...user,
-            can_see: [...user.can_see, queryId]
-          };
-          loginUserFromGoogle(updatedUser);
-        }
-        
-        // Remove from similar queries
-        setSimilarQueries(prev => prev.filter(q => q._id !== queryId));
-        
-        // Close the new query form and go to dashboard
-        setShowNewQueryForm(false);
-        setNewQuery({ query: "", address: "", latitude: null, longitude: null });
-        setQueryAnalysis(null);
-        setSelectedFiles([]);
-        setAttachmentAnalyses([]);
-        setShowMap(false);
-        setSimilarQueries([]);
-        setShowSimilarQueries(false);
-        setLastAnalyzedQuery("");
-        setLastAnalyzedAddress("");
-        
-        // Show success message
-       
-             } else {
-         // Handle specific error cases
-         if (data.error === "Query already in user's dashboard") {
-           alert("This query is already in your dashboard!");
-         } else {
-           alert("Failed to add query to dashboard: " + data.error);
-         }
-       }
-    } catch (error) {
-      console.error("Error adding query to dashboard:", error);
-      alert("Failed to add query to dashboard. Please try again.");
-    } finally {
-      setAddingToDashboard(false);
-    }
-  };
-
   const fetchQueryThreads = async (queryId) => {
     try {
       // First, try to get the latest query data from the API
@@ -1322,8 +1224,6 @@ export default function Dashboard() {
       setShowMap(false);
       setSelectedQuery(created);
       setThreads([]);
-      setSimilarQueries([]);
-      setShowSimilarQueries(false);
       setLastAnalyzedQuery("");
       setLastAnalyzedAddress("");
     } catch (err) {
@@ -1574,8 +1474,6 @@ export default function Dashboard() {
                         setSelectedFiles([]);
                         setAttachmentAnalyses([]);
                         setShowMap(false);
-                        setSimilarQueries([]);
-                        setShowSimilarQueries(false);
                         setLastAnalyzedQuery("");
                         setLastAnalyzedAddress("");
                       }}
@@ -1759,8 +1657,6 @@ export default function Dashboard() {
                               setSelectedFiles([]);
                               setAttachmentAnalyses([]);
                               setShowMap(false);
-                              setSimilarQueries([]);
-                              setShowSimilarQueries(false);
                               setLastAnalyzedQuery("");
                               setLastAnalyzedAddress("");
                             }}
@@ -1771,8 +1667,44 @@ export default function Dashboard() {
                         </div>
                      </div>
 
-                     {/* Right Column - AI Analysis */}
-                     <div className="space-y-6">
+                    {/* Right Column - AI Analysis */}
+                    <div className="space-y-6">
+                      <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 shadow-sm sticky top-6">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 bg-blue-50 border border-blue-200 rounded-full flex items-center justify-center">
+                            <Sparkles className="w-4 h-4 text-blue-600" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-sm font-semibold text-gray-900">AI Assistance</h3>
+                            <p className="text-xs text-gray-600 mt-1">
+                              Run the AI analysis after you finish describing the complaint and selecting the location. This prevents triggering the model on every keystroke.
+                            </p>
+                            <button
+                              onClick={handleAnalyzeQuery}
+                              disabled={
+                                analyzing ||
+                                attachmentAnalysisLoading ||
+                                !newQuery.query.trim() ||
+                                !(newQuery.address || "").trim()
+                              }
+                              className="mt-3 inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                            >
+                              {analyzing ? (
+                                <>
+                                  <LoadingSpinner size="sm" />
+                                  Running Analysis...
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles className="w-4 h-4" />
+                                  Run AI Analysis
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
                        {/* Analysis Loading */}
                        {analyzing && (
                          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 sticky top-6">
@@ -1785,118 +1717,6 @@ export default function Dashboard() {
                            </div>
                          </div>
                        )}
-
-                                                                                                  {/* Similar Queries Section - Above Analysis */}
-                          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 sticky top-6 mb-6">
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="flex items-start gap-2">
-                                <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                                <div>
-                                  <h4 className="text-sm font-semibold text-blue-900">Check for Similar Complaints</h4>
-                                  <p className="text-xs text-blue-800 mt-1">
-                                    Find existing complaints in the same area and department to avoid duplicates.
-                                  </p>
-                                </div>
-                              </div>
-                              <button
-                                onClick={() => {
-                                  if (queryAnalysis?.departmentId && newQuery.address) {
-                                    checkSimilarQueries(queryAnalysis.departmentId, newQuery.address);
-                                  } else {
-                                    alert("Please complete the complaint description and location first.");
-                                  }
-                                }}
-                                disabled={!queryAnalysis?.departmentId || !newQuery.address || analyzing || checkingSimilarQueries}
-                                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors flex items-center gap-1"
-                              >
-                                {checkingSimilarQueries ? (
-                                  <>
-                                    <LoadingSpinner size="sm" />
-                                    Checking...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Search className="w-3 h-3" />
-                                    Check Similar
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                            
-                            {showSimilarQueries && similarQueries.length > 0 && (
-                              <div>
-                                <div className="flex items-start gap-2 mb-3">
-                                  <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                                  <div>
-                                    <h4 className="text-sm font-semibold text-blue-900">Similar Complaints Found</h4>
-                                    <p className="text-xs text-blue-800 mt-1">
-                                      We found {similarQueries.length} similar complaint(s) in the same area and department.
-                                    </p>
-                                  </div>
-                                </div>
-                             
-                             <div className="space-y-2">
-                               {similarQueries.map((similarQuery) => (
-                                 <div key={similarQuery._id} className="bg-white rounded border border-blue-200 p-2">
-                                   <div className="flex items-start justify-between gap-2">
-                                     <div className="flex-1 min-w-0">
-                                       <h5 className="font-medium text-gray-900 text-xs mb-1">
-                                         {similarQuery.title}
-                                       </h5>
-                                       <p className="text-xs text-gray-600 mb-1 line-clamp-1">
-                                         {similarQuery.description}
-                                       </p>
-                                       <div className="flex items-center gap-2 text-xs text-gray-500">
-                                         <span className="flex items-center gap-1">
-                                           <MapPin className="w-2 h-2" />
-                                           {similarQuery.address || "No address"}
-                                         </span>
-                                         <span className="flex items-center gap-1">
-                                           <Eye className="w-2 h-2" />
-                                           {similarQuery.impressions || 1} views
-                                         </span>
-                                         <StatusBadge status={similarQuery.status} />
-                                       </div>
-                                     </div>
-                                     <button
-                                       onClick={() => addQueryToDashboard(similarQuery._id)}
-                                       disabled={addingToDashboard}
-                                       className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-2 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1 shrink-0"
-                                     >
-                                       {addingToDashboard ? (
-                                         <>
-                                           <LoadingSpinner size="sm" />
-                                           Adding...
-                                         </>
-                                       ) : (
-                                         <>
-                                           <Plus className="w-2 h-2" />
-                                           Add
-                                         </>
-                                       )}
-                                     </button>
-                                   </div>
-                                 </div>
-                               ))}
-                             </div>
-                             
-                             <div className="mt-2 pt-2 border-t border-blue-200">
-                               <p className="text-xs text-blue-700">
-                                 <strong>Note:</strong> Adding a query to your dashboard allows you to track its progress and receive updates, 
-                                 but you won't be able to participate in the conversation.
-                               </p>
-                             </div>
-                           </div>
-                         )}
-                         
-                         {showSimilarQueries && similarQueries.length === 0 && (
-                           <div className="text-center py-4">
-                             <p className="text-xs text-blue-700">
-                               No similar complaints found in this area and department.
-                             </p>
-                           </div>
-                         )}
-                       </div>
 
                                                  {/* Analysis Results */}
                                                    {queryAnalysis && !analyzing && (

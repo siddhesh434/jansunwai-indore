@@ -28,7 +28,7 @@ export async function GET() {
       results.tests.clientInitialization = "success";
       
       // Test 3: Try different models
-      const models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"];
+      const models = ["gemini-1.5-flash-latest", "gemini-1.5-pro-latest", "gemini-pro"];
       
       for (const modelName of models) {
         try {

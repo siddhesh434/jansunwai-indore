@@ -21,11 +21,11 @@ export async function GET() {
     // Try different models
     let model;
     try {
-      model = gemini.getGenerativeModel({ model: "gemini-1.5-flash" });
-      console.log("Using gemini-1.5-flash model");
+      model = gemini.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+      console.log("Using gemini-1.5-flash-latest model");
     } catch (modelError) {
-      console.log("Falling back to gemini-1.5-pro model");
-      model = gemini.getGenerativeModel({ model: "gemini-1.5-pro" });
+      console.log("Falling back to gemini-1.5-pro-latest model");
+      model = gemini.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
     }
 
     // Test with a simple prompt
